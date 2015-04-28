@@ -1,0 +1,118 @@
+\documentclass{thesis}
+
+%clickable links
+\usepackage{hyperref}
+
+% better itemize
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{xcolor}
+
+% Better captions
+\usepackage[font=small,labelfont=bf]{caption}
+
+% show author information in pdf document properties
+\hypersetup{
+	pdftitle={Tinzenite},
+	pdfauthor={\thefullname}
+}
+
+\colorlet{punct}{red!60!black}
+\definecolor{background}{HTML}{EEEEEE}
+\definecolor{delim}{RGB}{20,105,176}
+\colorlet{numb}{magenta!60!black}
+
+%JSON listing syntax highlighting support
+\lstdefinelanguage{json}{
+	basicstyle=\ttfamily\scriptsize,
+	numbers=left,
+	numberstyle=\scriptsize,
+	stepnumber=1,
+	numbersep=8pt,
+	showstringspaces=false,
+	breaklines=true,
+	frame=lines,
+	backgroundcolor=\color{background},
+	tabsize=2,
+	literate=
+	*{0}{{{\color{numb}0}}}{1}
+	{1}{{{\color{numb}1}}}{1}
+	{2}{{{\color{numb}2}}}{1}
+	{3}{{{\color{numb}3}}}{1}
+	{4}{{{\color{numb}4}}}{1}
+	{5}{{{\color{numb}5}}}{1}
+	{6}{{{\color{numb}6}}}{1}
+	{7}{{{\color{numb}7}}}{1}
+	{8}{{{\color{numb}8}}}{1}
+	{9}{{{\color{numb}9}}}{1}
+	{:}{{{\color{punct}{:}}}}{1}
+	{,}{{{\color{punct}{,}}}}{1}
+	{\{}{{{\color{delim}{\{}}}}{1}
+	{\}}{{{\color{delim}{\}}}}}{1}
+	{[}{{{\color{delim}{[}}}}{1}
+	{]}{{{\color{delim}{]}}}}{1},
+}
+
+\fullname{Tamino P.S.M. Hartmann}
+\email{tamino.hartmann@uni-ulm.de}
+\headline{Tinzenite\\{\Large Encrypted Peer to Peer File Synchronization\\via the Tox Protocol}}
+\titel{Thema}
+\jahr{2015}
+\matnr{722891}
+\gutachterA{Professor Doctor Manfred Reichert}
+\betreuer{Marc Schickler}
+\typ{Master thesis }
+\fakultaet{Engineering and Computer Science}
+\institut{Institute of Databases and Information Systems}
+
+\license{
+This work is licensed under the Creative Commons.
+Attribution-NonCommercial-ShareAlike 3.0 License. To view a copy of this
+license, visit http://creativecommons.org/licenses/by-nc-sa/3.0/de/ or send a
+letter to Creative Commons, 543 Howard Street, 5th Floor, San Francisco,
+California, 94105, USA. \\ Satz: PDF-\LaTeXe
+}
+
+% hyphenations:
+\hyphenation{Ta-mi-no}
+\hyphenation{Hart-mann}
+
+% DOCUMENT
+\begin{document}
+
+\frontmatter
+\maketitle
+\clearpage
+\impressum
+
+\cleardoublepage
+% ab hier zeilenabstand 1,4 fach 10pt/14pt
+% \setstretch{1.4}
+
+\input{text/abstract}
+\cleardoublepage
+\include{text/gratitude}
+
+\tableofcontents
+
+\mainmatter
+
+\include{text/introduction}
+\include{text/conclusion}
+
+\appendix
+
+\backmatter
+
+\listoffigures
+\listoftables
+
+\bibliographystyle{alpha}
+{\small
+\bibliography{cite.bib}
+}
+
+\clearpage
+\erklaerung
+
+\end{document}
