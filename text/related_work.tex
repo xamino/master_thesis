@@ -1,8 +1,48 @@
 \chapter{Related and Existing Work}
+\label{chap:related}
+
+%TODO write intro
 
 \section{Existing Software}
 
-%TODO synthesize the feature I want from Tinzenite by going through a comparison of the already existing services (Bitsync, Syncthing, GDrive, Dropbox, etc)
+TODO: synthesize the feature I want from Tinzenite by going through a comparison of the already existing services (Bitsync, Syncthing, GDrive, Dropbox, etc).
+Highlight what they do right and what they do wrong.
+I'll expand on these features in the implementation chapter.
+
+\subsection{Server Client Solutions}
+
+TODO: Explain how server client solutions work.
+
+\subsubsection{Google Drive}
+
+Negative: Central server, no encryption, ...
+Positive: web access, easy to use, integraton with Google Docs...
+
+\subsubsection{Dropbox}
+
+Negative: Central server, no encryption, ...
+Positive: web access, easy to use, ...
+
+\subsubsection{Boxcryptor}
+
+TODO: Especially interesting also because of the key distribution model – I might borrow some of those ideas.
+Negative: must be used on TOP of large data storage service
+Positive: encrypted, sharing possible, etc.
+
+\subsection{Peer to Peer Solutions}
+
+TODO: Explain how peer to peer solutions work.
+Notice that DHT should be briefly highlighted here already.
+
+\subsubsection{BitTorrent Sync}
+
+Negative: Closed source, peers can't be encrypted copies, ...
+Positive: no central point of failure, no strict internet requirement, ...
+
+\subsubsection{Syncthing}
+
+Negative: peers can't be encrypted copies, ...
+Positive: no central point of failure, no strict internet requirement, protocol is mixed data transfer and communication in one with security stuff added, ...
 
 \section{Papers}
 
