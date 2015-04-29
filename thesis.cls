@@ -55,7 +55,7 @@
 \RequirePackage{graphicx}
 \graphicspath{{img/}}
 \RequirePackage{verbatim}
-\RequirePackage{tabularx}
+\RequirePackage{tabulary}
 \RequirePackage[hyphens]{url}
 \RequirePackage{color}
 \RequirePackage{amssymb}

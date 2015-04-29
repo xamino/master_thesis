@@ -96,6 +96,30 @@ TODO: all the core logic should be strictly kept separate from the user side of 
 The library will encapsulate the JSON communication and states of said API.
 Clients will have to register hocks for incoming updates, files, and notify the library of updated (delta) files.
 
+To keep development of clients as easy as possible while at the same time keeping the API consisten between them we will separate the core logic for Tinzenite from any user oriented code.
+Therefore the library will encapsulate the Toxcore library and build on it the core features required for clients to work.
+This means that we will have to define a library API for interfacing with it.
+The library will not handle writing or reading data from the user's disk: these capabilities will be offloaded to the implementation of the client programs.
+This will ensure a maximum of adaptability for clients, meaning that they will not be constrained by the cross platform capabilities of the library itself.
+%TODO of course, Toxcore might pose a problem here... :P
+
+\begin{table}[H]
+\centering
+%TODO clean table formatting for use everywhere... :P
+\begin{tabulary}{\textwidth}{p{2.5cm} || J}
+	Initialize & Prepares Tinzenite and starts the underlying libraries, notably connects to the Tox network. Note that once initialized, files will be sent and written immediately. Settings and options must be handed over on initialization.\\
+	\hline
+    Register Callbacks & Given object will be called for all callbacks.\\
+    %TODO: what callbacks should be specificed? register for all should be an option, but registering for any should be possible too!
+\end{tabulary}
+\caption[Tinzenite Library API]{Methods for accessing the Tinzenite library.}
+\label{table:lib:api}
+\end{table}
+
+TODO: What about helper functions?
+Should be cleanly separate too.
+Notably probably includes delta of files, ...?, etc.
+
 \subsection{Client Peer}
 
 TODO: list and explain features of basic computer client (how to connect peers, how to encrypt), remember that usability is important.
