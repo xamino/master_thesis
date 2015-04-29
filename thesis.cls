@@ -211,7 +211,7 @@
 \thispagestyle{empty}
 { \small
   \flushleft
-  %Version \today \\\vfill
+  Version \today \\\vfill
   \text{ } \\\vfill
   \copyright~\@jahr~\@fullname\\[0.5em]
 

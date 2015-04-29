@@ -1,5 +1,51 @@
 \chapter{Introduction}
 
-Test text to test some testing text.
-Notably, she said: "Doubtly so, Mr. Bond, but can you live?"
-Laughing out loud, test done~\cite{web:site:tox}.
+%TODO write introductory text
+
+\section{Overview}
+
+% TODO rewrite
+% importance of topic
+We propose the implementation of a file synchronization program that solves these problems.
+The proposed software suite should primarily utilize strong encryption to make unauthorized data access as hard as possible.
+While the core features must be independent of cloud services, encrypted data storage for offline access should still be possible and allow third party services without having to entrust cleartext access.
+Finally the software should be as easy to use as possible to enable anyone to use it after a simple setup process.
+Once running the software should have a negligible footprint on the client's peers.
+
+\section{Motivation}
+
+%TODO rewrite
+The thesis is mainly motivated by the revelations of drag net surveillance by Edward Snowden and the compliance by so called trusted service providers.
+Thus new software solutions are required to enable users to take back their privacy on the internet without sacrificing usability and ease of access.
+
+A range of software has come into the spotlight of public disclosure since the revelations that already work towards this goal.
+One example is the Open Whisper Systems group.
+Their stated goal on the website is "[...] we're working to advance the state of the art for secure communication, while simultaneously making it easy for everyone to use."~\cite{web:site:whispersystems:about}.
+Another example is the Tox instant messenger community that is building a free, open source, peer to peer Skype alternative~\cite{web:site:tox}.
+
+% move the motivation over to enabling privacy of data
+The main goal of this thesis is to tackle the problem of cloud data storage, often used for distributed file access across multiple computers.
+Existing examples of this include Google Drive~\cite{web:site:gdrive} and Dropbox~\cite{web:site:dropbox}.
+While the data transfered is now encrypted in transit in most cases, it is not encrypted while residing on the servers.
+This allows anyone with access to the server to fully access the data, so long as it was not already previously encrypted by the user.
+Before Snowden the third parties were entrusted with the safe keeping of the stored data under the presumption that no unauthorized access was allowed or even possible.
+However this trust has been lost now that the public has been made aware of the possibilities of state organizations to access any data without due legal process.
+% TODO maybe expand a bit on the trust things? --> why do we require a trusted 3rd party? what benefit does it give the user?
+
+One solution to this problem is encrypting everything client side before uploading the data to third parties.
+An example of a service that does this is Boxcryptor~\cite{web:site:boxcryptor}.
+However this principle requires active involvement from the user and is thus an extra hurdle in securing one's data.
+Perhaps simply forgoing a third party would be a possible solution.
+Examples of existing peer to peer solutions are BitTorrent Sync~\cite{web:site:bittorrent_sync} and Syncthing~\cite{web:site:synthing}.
+However now the main advantage of a third party is lost: namely the ability to store data in a way that it is readily accessible even if every peer is currently offline.
+Syncthing notably explicitly states that the user can enable access for trusted third parties, but as it stands now this third party would receive an unencrypted access to any data stored there.
+
+\section{Project Context}
+
+This paper is the master thesis of Tamino P.S.M. Hartmann, written at the Faculty of Engineering and Computer Science~\cite{web:site:faculty} at the Institute of Databases and Information Systems~\cite{web:site:institute} at the University of Ulm~\cite{web:site:uni_ulm}, Germany.
+% TODO add "the work commissioned" but do it like "It was proposed" or something
+The supervisor was Marc Schickler and the examiner was Professor Doctor Manfred Reichert.
+
+\section{Content of this Paper}
+
+TODO once paper is finished.
