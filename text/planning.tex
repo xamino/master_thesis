@@ -1,11 +1,15 @@
 \chapter{Concept}
 \label{chap:concept}
 
-%TODO a whole lot
+The following chapter discusses all conceptual work that went into realizing Tinzenite.
+We will first give an overview of the basic goals of this thesis.
+Then we will discuss the dependencies we chose to base the system on.
+Important for every piece of software is the core data model and API for updating said model.
+Finally we will highlight the features and differences of each software aspect of the Tinzenite system.
 
 \section{Basic Goals}
 
-%TODO maybe move broad scope before features? But it builds on features... :P
+TODO: maybe move broad scope before features? But it builds on features... :P
 
 \subsection{Features}
 
@@ -63,9 +67,24 @@ In this brief section we will go through the exact scope that this work is to fu
 
 \section{Dependencies}
 
-TODO: list, explain reasoning, and list interesting features for all software I'll use to build this.
-Notably: Tox, Golang, Hadoop.
-Also explain why we use JSON for API.
+This section briefly highlights the technologies we chose to support our work.
+These range from software solutions to data organization standards.
+
+\subsection{Tox}
+
+TODO: list, explain
+
+\subsection{Golang}
+
+TODO: list, explain
+
+\subsection{Hadoop}
+
+TODO: list, explain
+
+\subsection{JSON}
+
+TODO: list, explain
 
 \section{File Model and API}
 
@@ -93,7 +112,7 @@ An important feature that the model must have is that it works independent of th
 Therefore there are only two assumptions we will make of the structure of the directory that a peer will work on: namely that it contains files sorted in directories.
 Out of this we can immediately synthesize our two main components we will require: a file model and a directory model.
 Since a peer is intended to have directory as the root node from which to run, the core element will always be a directory.
-An example of the proposed model structure can be seen in~\ref{fig:modellist}.
+An example of the proposed model structure can be seen in~\ref{list:model}.
 
 \begin{figure}[htp]
 \begin{modellist}
@@ -110,7 +129,49 @@ An example of the proposed model structure can be seen in~\ref{fig:modellist}.
     \end{modellist}
 \end{modellist}
 \caption[Data Model Example Structure]{An example of how a data model of a directory is structured.}
-\label{fig:modellist}
+\label{list:model}
+\end{figure}
+
+It is important to note that the model will not be used to store peer reliant information.
+This includes for example where the directory is placed on the peer's file system.
+Such information must be stored separately by the peer and applied when working with the data model, for example when determining what the full path on the file system will be for a file that is to be written.
+
+\subsubsection{Directory Model}
+
+Figure~\ref{json:directory_model} shows an example of the proposed JSON structure for representing a directory.
+
+TODO: more plus explain
+
+\begin{figure}[htp]
+    \begin{lstlisting}[language=json,firstnumber=0]
+    {
+        "identification":"hash",
+        "path":"root/subdir",
+        "objects":[
+            ...
+        ]
+    }
+    \end{lstlisting}
+\caption[Directory JSON Model]{An example of a directory JSON object. Note that for brevity no files or sub directories are shown in the "objects" array.}
+\label{json:directory_model}
+\end{figure}
+
+\subsubsection{File Model}
+
+Figure~\ref{json:file_model} shows an example of the proposed JSON structure for representing a file object.
+
+TODO: define file object
+
+\begin{figure}[htp]
+    \begin{lstlisting}[language=json,firstnumber=0]
+    {
+        "identification":"hash",
+        "version":"23",
+        "path":"root/subdir/thesis.doc"
+    }
+    \end{lstlisting}
+\caption[File JSON Model]{An example of a file JSON object.}
+\label{json:file_model}
 \end{figure}
 
 \subsection{Core Update API}
@@ -183,6 +244,8 @@ Notably probably includes delta of files, ...?, etc.
 
 TODO: list and explain features of basic computer client (how to connect peers, how to encrypt), remember that usability is important.
 Features: password protected everything as with TextSecure?
+Visibility of operations is important.
+Will also need to put some thought into support of shadow files – what exactly are they and what happens when I click on one?
 
 \subsection{Server Peer}
 
