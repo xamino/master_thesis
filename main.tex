@@ -17,6 +17,7 @@
 	pdfauthor={\thefullname}
 }
 
+% not sure for what this is here...
 \colorlet{punct}{red!60!black}
 \definecolor{background}{HTML}{EEEEEE}
 \definecolor{delim}{RGB}{20,105,176}
@@ -53,6 +54,11 @@
 	{]}{{{\color{delim}{]}}}}{1},
 }
 
+% define special arrow list for model
+\newlist{modellist}{itemize}{4}
+\setlist[modellist]{label=$\multimap$}
+
+% title definition
 \fullname{Tamino P.S.M. Hartmann}
 \email{tamino.hartmann@uni-ulm.de}
 \headline{Tinzenite\\{\Large Encrypted Peer to Peer File Synchronization\\via the Tox Protocol}}

@@ -63,12 +63,62 @@ In this brief section we will go through the exact scope that this work is to fu
 
 \section{Dependencies}
 
-TODO: list, explain reasoning, and list interesting features for all software I'll use to build this
+TODO: list, explain reasoning, and list interesting features for all software I'll use to build this.
+Notably: Tox, Golang, Hadoop.
+Also explain why we use JSON for API.
 
-\section{API}
+\section{File Model and API}
 
-TODO: show and explain JSON api I intend to use to facilitate communication between peers.
-Note that the API should already be specified for all planned features, independent of how far I actually get!
+The following section will define the data model each peer keeps of its data and specify the API for updating it between peers.
+If the model does not match the actual data stored by a client it will try to update the data by requesting the updates from other peers.
+
+For exchanging model information we will specify a JSON based API that will be used to communicate via the Tox text channels.
+This API has the goal of being fully scope complete.
+This means that both the core model updates required for the basic features of Tinzenite to work and the advanced features must be defined in advance, independent of how far we implement it.
+
+Therefore the following specifications are divided into three parts.
+First we will define and explain the model each peer keeps of the stored data.
+Next the messages used to facilitate the update of the model between clients will be discussed.
+Finally we will take a look at the advanced features and how they will be built on top of the previous work.
+
+\subsection{Peer Data Model}
+
+%TODO: ignore files / dirs? This should be implemented...
+
+% why again json
+Since we intend to use JSON for communication via Tox, it seems prudent to define the file model of a peer's data in the same way.
+This will allow easy application of updates without having to explicitly translate between two different views of the same data.
+
+An important feature that the model must have is that it works independent of the file types.
+Therefore there are only two assumptions we will make of the structure of the directory that a peer will work on: namely that it contains files sorted in directories.
+Out of this we can immediately synthesize our two main components we will require: a file model and a directory model.
+Since a peer is intended to have directory as the root node from which to run, the core element will always be a directory.
+An example of the proposed model structure can be seen in~\ref{fig:modellist}.
+
+\begin{figure}[htp]
+\begin{modellist}
+\item Root Directory
+    \begin{modellist}
+        \item File
+        \item Sub Directory
+            \begin{modellist}
+                \item File
+                \item File
+            \end{modellist}
+        \item File
+        \item File
+    \end{modellist}
+\end{modellist}
+\caption[Data Model Example Structure]{An example of how a data model of a directory is structured.}
+\label{fig:modellist}
+\end{figure}
+
+\subsection{Core Update API}
+
+\subsection{Advanced Features API}
+
+TODO: Here is the list of what I consider to be the advanced features.
+Now do something sensible with it.
 
 \begin{description}[leftmargin=2em,style=nextline,noitemsep,nolistsep]
 \item[Encryption Key Management]
@@ -85,6 +135,15 @@ Note that the API should already be specified for all planned features, independ
     TODO: what to do if a client knows of shadow files but can't get full set?
     Are shadow files also transitively synchronized?
 \end{description}
+
+TODO: Test JSON listing so that I know how it looks and works.
+Will be used extensively soon.
+
+\begin{lstlisting}[language=json,firstnumber=0]
+{
+	"test":"json_latex_test"
+}
+\end{lstlisting}
 
 \section{Software Scope}
 
