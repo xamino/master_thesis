@@ -132,21 +132,34 @@ An example of the proposed model structure can be seen in~\ref{list:model}.
 \label{list:model}
 \end{figure}
 
+The most important aspect is of course what information is stored within the model and its objects.
+Each file is considered a binary blob and not modified by Tinzenite in any way to preserve data integrity.
+Therefore additional information that Tinzenite requires to function will need to be part of the model.
+Each object in the model will receive a single unique hash for internal identification purposes independent of the file name or location.
+%TODO CONTINUE HERE!!!
+
+TODO CONTINUE HERE ABOVE
+
 It is important to note that the model will not be used to store peer reliant information.
 This includes for example where the directory is placed on the peer's file system.
 Such information must be stored separately by the peer and applied when working with the data model, for example when determining what the full path on the file system will be for a file that is to be written.
+Some properties are also not suited to be transferred between peers.
+This includes file system or operating system dependent properties such as usage rights, ownership, or flags.
+%TODO look into this. A security argument might be to simply strip all extra information on transit but leave it untouched on client side, even over file updates. This would mean that the user only has to setup a dir once with rights etc as he likes it before he can use it with Tinzenite.
 
 \subsubsection{Directory Model}
 
 Figure~\ref{json:directory_model} shows an example of the proposed JSON structure for representing a directory.
 
-TODO: more plus explain
+TODO: more plus explain.
+Does the directory require a version?
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
     {
         "identification":"hash",
-        "path":"root/subdir",
+        "path":"root_hash/subdir_hash",
+        "name":"subdir",
         "objects":[
             ...
         ]
@@ -166,8 +179,10 @@ TODO: define file object
     \begin{lstlisting}[language=json,firstnumber=0]
     {
         "identification":"hash",
+        "path":"root_hash/subdir_hash/hash",
+        "name":"thesis.doc",
         "version":"23",
-        "path":"root/subdir/thesis.doc"
+        "shadow":"false"
     }
     \end{lstlisting}
 \caption[File JSON Model]{An example of a file JSON object.}
@@ -175,6 +190,11 @@ TODO: define file object
 \end{figure}
 
 \subsection{Core Update API}
+
+TODO: Basic messages: add, remove, update.
+What happens on rename update?
+Can I make it intelligent enough that that works automatically?
+If the clients can detect rename / move atomically this shouldn't be a problem (update --> path).
 
 \subsection{Advanced Features API}
 
@@ -196,15 +216,6 @@ Now do something sensible with it.
     TODO: what to do if a client knows of shadow files but can't get full set?
     Are shadow files also transitively synchronized?
 \end{description}
-
-TODO: Test JSON listing so that I know how it looks and works.
-Will be used extensively soon.
-
-\begin{lstlisting}[language=json,firstnumber=0]
-{
-	"test":"json_latex_test"
-}
-\end{lstlisting}
 
 \section{Software Scope}
 
