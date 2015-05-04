@@ -135,10 +135,13 @@ An example of the proposed model structure can be seen in~\ref{list:model}.
 The most important aspect is of course what information is stored within the model and its objects.
 Each file is considered a binary blob and not modified by Tinzenite in any way to preserve data integrity.
 Therefore additional information that Tinzenite requires to function will need to be part of the model.
-Each object in the model will receive a single unique hash for internal identification purposes independent of the file name or location.
-%TODO CONTINUE HERE!!!
 
-TODO CONTINUE HERE ABOVE
+Each object in the model will for identification purposes be specified by a hash.
+This hash will be a salted hash\footnote{We use a salted hash to prevent an attacker on a third party peer to be able to read path names from the model structure via a simple rainbow table lookup.} of the object's name.
+Furthermore each model object will contain a path variable that specifies the complete path of the object in the directory tree.
+This has the purpose of allowing the placement of all files in the correct locations on disk.
+Notably, unlike on the user's disk, the names contained in the path are the salted name hashes of the files and directories.
+Some further attributes will also be specified, but as they differ between file and directory model, these will be further discussed in the corresponding sections below.
 
 It is important to note that the model will not be used to store peer reliant information.
 This includes for example where the directory is placed on the peer's file system.
@@ -148,16 +151,12 @@ This includes file system or operating system dependent properties such as usage
 %TODO look into this. A security argument might be to simply strip all extra information on transit but leave it untouched on client side, even over file updates. This would mean that the user only has to setup a dir once with rights etc as he likes it before he can use it with Tinzenite.
 
 \subsubsection{Directory Model}
-
-Figure~\ref{json:directory_model} shows an example of the proposed JSON structure for representing a directory.
-
-TODO: more plus explain.
-Does the directory require a version?
+\label{sec:dir_model}
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
     {
-        "identification":"hash",
+        "identification":"subdir_hash.salt",
         "path":"root_hash/subdir_hash",
         "name":"subdir",
         "objects":[
@@ -165,23 +164,29 @@ Does the directory require a version?
         ]
     }
     \end{lstlisting}
-\caption[Directory JSON Model]{An example of a directory JSON object. Note that for brevity no files or sub directories are shown in the "objects" array.}
+\caption[Directory JSON Model]{An example of a directory JSON object. Note that for brevity no files or sub directories are shown in the \textit{"objects"} array.}
 \label{json:directory_model}
 \end{figure}
 
+Figure~\ref{json:directory_model} shows an example of the proposed JSON structure for representing a directory.
+The \textit{"identification"} attribute is the name of the directory stored as a salted hash.
+The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory, notably replacing the real names of the directories with the corresponding hashes.
+For trusted peers that store an unencrypted version of the directory the clear text \textit{"name"} is also stored here as an attribute.
+Finally an \textit{"objects"} array is where the corresponding sub directories or files are placed.
+
+TODO: how do I detect directory renames?
+Possible solution would be to compare the \textit{"objects"} attributes of old and suspected new model object – if they match, it was a rename, so send update.
+
 \subsubsection{File Model}
-
-Figure~\ref{json:file_model} shows an example of the proposed JSON structure for representing a file object.
-
-TODO: define file object
+\label{sec:file_model}
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
     {
-        "identification":"hash",
-        "path":"root_hash/subdir_hash/hash",
-        "name":"thesis.doc",
-        "version":"23",
+        "identification":"file_hash.salt",
+        "path":"root_hash/subdir_hash/file_hash",
+        "name":"file",
+        "version":"content_hash",
         "shadow":"false"
     }
     \end{lstlisting}
@@ -189,7 +194,28 @@ TODO: define file object
 \label{json:file_model}
 \end{figure}
 
+Figure~\ref{json:file_model} shows an example of the proposed JSON structure for representing a file object.
+The \textit{"identification"} attribute is the name of the file stored as a salted hash.
+The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory, notably replacing the real names of the directories with the corresponding hashes, and finally the file name with its hash too.
+For trusted peers that store an unencrypted version of the file the clear text \textit{"name"} is also stored here as an attribute.
+Important for detecting file changes is the \textit{"version"} attribute which stores a hash of the file's binary blob.
+Finally the \textit{"shadow"} flag is used to notify a peer whether the file is locally accessible or must first be fetched from other peers.
+
 \subsection{Core Update API}
+
+This section describes the API that will be used to synchronize two models on separate peers where the models might diverge.
+To understand how these messages flow, it is important to understand how Tinzenite handles peer connectivity.
+
+Every peer views all connected peers as separate connections.
+A swarm behavior only comes to pass because of the independent actions of every peer, not through a combined communication between multiple peers.
+This primarily makes it relatively easy to implement a Tinzenite peer, as the communication state is never between multiple peers.
+Therefore a single peer has a base state of no connected other peers.
+
+TODO: State: who begins the communication?
+Use nonce to attach answer to response?
+That would allow fully asynchronous communications...
+
+Rules: If A sends its model to B, B will respond with its model back to A.
 
 TODO: Basic messages: add, remove, update.
 What happens on rename update?
