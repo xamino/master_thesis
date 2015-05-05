@@ -1,0 +1,19 @@
+# ignore everything
+*
+
+# latex
+!.gitignore
+!*/
+!*.tex
+!*.dot
+!*.cls
+!*.bib
+!*.png
+!*.jpg
+!*.dia
+!*.eps
+!*/*.sh
+
+# but DO ignore since we can build it:
+graph/*.png
+
