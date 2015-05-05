@@ -159,6 +159,7 @@ This includes file system or operating system dependent properties such as usage
         "identification":"subdir_hash.salt",
         "path":"root_hash/subdir_hash",
         "name":"subdir",
+        "version":"42",
         "objects":[
             ...
         ]
@@ -172,6 +173,7 @@ Figure~\ref{json:directory_model} shows an example of the proposed JSON structur
 The \textit{"identification"} attribute is the name of the directory stored as a salted hash.
 The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory, notably replacing the real names of the directories with the corresponding hashes.
 For trusted peers that store an unencrypted version of the directory the clear text \textit{"name"} is also stored here as an attribute.
+To differentiate between updates we require a \textit{"version"} attribute.
 Finally an \textit{"objects"} array is where the corresponding sub directories or files are placed.
 
 TODO: how do I detect directory renames?
@@ -186,7 +188,8 @@ Possible solution would be to compare the \textit{"objects"} attributes of old a
         "identification":"file_hash.salt",
         "path":"root_hash/subdir_hash/file_hash",
         "name":"file",
-        "version":"content_hash",
+        "version":"42",
+        "content":"content_hash",
         "shadow":"false"
     }
     \end{lstlisting}
@@ -198,8 +201,11 @@ Figure~\ref{json:file_model} shows an example of the proposed JSON structure for
 The \textit{"identification"} attribute is the name of the file stored as a salted hash.
 The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory, notably replacing the real names of the directories with the corresponding hashes, and finally the file name with its hash too.
 For trusted peers that store an unencrypted version of the file the clear text \textit{"name"} is also stored here as an attribute.
-Important for detecting file changes is the \textit{"version"} attribute which stores a hash of the file's binary blob.
+To differentiate between updates we require a \textit{"version"} attribute.
+Important for detecting file changes is the \textit{"content"} attribute which stores a hash of the file's binary blob.
 Finally the \textit{"shadow"} flag is used to notify a peer whether the file is locally accessible or must first be fetched from other peers.
+
+TODO: possibly might also require a conflict attribute to detect and propagate conflicts?
 
 \subsection{Core Update API}
 
