@@ -205,8 +205,6 @@ To differentiate between updates we require a \textit{"version"} attribute.
 Important for detecting file changes is the \textit{"content"} attribute which stores a hash of the file's binary blob.
 Finally the \textit{"shadow"} flag is used to notify a peer whether the file is locally accessible or must first be fetched from other peers.
 
-TODO: possibly might also require a conflict attribute to detect and propagate conflicts?
-
 \subsection{Core Update API}
 
 This section describes the API that will be used to synchronize two models on separate peers where the models might diverge.
@@ -216,6 +214,12 @@ Every peer views all connected peers as separate connections.
 A swarm behavior only comes to pass because of the independent actions of every peer, not through a combined communication between multiple peers.
 This primarily makes it relatively easy to implement a Tinzenite peer, as the communication state is never between multiple peers.
 Therefore a single peer has a base state of no connected other peers.
+
+TODO: work out normal operations, then proceed to how to bootstrap clear text node.
+Encrypted peers should be easier I think.
+Detect encrypted peers via challenge response method.
+Theoretically only clear nodes have keys to respond.
+Attacker can't decrypt challenge so nothing bad happens.
 
 TODO: State: who begins the communication?
 Use nonce to attach answer to response?
@@ -227,6 +231,10 @@ TODO: Basic messages: add, remove, update.
 What happens on rename update?
 Can I make it intelligent enough that that works automatically?
 If the clients can detect rename / move atomically this shouldn't be a problem (update --> path).
+
+TODO: how are conflicts handled.
+Easiest: clients detect files are same but different, create the two as new versions and rename so user can see.
+Nothing else needs to change for the API then – if the user resolves it manually the rename / delete of files will propagate as normal.
 
 \subsection{Advanced Features API}
 
@@ -251,7 +259,8 @@ Now do something sensible with it.
 
 \section{Software Scope}
 
-TODO: section for listing actual conceptual work I'll have to do before starting implementation
+TODO: section for listing actual conceptual work I'll have to do before starting implementation.
+Also consider implementing a working but "quiet" client – no file transfers but reads out communications.
 
 \subsection{Core Application Library}
 
