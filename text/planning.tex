@@ -225,8 +225,6 @@ TODO: State: who begins the communication?
 Use nonce to attach answer to response?
 That would allow fully asynchronous communications...
 
-Rules: If A sends its model to B, B will respond with its model back to A.
-
 TODO: Basic messages: add, remove, update.
 What happens on rename update?
 Can I make it intelligent enough that that works automatically?
@@ -235,6 +233,9 @@ If the clients can detect rename / move atomically this shouldn't be a problem (
 TODO: how are conflicts handled.
 Easiest: clients detect files are same but different, create the two as new versions and rename so user can see.
 Nothing else needs to change for the API then – if the user resolves it manually the rename / delete of files will propagate as normal.
+
+TODO: on receiving an update: queue in connection specific command queue (one per connection because only one OP per connection) (update / redo existing fetch if applicable != FIFO); fetch first file in queue.
+Then wait a bit (?) before propagating update yourself (decouple receive and send time frames?).
 
 \subsection{Advanced Features API}
 

@@ -1,0 +1,15 @@
+digraph statemachine {
+    // label
+    a [label="Idle"]
+    b [label="Model Update"]
+    c [label="Enqueue"]
+    d [label="Fetch File"]
+    // define
+    a -> b [label=" File:Changed "];
+    b -> a;
+    a -> c [label=" Receive:Update "];
+    c -> c [label=" Receive:Update "];
+    c -> d [label=" Queue:Present "];
+    d -> c [label=" File:Applied "];
+    c -> a [label=" Queue:Empty "];
+}

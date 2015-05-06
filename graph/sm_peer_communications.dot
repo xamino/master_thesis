@@ -1,0 +1,20 @@
+digraph statemachine {
+    // label
+    start [shape="point" width="0.2"]
+    a [label="Disconnected"];
+    b [label="Connected"];
+    c [label="Unauthorized"];
+    d [label="Unencrypted Authorized"];
+    e [label="Idle"];
+    g [label="Encrypted Authorized"];
+    // define
+    start -> a;
+    a -> b [label=" Connect "];
+    b -> c [label=" Send:Challenge "];
+    c -> d [label=" Receive:OK_Challenge "];
+    d -> d [label=" Send:Model+Peers "];
+    d -> e [label=" Receive:Model+Peers "];
+    c -> g [label=" Receive:ERR_Challenge "];
+    g -> g [label=" Send:Anon_Model\n+Anon_Peers "];
+    g -> e [label=" Receive:Anon_Model+Anon_Peers "];
+}
