@@ -1,0 +1,164 @@
+\chapter{Architecture}
+\label{chap:architecture}
+
+The following section will define the data model each peer keeps of its data and specify the API for updating it between peers.
+First we will define and explain the model each peer keeps of the stored data.
+Next the messages used to facilitate the update of the model between clients will be discussed.
+Finally we will take a look at the advanced features and how they will be built on top of the previous work.
+
+\section{Peer Data Model}
+
+%TODO: ignore files / dirs? This should be implemented...
+
+% why again json
+Since we intend to use JSON for communication via Tox, it seems prudent to define the file model of a peer's data in the same way.
+This will allow easy application of updates without having to explicitly translate between two different views of the same data.
+
+An important feature that the model must have is that it works independent of the file types.
+Therefore there are only two assumptions we will make of the structure of the directory that a peer will work on: namely that it contains files sorted in directories.
+Out of this we can immediately synthesize our two main components we will require: a file model and a directory model.
+Since a peer is intended to have directory as the root node from which to run, the core element will always be a directory.
+An example of the proposed model structure can be seen in~\ref{list:model}.
+
+\begin{figure}[htp]
+\begin{modellist}
+\item Root Directory
+    \begin{modellist}
+        \item File
+        \item Sub Directory
+            \begin{modellist}
+                \item File
+                \item File
+            \end{modellist}
+        \item File
+        \item File
+    \end{modellist}
+\end{modellist}
+\caption[Data Model Example Structure]{An example of how a data model of a directory is structured.}
+\label{list:model}
+\end{figure}
+
+The most important aspect is of course what information is stored within the model and its objects.
+Each file is considered a binary blob and not modified by Tinzenite in any way to preserve data integrity.
+Therefore additional information that Tinzenite requires to function will need to be part of the model.
+
+Each object in the model will for identification purposes be specified by a hash.
+This hash will be a salted hash\footnote{We use a salted hash to prevent an attacker on a third party peer to be able to read path names from the model structure via a simple rainbow table lookup.} of the object's name.
+Furthermore each model object will contain a path variable that specifies the complete path of the object in the directory tree.
+This has the purpose of allowing the placement of all files in the correct locations on disk.
+Notably, unlike on the user's disk, the names contained in the path are the salted name hashes of the files and directories.
+Some further attributes will also be specified, but as they differ between file and directory model, these will be further discussed in the corresponding sections below.
+
+It is important to note that the model will not be used to store peer reliant information.
+This includes for example where the directory is placed on the peer's file system.
+Such information must be stored separately by the peer and applied when working with the data model, for example when determining what the full path on the file system will be for a file that is to be written.
+Some properties are also not suited to be transferred between peers.
+This includes file system or operating system dependent properties such as usage rights, ownership, or flags.
+%TODO look into this. A security argument might be to simply strip all extra information on transit but leave it untouched on client side, even over file updates. This would mean that the user only has to setup a dir once with rights etc as he likes it before he can use it with Tinzenite.
+
+\subsection{Directory Model}
+\label{sec:dir_model}
+
+\begin{figure}[htp]
+    \begin{lstlisting}[language=json,firstnumber=0]
+    {
+        "identification":"subdir_hash.salt",
+        "path":"root_hash/subdir_hash",
+        "name":"subdir",
+        "version":"42",
+        "objects":[
+            ...
+        ]
+    }
+    \end{lstlisting}
+\caption[Directory JSON Model]{An example of a directory JSON object. Note that for brevity no files or sub directories are shown in the \textit{"objects"} array.}
+\label{json:directory_model}
+\end{figure}
+
+Figure~\ref{json:directory_model} shows an example of the proposed JSON structure for representing a directory.
+The \textit{"identification"} attribute is the name of the directory stored as a salted hash.
+The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory, notably replacing the real names of the directories with the corresponding hashes.
+For trusted peers that store an unencrypted version of the directory the clear text \textit{"name"} is also stored here as an attribute.
+To differentiate between updates we require a \textit{"version"} attribute.
+Finally an \textit{"objects"} array is where the corresponding sub directories or files are placed.
+
+% TODO: how do I detect directory renames? Possible solution would be to compare the \textit{"objects"} attributes of old and suspected new model object – if they match, it was a rename, so send update.
+
+\subsection{File Model}
+\label{sec:file_model}
+
+\begin{figure}[htp]
+    \begin{lstlisting}[language=json,firstnumber=0]
+    {
+        "identification":"file_hash.salt",
+        "path":"root_hash/subdir_hash/file_hash",
+        "name":"file",
+        "version":"42",
+        "content":"content_hash",
+        "shadow":"false"
+    }
+    \end{lstlisting}
+\caption[File JSON Model]{An example of a file JSON object.}
+\label{json:file_model}
+\end{figure}
+
+Figure~\ref{json:file_model} shows an example of the proposed JSON structure for representing a file object.
+The \textit{"identification"} attribute is the name of the file stored as a salted hash.
+The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory, notably replacing the real names of the directories with the corresponding hashes, and finally the file name with its hash too.
+For trusted peers that store an unencrypted version of the file the clear text \textit{"name"} is also stored here as an attribute.
+To differentiate between updates we require a \textit{"version"} attribute.
+Important for detecting file changes is the \textit{"content"} attribute which stores a hash of the file's binary blob.
+Finally the \textit{"shadow"} flag is used to notify a peer whether the file is locally accessible or must first be fetched from other peers.
+
+\section{Core Update API}
+
+This section describes the API that will be used to synchronize two models on separate peers where the models might diverge.
+To understand how this works, it is important to understand how Tinzenite is structured.
+
+Every peer views all connected peers as separate connections.
+A swarm behavior only comes to pass because of the independent actions of every peer, not through a combined communication between multiple peers.
+This primarily makes it relatively easy to implement a Tinzenite peer, as the communication state is never between multiple peers.
+Therefore a single peer has a base state of no connected other peers.
+
+TODO: work out normal operations, then proceed to how to bootstrap clear text node.
+Encrypted peers should be easier I think.
+Detect encrypted peers via challenge response method.
+Theoretically only clear nodes have keys to respond.
+Attacker can't decrypt challenge so nothing bad happens.
+
+TODO: State: who begins the communication?
+Use nonce to attach answer to response?
+That would allow fully asynchronous communications...
+
+TODO: Basic messages: add, remove, update.
+What happens on rename update?
+Can I make it intelligent enough that that works automatically?
+If the clients can detect rename / move atomically this shouldn't be a problem (update --> path).
+
+TODO: how are conflicts handled.
+Easiest: clients detect files are same but different, create the two as new versions and rename so user can see.
+Nothing else needs to change for the API then – if the user resolves it manually the rename / delete of files will propagate as normal.
+
+TODO: on receiving an update: queue in connection specific command queue (one per connection because only one OP per connection) (update / redo existing fetch if applicable != FIFO); fetch first file in queue.
+Then wait a bit (?) before propagating update yourself (decouple receive and send time frames?).
+
+\section{Advanced Features API}
+
+TODO: Here is the list of what I consider to be the advanced features.
+Now do something sensible with it.
+
+\begin{description}[leftmargin=2em,style=nextline,noitemsep,nolistsep]
+\item[Encryption Key Management]
+    An important capability will be the synchronization of the access keys to unencrypted clients so that all of them can access the data stored on encrypted clients.
+    Thoughts should be given to how to revoke compromised keys.
+\item[Space Management]
+    The API must respect differences in storage size capabilities between different clients or size restrictions.
+    Notably this is important for third parties to sell different storage sizes to clients.
+    TODO: could files above the limit be sent as shadow files?
+\item[Shadow Files]
+    Depending on the location of a client a user may with to only access specific files without having to get an entire set or updates.
+    Therefore the client could be set to only read and create dummy files.
+    By selecting specific files the client will then only update or retrieve the corresponding files or directories.
+    TODO: what to do if a client knows of shadow files but can't get full set?
+    Are shadow files also transitively synchronized?
+\end{description}

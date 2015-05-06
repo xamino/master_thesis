@@ -191,7 +191,7 @@
 
 {\footnotesize \bfseries Author:}\\
 {\footnotesize \@fullname\\\@email}\\[2em]
-{\footnotesize \bfseries Reviewer:}\\
+{\footnotesize \bfseries Reviewers:}\\
 {\footnotesize\@gutachterA
 \if@gutachterBSet\\%
 \@gutachterB\fi%
