@@ -123,6 +123,50 @@ A swarm behavior only comes to pass because of the independent actions of every 
 This primarily makes it relatively easy to implement a Tinzenite peer, as the communication state is never between multiple peers.
 Therefore a single peer has a base state of no connected other peers.
 
+\subsection{Connection Management}
+
+In this section we will discuss how Tinzenite connects to other peers.
+As we distinguish between trusted and encrypted peers we must determine how the data we will send is to be modified accordingly.
+%TODO maybe I should start a glossary: list and differentiate between peers, connection type, ...
+If the initiating peer is already encrypted, the connection by default will be considered anonymous.
+If not the peer must query the other peer.
+Since we can not trust the other peer to give an honest answer this query must be cryptographically secure.
+Attackers that illegitimately wants to connect to a trusted peer thus can not establish a clear connection without the required keys, which they should not be in possession of\footnote{Tinzenite is designed to avoid revealing keys to outsiders. However outside attacks are beyond its control such as for example key loggers.}.
+Only if the challenge is successfully replied to is the other peer considered trusted and the following communication not anonymous.
+If the challenge is ignored the other peer is considered as an encrypted peer and the following communication adapted to fit.
+Should the challenge be incorrectly answered we can consider possibly warning the user or even blacklisting the peer.
+
+Once the connection type has been determined it will be applied to all following communication.
+In general this means that compared to a trusted communication identifying information and file contents will be encrypted.
+The peer list will be synchronized but the encryption keys not.
+The model exchange and all update messages will be partially encrypted too to preserve data security.
+
+The next and final step to a ready and idle connection state is the exchange of models.
+Once this is done both peers can compare the received models with their local ones and determine which files they need to update from the other peer.
+These messages will then be sent asynchronously over the now established and typified communication channel accordingly.
+
+\begin{figure}[htp]
+\centering
+    \includegraphics[width=\textwidth]{graph/sm_peer_communications}
+\caption[Connection State Diagram]{This diagram shows how peers handle the establishment of a connection to a known peer.}
+\label{graph:connection_states}
+\end{figure}
+
+%TODO rework this stuff below a bit so it fits better with the things above.
+Figure~\ref{graph:connection_states} shows an informal state diagram of how a peer reaches the idle state where the connection is ready and set up.
+The switch from the disconnected state to the connected state is signaled by the underlying Tox connection, meaning it happens when the other peer is online and visible via the Tox channel.
+Once connected a challenge is sent which contains a general identifier and an encrypted nonce.
+The encrypted nonce is important to check whether the other peer is an encrypted one or a clear one.
+If the sending peer is already encrypted the challenge is left out as it can not generate a valid one anyway.
+%TODO change diagram to reflect this!
+
+Note that a few points must be considered that can not be shown in the diagram.
+Since Tinzenite is designed as a peer to peer network, no client server structure exists.
+This poses the challenge of who begins the construction of a connection, especially as we can not distinguish between peers that have been online for a while already and peers that just activated when the base peer starts up.
+This is due to peer to peer architecture of Tox: not all peers will respond to queries within the same time frame.
+Peers further away from a network perspective will seem to be online only after peers that are nearer.
+Therefore we will utilize a random back-off timer for sending the initial challenge.
+
 TODO: work out normal operations, then proceed to how to bootstrap clear text node.
 Encrypted peers should be easier I think.
 Detect encrypted peers via challenge response method.
@@ -132,6 +176,8 @@ Attacker can't decrypt challenge so nothing bad happens.
 TODO: State: who begins the communication?
 Use nonce to attach answer to response?
 That would allow fully asynchronous communications...
+
+\subsection{Model Management}
 
 TODO: Basic messages: add, remove, update.
 What happens on rename update?
