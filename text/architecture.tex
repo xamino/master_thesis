@@ -151,30 +151,31 @@ These messages will then be sent asynchronously over the now established and typ
 \label{graph:connection_states}
 \end{figure}
 
-%TODO rework this stuff below a bit so it fits better with the things above.
 Figure~\ref{graph:connection_states} shows an informal state diagram of how a peer reaches the idle state where the connection is ready and set up.
 The switch from the disconnected state to the connected state is signaled by the underlying Tox connection, meaning it happens when the other peer is online and visible via the Tox channel.
-Once connected a challenge is sent which contains a general identifier and an encrypted nonce.
-The encrypted nonce is important to check whether the other peer is an encrypted one or a clear one.
-If the sending peer is already encrypted the challenge is left out as it can not generate a valid one anyway.
-%TODO change diagram to reflect this!
+Once connected and if the peer itself is a trusted peer, a challenge is sent which contains a general identifier and an encrypted nonce.
+The encrypted nonce is important to check whether the other peer is encrypted or trusted.
 
 Note that a few points must be considered that can not be shown in the diagram.
 Since Tinzenite is designed as a peer to peer network, no client server structure exists.
 This poses the challenge of who begins the construction of a connection, especially as we can not distinguish between peers that have been online for a while already and peers that just activated when the base peer starts up.
 This is due to peer to peer architecture of Tox: not all peers will respond to queries within the same time frame.
 Peers further away from a network perspective will seem to be online only after peers that are nearer.
-Therefore we will utilize a random back-off timer for sending the initial challenge.
+We solve this issue by having the peers use a random back off time whenever a request expects an answer\footnote{For example the challenge message for establishing a trusted connection.}.
 
-TODO: work out normal operations, then proceed to how to bootstrap clear text node.
-Encrypted peers should be easier I think.
-Detect encrypted peers via challenge response method.
-Theoretically only clear nodes have keys to respond.
-Attacker can't decrypt challenge so nothing bad happens.
+Since we can not trust the other side of the Tox channel to be a Tinzenite peer, the peer initiating a connection will not advance beyond a step where it expects an answer.
+This means that for example an attacker would either receive only a challenge (to which he can't respond without knowing the keys) or the anonymized model and peer list\footnote{The peer list is the more problematic of the two as it can be used to determine the size of the user's Tinzenite peer network. However to allow encrypted peers to facilitate file transfer between two mutually exclusively online peers, it must know this information. This is mitigated by the fact that Tox IDs are hard to guess and not shared beyond the Tinzenite peer network. TODO: move this to the security section / chapter / whatever?} (which doesn't offer up any useful information as per specifications).
 
-TODO: State: who begins the communication?
-Use nonce to attach answer to response?
-That would allow fully asynchronous communications...
+\subsection{New Connection Establishment}
+
+The previous section described how Tinzenite connects to known peers.
+This section therefore discusses how Tinzenite connects to new peers, meaning peers that the user adds to the network.
+Notably this is a manual process where the user is used as a secondary channel to prevent man in the middle attacks.
+Since a typical Tinzenite network might have many peers, it is not desirable to have to authenticate a new peer manually with every other peer.
+We therefore propose that the user only need authenticate the new peer with one existing peer.
+From there the authentication is synchronized to the other existing peers much like any other file or property update.
+This bootstrapping process allows a user friendly setup of peers.
+Should the same peer have been added multiple times at different existing peers Tinzenite will detect this and merge the authentication together.
 
 \subsection{Model Management}
 
