@@ -1,20 +1,24 @@
 digraph statemachine {
     // label
-    start [shape="point" width="0.2"]
+    start [shape="point" width="0.2"];
     a [label="Disconnected"];
-    b [label="Connected"];
+    conn [label="Connected"];
+    epeer [label="Encrypted Peer"];
     c [label="Unauthorized"];
     d [label="Unencrypted Authorized"];
-    e [label="Idle"];
-    g [label="Encrypted Authorized"];
+    idle [label="Idle"];
+    end [shape="circle" width="0.2" style="bold" label=""];
     // define
     start -> a;
-    a -> b [label=" Connect "];
-    b -> c [label=" Send:Challenge "];
-    c -> d [label=" Receive:OK_Challenge "];
-    d -> d [label=" Send:Model+Peers "];
-    d -> e [label=" Receive:Model+Peers "];
-    c -> g [label=" Receive:ERR_Challenge "];
-    g -> g [label=" Send:Anon_Model\n+Anon_Peers "];
-    g -> e [label=" Receive:Anon_Model+Anon_Peers "];
+    a -> conn [label=" Connect "];
+    conn -> c [label=" Trusted_Peer:\nTrue "];
+    c -> c [label=" Send:Challenge "];
+    c -> d [label=" Receive:Challenge:Valid "];
+    c -> epeer [label=" Receive:Challenge:Invalid "];
+    d -> d [label=" Send:Model\n+Peers "];
+    d -> idle [label=" Receive:Model+Peers "];
+    conn -> epeer [label=" Trusted_Peer:\nFalse "];
+    epeer -> epeer [label=" Send:Anon_Model\n+Anon_Peers "];
+    epeer -> idle [label=" Receive:Anon_Model\n+Anon_Peers "];
+    idle -> end;
 }
