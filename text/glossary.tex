@@ -1,0 +1,19 @@
+\chapter{Glossary}
+\label{chap:glossary}
+
+\begin{description}[leftmargin=2em,style=nextline,noitemsep,nolistsep]
+    \item[Encrypted Connection]
+        An encrypted connection is utilized between encrypted peers and between an encrypted peer and a trusted peer.
+        Messages are partially modified (encrypted and or anonymized) to preserve the data privacy.
+    \item[Encrypted Peer]
+        An encrypted peer contains an encrypted copy of the directory.
+        The keys for encryption are not shared with it.
+        All messages it receives contain anonymized or encrypted information (for example file names) wherever necessary.
+    \item[Tinzenite]
+        The name of the core software library of this thesis.
+    \item[Trusted Connection]
+        A trusted connection is only between two trusted peers.
+        All information that flows over it is complete and in clear text.
+    \item[Trusted Peer]
+        A trusted peer has access to the encryption keys and contains an unencrypted copy of the directory.
+\end{description}
