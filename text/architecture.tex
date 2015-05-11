@@ -177,9 +177,26 @@ From there the authentication is synchronized to the other existing peers much l
 This bootstrapping process allows a user friendly setup of peers.
 Should the same peer have been added multiple times at different existing peers Tinzenite will detect this and merge the authentication together.
 
-%TODO note that removing peers is handled in the same manner.
+\begin{figure}[htp]
+\centering
+    \includegraphics[width=10cm]{diagram/sequence_new_connect}
+\caption[New Connection Sequence Diagram]{This diagram shows the interaction required to connect a new peer to the existing Tinzenite network.}
+\label{diagram:new_connection}
+\end{figure}
+
+Figure~\ref{diagram:new_connection} shows how a user interacts with a Tinzenite peer and the Tinzenite network (consisting of 1 to n other existing peers) to connect a new peer to the network for the first time.
+
+Removing peers will work much in the same way.
+A user can note a peer to be removed, resulting in it being removed immediately from the peer where the action was initiated.
+It will then transit through online peers and result in a complete removal once all peers have been online.
+An interesting aspect to how to handle removal from the perspective of the to be removed peer is what to do with the data on the peer.
+For a trusted peer we might offer a choice whether to remove the data or simply disconnect it from the Tinzenite network.
+On the other hand encrypted peers can simply remove the data immediately as they can't access it anyway.
 
 \subsection{Model Management}
+
+This section will describe how a peer receives and sends messages via the Tox channel.
+Since we will be required to distinguish between encrypted and trusted connections we will start off with the trusted one and then briefly highlight the differences required for an encrypted connection.
 
 TODO: Basic messages: add, remove, update.
 What happens on rename update?
