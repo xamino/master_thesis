@@ -1,9 +1,6 @@
 \chapter{Architecture}
 \label{chap:architecture}
 
-TODO: Rework, might have restructured a bit harshly. :P
-%TODO see above
-
 The following section will define the data model each peer keeps of its data and specify the API for updating it between peers.
 First we will define and explain the model each peer keeps of the stored data.
 Next the messages used to facilitate the update of the model between clients will be discussed.
@@ -185,8 +182,17 @@ Should the same peer have been added multiple times at different existing peers 
 \end{figure}
 
 Figure~\ref{diagram:new_connection} shows how a user interacts with a Tinzenite peer and the Tinzenite network (consisting of 1 to n other existing peers) to connect a new peer to the network for the first time.
+As prose: the users simply start the new peer client for the first time.
+Then they can point it at the directory location, change settings, and check that another peer is visible.
+To establish an initial connection a Tox ID of an available trusted\footnote{Note that to set up a trusted peer the initial connection must also be to a trusted peer so that all encryption keys can be shared. If the available peer is only an encrypted one the new peer can also only be an encrypted peer as the keys for decrypting the files and data aren't available.} Tinzenite peer is required.
+The users can then command the new peer to connect to this available peer by entering the Tox ID.
+To ensure that no man in the middle attack can happen the users will now have to confirm the connection on the available peer.
+This means allowing the connection there and ideally ensuring that the seen Tox ID is identical with the new peer's Tox ID.
+Once the connection has been confirmed on the other peer a channel is opened.
+The new peer address and its information will now be synchronized throughout the already connected peers once they are available, removing the need to add the new peer manually to each and every one.
+The directories will immediately begin synchronization.
 
-Removing peers will work much in the same way.
+Removing peers will work much in the same way from a system perspective.
 A user can note a peer to be removed, resulting in it being removed immediately from the peer where the action was initiated.
 It will then transit through online peers and result in a complete removal once all peers have been online.
 An interesting aspect to how to handle removal from the perspective of the to be removed peer is what to do with the data on the peer.
