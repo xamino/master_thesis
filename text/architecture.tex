@@ -49,6 +49,10 @@ This is required so that we can differentiate a renamed file from a removed file
 Furthermore each model object will contain a path variable that specifies the complete path of the object in the directory tree.
 This has the purpose of allowing the placement of all files in the correct locations on disk.
 Notably, unlike on the user's disk, the names contained in the path are the identifying hashes.
+
+Apart from the above attributes Tinzenite must also track versions of files to allow detection of when files have been updated.
+We will use a vector clock\footnote{TODO: find and link paper?} to implement this.
+The vector of peers with the associated versions can also be used to detect collisions.
 Some further attributes will also be specified, but as they differ between file and directory model, these will be further discussed in the corresponding sections below.
 
 It is important to note that the model will not be used to store peer reliant information.
@@ -67,7 +71,11 @@ This includes file system or operating system dependent properties such as usage
         "identification":"subdir_random_hash",
         "path":"root_hash/subdir_random_hash",
         "name":"subdir",
-        "version":"42",
+        "version":{
+            "peer_name", "version",
+            "peer_name", "version",
+            ...
+        },
         "objects":[
             ...
         ]
@@ -81,7 +89,7 @@ Figure~\ref{json:directory_model} shows an example of the proposed JSON structur
 The \textit{"identification"} attribute is a random generated hash that uniquely identifies the directory.
 The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory, notably replacing the real names of the directories with the corresponding identification attribute values.
 For trusted peers that store an unencrypted version of the directory the clear text \textit{"name"} is also stored here as an attribute.
-To differentiate between updates we require a \textit{"version"} attribute.
+To differentiate between updates we require a \textit{"version"} attribute which represents a vector clock of peers and their last known version.
 Finally an \textit{"objects"} array is where the corresponding sub directories or files are placed.
 
 \subsection{File Model}
@@ -93,7 +101,11 @@ Finally an \textit{"objects"} array is where the corresponding sub directories o
         "identification":"file_random_hash",
         "path":"root_hash/subdir_random_hash/file_random_hash",
         "name":"file",
-        "version":"42",
+        "version":{
+            "peer_name", "version",
+            "peer_name", "version",
+            ...
+        },
         "content":"content_hash",
         "shadow":"false"
     }
@@ -106,11 +118,9 @@ Figure~\ref{json:file_model} shows an example of the proposed JSON structure for
 The \textit{"identification"} attribute is a random generated hash that uniquely identifies the file.
 The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory, notably replacing the real names of the directories with the corresponding identification hashes, and finally the file name with its hash too.
 For trusted peers that store an unencrypted version of the file the clear text \textit{"name"} is also stored here as an attribute.
-To differentiate between updates we require a \textit{"version"} attribute.
+To differentiate between updates we require a \textit{"version"} attribute which represents a vector clock of peers and their last known version.
 Important for detecting file changes is the \textit{"content"} attribute which stores a hash of the file's binary blob.
 Finally the \textit{"shadow"} flag is used to notify a peer whether the file is locally accessible or must first be fetched from other peers.
-
-TODO: rework as ID won't work --> need to decouple it from the file name.
 
 \section{Core Update API}
 
@@ -209,27 +219,59 @@ Since we will be required to distinguish between encrypted and trusted connectio
 
 Once the setup has been completed, as seen in section~\ref{sec:conn_management}, the models must be updated if they do not match.
 This happens normally when files and directories have changed through user or system interaction.
+
+\subsubsection{Fetch File Message}
+
+\begin{figure}[htp]
+    \begin{lstlisting}[language=json,firstnumber=0]
+    {
+        "operation":"fetch",
+        "object":"object_identification_hash"
+    }
+    \end{lstlisting}
+\caption[Fetch Object Message]{The message sent to initiate a file transfer.}
+\label{json:fetch_file}
+\end{figure}
+
+Figure~\ref{json:fetch_file} TODO
+TODO: add capability for delta updates... if possible. :P
+
+\subsubsection{Update Object Message}
+
+\begin{figure}[htp]
+    \begin{lstlisting}[language=json,firstnumber=0]
+    {
+        "operation":"create",
+        "object":{
+            ...
+        }
+    }
+    \end{lstlisting}
+\caption[Update Object Message]{The message broadcast by a peer to connected peers to notify that an update has happened.}
+\label{json:update_object}
+\end{figure}
+
+Figure~\ref{json:update_object} TODO
+
+%TODO continue from here, this needs to be thought out better:
+TODO: the following is incorrect (the messages are used to broadcast changes; model updates only require fetch messages).
+
 Therefore we need to define messages that can transform an out of date model into an updated one while the peer fetches the binary changes through the Tox protocol.
 We must support all basic file operations that can happen to guarantee a seamless synchronization.
-From the peer view files change by being renamed, being moved, or updating their content.
+From the peer view files can be changed by being renamed, being moved, or updating their content.
+Of course we must also allow the creation of new files and the removal of files.
 
 For our purposes renaming a file and moving it to a different location within the peer directory are the same operation for technical reasons.
 Both operations result in at least a path change with an added name change when being renamed.
-What doesn't change from the system view is the contents of the file, which in turn means that the content hash remains the same.
-Within the file model (compare with section~\ref{sec:file_model}) this translates to changes to the following attributes: \textit{"identification"}, \textit{"path"}, \textit{"name"}, and \textit{"version"}.
-Because identification changes we need to remove the old file model and replace it with a new one.
-
-TODO: Basic messages: add, remove, update.
-What happens on rename update?
-Can I make it intelligent enough that that works automatically?
-If the clients can detect rename / move atomically this shouldn't be a problem (update --> path).
+What doesn't change from the system view is the contents of the file, which in turn means that the content hash remains the same, and its identification hash.
+Within the file model (compare section~\ref{sec:file_model}) this translates to changes to the \textit{"path"}, \textit{"name"}, and \textit{"version"} attributes.
 
 TODO: how are conflicts handled.
 Easiest: clients detect files are same but different, create the two as new versions and rename so user can see.
 Nothing else needs to change for the API then – if the user resolves it manually the rename / delete of files will propagate as normal.
 
 TODO: on receiving an update: queue in connection specific command queue (one per connection because only one OP per connection) (update / redo existing fetch if applicable != FIFO); fetch first file in queue.
-Then wait a bit (?) before propagating update yourself (decouple receive and send time frames?).
+Then wait a bit (?) before propagating update yourself (decouple receive and send time frames?). <-- Isn't this implementation details?
 
 \section{Advanced Features API}
 
