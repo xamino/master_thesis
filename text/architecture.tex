@@ -43,10 +43,12 @@ Each file is considered a binary blob and not modified by Tinzenite in any way t
 Therefore additional information that Tinzenite requires to function will need to be part of the model.
 
 Each object in the model will for identification purposes be specified by a hash.
-This hash will be a salted hash\footnote{We use a salted hash to prevent an attacker on a third party peer to be able to read path names from the model structure via a simple rainbow table lookup.} of the object's name.
+This hash will be a unique randomly generated hash.
+This hash allows us to decouple the name of the object from its model representation, effectively serving the same function as node identification numbers when stored on a disk.
+This is required so that we can differentiate a renamed file from a removed file and update a model accordingly.
 Furthermore each model object will contain a path variable that specifies the complete path of the object in the directory tree.
 This has the purpose of allowing the placement of all files in the correct locations on disk.
-Notably, unlike on the user's disk, the names contained in the path are the salted name hashes of the files and directories.
+Notably, unlike on the user's disk, the names contained in the path are the identifying hashes.
 Some further attributes will also be specified, but as they differ between file and directory model, these will be further discussed in the corresponding sections below.
 
 It is important to note that the model will not be used to store peer reliant information.
@@ -62,8 +64,8 @@ This includes file system or operating system dependent properties such as usage
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
     {
-        "identification":"subdir_hash.salt",
-        "path":"root_hash/subdir_hash",
+        "identification":"subdir_random_hash",
+        "path":"root_hash/subdir_random_hash",
         "name":"subdir",
         "version":"42",
         "objects":[
@@ -76,13 +78,11 @@ This includes file system or operating system dependent properties such as usage
 \end{figure}
 
 Figure~\ref{json:directory_model} shows an example of the proposed JSON structure for representing a directory.
-The \textit{"identification"} attribute is the name of the directory stored as a salted hash.
-The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory, notably replacing the real names of the directories with the corresponding hashes.
+The \textit{"identification"} attribute is a random generated hash that uniquely identifies the directory.
+The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory, notably replacing the real names of the directories with the corresponding identification attribute values.
 For trusted peers that store an unencrypted version of the directory the clear text \textit{"name"} is also stored here as an attribute.
 To differentiate between updates we require a \textit{"version"} attribute.
 Finally an \textit{"objects"} array is where the corresponding sub directories or files are placed.
-
-% TODO: how do I detect directory renames? Possible solution would be to compare the \textit{"objects"} attributes of old and suspected new model object – if they match, it was a rename, so send update.
 
 \subsection{File Model}
 \label{sec:file_model}
@@ -90,8 +90,8 @@ Finally an \textit{"objects"} array is where the corresponding sub directories o
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
     {
-        "identification":"file_hash.salt",
-        "path":"root_hash/subdir_hash/file_hash",
+        "identification":"file_random_hash",
+        "path":"root_hash/subdir_random_hash/file_random_hash",
         "name":"file",
         "version":"42",
         "content":"content_hash",
@@ -103,12 +103,14 @@ Finally an \textit{"objects"} array is where the corresponding sub directories o
 \end{figure}
 
 Figure~\ref{json:file_model} shows an example of the proposed JSON structure for representing a file object.
-The \textit{"identification"} attribute is the name of the file stored as a salted hash.
-The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory, notably replacing the real names of the directories with the corresponding hashes, and finally the file name with its hash too.
+The \textit{"identification"} attribute is a random generated hash that uniquely identifies the file.
+The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory, notably replacing the real names of the directories with the corresponding identification hashes, and finally the file name with its hash too.
 For trusted peers that store an unencrypted version of the file the clear text \textit{"name"} is also stored here as an attribute.
 To differentiate between updates we require a \textit{"version"} attribute.
 Important for detecting file changes is the \textit{"content"} attribute which stores a hash of the file's binary blob.
 Finally the \textit{"shadow"} flag is used to notify a peer whether the file is locally accessible or must first be fetched from other peers.
+
+TODO: rework as ID won't work --> need to decouple it from the file name.
 
 \section{Core Update API}
 
@@ -121,6 +123,7 @@ This primarily makes it relatively easy to implement a Tinzenite peer, as the co
 Therefore a single peer has a base state of no connected other peers.
 
 \subsection{Connection Management}
+\label{sec:conn_management}
 
 In this section we will discuss how Tinzenite connects to other peers.
 As we distinguish between trusted and encrypted peers we must determine how the data we will send is to be modified accordingly.
@@ -203,6 +206,18 @@ On the other hand encrypted peers can simply remove the data immediately as they
 
 This section will describe how a peer receives and sends messages via the Tox channel.
 Since we will be required to distinguish between encrypted and trusted connections we will start off with the trusted one and then briefly highlight the differences required for an encrypted connection.
+
+Once the setup has been completed, as seen in section~\ref{sec:conn_management}, the models must be updated if they do not match.
+This happens normally when files and directories have changed through user or system interaction.
+Therefore we need to define messages that can transform an out of date model into an updated one while the peer fetches the binary changes through the Tox protocol.
+We must support all basic file operations that can happen to guarantee a seamless synchronization.
+From the peer view files change by being renamed, being moved, or updating their content.
+
+For our purposes renaming a file and moving it to a different location within the peer directory are the same operation for technical reasons.
+Both operations result in at least a path change with an added name change when being renamed.
+What doesn't change from the system view is the contents of the file, which in turn means that the content hash remains the same.
+Within the file model (compare with section~\ref{sec:file_model}) this translates to changes to the following attributes: \textit{"identification"}, \textit{"path"}, \textit{"name"}, and \textit{"version"}.
+Because identification changes we need to remove the old file model and replace it with a new one.
 
 TODO: Basic messages: add, remove, update.
 What happens on rename update?
