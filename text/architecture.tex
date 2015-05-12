@@ -122,6 +122,12 @@ To differentiate between updates we require a \textit{"version"} attribute which
 Important for detecting file changes is the \textit{"content"} attribute which stores a hash of the file's binary blob.
 Finally the \textit{"shadow"} flag is used to notify a peer whether the file is locally accessible or must first be fetched from other peers.
 
+\section{Peer Futher Data – TODO}
+
+%TODO
+TODO: the peer will contain more stuff than just the model (although ideally the model would encompass everything).
+Need to also look at and introduce: deletion updates (can be model OR peer!) and peer list (how is this synced? needs to be considered!).
+
 \section{Core Update API}
 
 This section describes the API that will be used to synchronize two models on separate peers where the models might diverge.
@@ -226,7 +232,9 @@ This happens normally when files and directories have changed through user or sy
     \begin{lstlisting}[language=json,firstnumber=0]
     {
         "operation":"fetch",
-        "identification":"object_identification_hash"
+        "identification":"object_identification_hash",
+        "TODO":"ADD LIBRSYNC STUFF HERE",
+        "delta":"true/false"
     }
     \end{lstlisting}
 \caption[Fetch Object Message]{The message sent to initiate a file transfer.}
@@ -240,7 +248,9 @@ Upon receiving the message the other peer starts a Tox file transfer which the i
 
 TODO: add capability for delta updates... if possible. :P
 Delta is difficult because we must effectively track parts of files instead of complete files... how to do this?
-Also remember that multiple file transfers might be a problem.
+use librsync! <-- Really good and easy to use, will save a ton of work!
+
+TODO: Also remember that multiple file transfers might be a problem.
 Do we limit the connection to one transfer at a time or can we fetch everything at once?
 
 \subsubsection{Update Object Message}

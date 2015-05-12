@@ -1,0 +1,49 @@
+Message format (from view of A):
+
+{
+    "nonce":"adkfhkjhjkJKHJKhjkahdfjksad", // <-- for ID purpose
+    "pending":[
+        "D",
+        "E"
+    ],
+    "remove":{
+        "identification":"random_unique_hash", // <-- important since this protects against deleting same named files for example
+        // either remove file or remove peer
+    }
+}
+
+
+HOW TO:
+ - A knows that BCDE need update
+ - BC connect
+ - A sends BC update
+ - BC apply
+ - A knows that DE need update
+ - A sends to BC that DE need update
+ - A offline
+ 
+ - D connects
+ - BC send update
+ - D apply
+ - BC know that E needs update
+ - BC sends to D that E needs update
+ - BC offline
+ 
+ - E connects
+ - D sends E update
+ - E apply
+ - DE done
+ 
+ - A connects
+ - A sends DE update
+ - DE do nothing (nonce already known OR no such file exists)
+ - A done
+ 
+ - BC connect
+ - BC sends E update
+ - E does nothing
+ - BC done
+ 
+^^ nonce in update ensures that update is only executed once for every peers
+repeated receive is no problem --> ignored if file doesn't exist anyway
+the above can be combined: here is the update and the following people still don't know of it
