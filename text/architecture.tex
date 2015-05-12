@@ -226,15 +226,22 @@ This happens normally when files and directories have changed through user or sy
     \begin{lstlisting}[language=json,firstnumber=0]
     {
         "operation":"fetch",
-        "object":"object_identification_hash"
+        "identification":"object_identification_hash"
     }
     \end{lstlisting}
 \caption[Fetch Object Message]{The message sent to initiate a file transfer.}
 \label{json:fetch_file}
 \end{figure}
 
-Figure~\ref{json:fetch_file} TODO
+Figure~\ref{json:fetch_file} shows how a message to initiate a file transfer is structured.
+Note that apart from the identification we require no further information – the model has been independently updated.
+Now the peers need only get the binary files.
+Upon receiving the message the other peer starts a Tox file transfer which the initiating peer knows to accept as it just requested it.
+
 TODO: add capability for delta updates... if possible. :P
+Delta is difficult because we must effectively track parts of files instead of complete files... how to do this?
+Also remember that multiple file transfers might be a problem.
+Do we limit the connection to one transfer at a time or can we fetch everything at once?
 
 \subsubsection{Update Object Message}
 
@@ -251,21 +258,28 @@ TODO: add capability for delta updates... if possible. :P
 \label{json:update_object}
 \end{figure}
 
-Figure~\ref{json:update_object} TODO
+Figure~\ref{json:update_object} is a message for broadcasting a model update to other connected peers.
+The update message serves to keep both models in sync even after the initial synchronization at connection establishment.
+Upon receiving an update message the peer will most likely immediately respond with a fetch message to retrieve the updated file.
 
-%TODO continue from here, this needs to be thought out better:
-TODO: the following is incorrect (the messages are used to broadcast changes; model updates only require fetch messages).
+What happens within a peer's model upon receiving such an update message differs on what kind of file operation it is.
+There exist just four cases from Tinzenite's view: either the content has changed, a file attribute has changed, a file has been created, or a file has been removed.
 
-Therefore we need to define messages that can transform an out of date model into an updated one while the peer fetches the binary changes through the Tox protocol.
-We must support all basic file operations that can happen to guarantee a seamless synchronization.
-From the peer view files can be changed by being renamed, being moved, or updating their content.
-Of course we must also allow the creation of new files and the removal of files.
+%TODO refer forwards to Tinzenite logic once I've worked that out
+Tinzenite continously checks the directory against the model of the same (see also TODO).
+In the case that it notices that a file is missing from the directory but that exists in the model Tinzenite fetches and creates that file.
 
-For our purposes renaming a file and moving it to a different location within the peer directory are the same operation for technical reasons.
-Both operations result in at least a path change with an added name change when being renamed.
+TODO: autsch, how to handle file deletions?
+They must be caught and handled correctly!
+I must synchronize and keep tab on which files have once existed and have been since deleted... :(
+
+In the case that the content has changed the \textit{"content"} attribute must be updated and a fetch message sent to retrieve the binary file so that the model matches the directory again.
+Somewhat more interesting is the case where the content remains the same
+
 What doesn't change from the system view is the contents of the file, which in turn means that the content hash remains the same, and its identification hash.
 Within the file model (compare section~\ref{sec:file_model}) this translates to changes to the \textit{"path"}, \textit{"name"}, and \textit{"version"} attributes.
 
+%TODO
 TODO: how are conflicts handled.
 Easiest: clients detect files are same but different, create the two as new versions and rename so user can see.
 Nothing else needs to change for the API then – if the user resolves it manually the rename / delete of files will propagate as normal.
