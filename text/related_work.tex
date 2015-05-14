@@ -1,36 +1,62 @@
 \chapter{Related and Existing Work}
 \label{chap:related}
 
-%TODO write intro
+This chapter serves two purposes.
+First we will discuss existing solutions and how our proposed implementation differentiates itself from them.
+Then we will take a look at the academic side of file synchronization and discuss related papers.
 
 \section{Existing Software}
 
-TODO: synthesize the feature I want from Tinzenite by going through a comparison of the already existing services (Bitsync, Syncthing, GDrive, Dropbox, etc).
-Highlight what they do right and what they do wrong.
-I'll expand on these features in the implementation chapter.
+For any interent technology two options exist how to struture its architecture, broadly speaking.
+Most of the internet as it is today is cleanly divided in a client server structure where a client always request information from a central server.
+This is a strongly hierachical structure.
+The opposite of this is a distributed, peer to peer model, where a client requests information from any other client and in turn will also respond to queries from other clients.
+Both options have been used in existing file synchronization solutions.
+Therefore we have divided the existing software we will shortly discuss in the following sections between these two extremes.
 
-\subsection{Server Client Solutions}
+\subsection{Client Server Solutions}
 
-TODO: Explain how server client solutions work.
-
-\subsubsection{Google Drive}
-
-Negative: Central server, no encryption, ...
-Positive: web access, easy to use, integraton with Google Docs...
-Cite~\cite{web:site:gdrive}.
+For client server solutions any user must rely on the availability of the central server.
+These are often hosted by third parties in a distributed manner for reasons of performance and scaling.
 
 \subsubsection{Dropbox}
 
-Negative: Central server, no encryption, ...
-Positive: web access, easy to use, ...
-Cite~\cite{web:site:dropbox}.
+One of the most popular cloud storage providers currently, Dropbox~\cite{web:site:dropbox}, is known by many users looking for a solution that works across multiple operating systems.
+Positive features include web access to stored data, clients for many different platforms, easy sharing of data with outsiders, and ease of use.
+On the negative side the service relies on its backend servers, although computers can synchronize files between themselves on a local area network.
+Dropbox also lacks any end to end encryption, but does encrypt data while in transit and when "at rest" in their data centers\footnote{See \url{https://blogs.dropbox.com/dropbox/2014/06/weve-got-your-back/}, retrieved on May 14, 2015}.
+Therefore it comes with little surprise that they were prominently featured in the Snowden leaks\footnote{See \url{http://rt.com/news/195244-snowden-rid-dropbox-privacy/}, retrieved on May 14, 2015}.
+The company does have full access to any data the user uploads to their servers, as long as they do not encrypt the files beforehand themselves.
+This in turn means that they can offer up said data if required to by a government, as is the case in the United States of America.
+
+Dropbox offers a free account for a basic storage plan.
+Additional storage is available for purchase.
+None of the core applications has been open sourced to date, meaning even if Dropbox implemented strong encryption it could not be independently verified.
+
+\subsubsection{Google Drive}
+
+Google Drive~\cite{web:site:gdrive} is similiar to Dropbox from its functionality.
+It does go a step further than Dropbox by integrating tightly with their suite of online applications for creating and editing documents, the so called Google Docs.
+As can thus be quickly seen Google also has full access to all data that users upload to their servers.
+This in turn means that under the PRISM program by the NSA, all such data is also retrievable by a fourth party\footnote{See \url{http://rt.com/usa/nsa-secretly-access-yahoo-google-982/}, retrieved on May 14, 2015}.
+
+Google also offers up a basic storage amount at no charge for the user.
+Again additional space can be purchased on a monthly basis.
+Apart from offering access via fewer clients than Dropbox, Google also has failed to open source the components of its service.
 
 \subsubsection{Boxcryptor}
 
-TODO: Especially interesting also because of the key distribution model – I might borrow some of those ideas.
-Negative: must be used on TOP of large data storage service
-Positive: encrypted, sharing possible, etc.
-Cite~\cite{web:site:boxcryptor}.
+Both already mentioned services are thus not to be trusted with private information.
+However solutions for encrypting the data sent over such services exist.
+One example of such a service is the Boxcryptor software~\cite{web:site:boxcryptor}.
+It encrypts all data before uploading it to the connected cloud storage service and decrypts it when retrieving it.
+The user keys are attached to the user's account.
+Assymmetric encryption is used to upload all keys to the companies key server so that other clients can retrieve and, with a correct password, decrypt the data.
+Sharing of data is still possible even for users without an account by utilizing special keys.
+
+The downside to this approach is mainly that it has to be used on top of an existing cloud storage service, althouh it works on most existing services.
+However the software is again not open source and thus not independently verifiable.
+Boxcryptor also offers a free version of its service, but to access all security features a paid subscription is required.
 
 \subsection{Peer to Peer Solutions}
 
@@ -94,3 +120,13 @@ ALSO: page 7 has thoughts on remove / update conflicts.
 Basically they remove the dir and move the orphaned file to a special dir\footnote{TODO: make this a hidden dir and also use for conflicts? The dir is handled normally by the sync apart from how files land in it. Clients can then work on conflicts everywhere and the solutions will be propagated correctly.}.
 Also note the no updates lost policy!
 FINALLY: also note the name conflicts part!
+
+\section{Conclusion}
+
+TODO: list what we synthesized from all the related work here.
+
+TODO: synthesize the feature I want from Tinzenite by going through a comparison of the already existing services (Bitsync, Syncthing, GDrive, Dropbox, etc).
+Highlight what they do right and what they do wrong.
+I'll expand on these features in the implementation chapter.
+
+TODO: maybe also look at \url{http://www.symform.com/}.
