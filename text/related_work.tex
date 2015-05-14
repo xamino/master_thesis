@@ -17,17 +17,20 @@ TODO: Explain how server client solutions work.
 
 Negative: Central server, no encryption, ...
 Positive: web access, easy to use, integraton with Google Docs...
+Cite~\cite{web:site:gdrive}.
 
 \subsubsection{Dropbox}
 
 Negative: Central server, no encryption, ...
 Positive: web access, easy to use, ...
+Cite~\cite{web:site:dropbox}.
 
 \subsubsection{Boxcryptor}
 
 TODO: Especially interesting also because of the key distribution model – I might borrow some of those ideas.
 Negative: must be used on TOP of large data storage service
 Positive: encrypted, sharing possible, etc.
+Cite~\cite{web:site:boxcryptor}.
 
 \subsection{Peer to Peer Solutions}
 
@@ -38,25 +41,56 @@ Notice that DHT should be briefly highlighted here already.
 
 Negative: Closed source, peers can't be encrypted copies, ...
 Positive: no central point of failure, no strict internet requirement, ...
+Cite~\cite{web:site:bittorrent_sync}.
 
 \subsubsection{Syncthing}
 
 Negative: peers can't be encrypted copies, ...
 Positive: no central point of failure, no strict internet requirement, protocol is mixed data transfer and communication in one with security stuff added, ...
+Cite~\cite{web:site:synthing}.
 
 \section{Papers}
 
 %TODO look for papers that relate to my work
 
 Basic file sync stuff \cite{balasubramaniam1998file}.
-Ignore links!
+We: ignore links, file permissions, and unlike the paper file type (we never modify the file itself)!
 Detect updates definitions – look at them and point to how we want to do it.
 Reconciliation: we'll keep conflicts and propagate as new files, leaving the user to manually sort it out.
 Ideally, we'll offer assisstance however (mark them in the dir?).
 Insert/delete ambiguity!
 I might be able to synthesize rules from this, for example: if a deletion conflicts, leave it be but mark (and apply updates within it if appropriate).
 RUMOR --> sounds almost like mine, look at it!
+I also use pull method for updates (look at what the gossiping stuff is about maybe?).
 What happens for my spec when a change results in the same content?
 Theoretically nothing because version+1 and content hash is the same. :D
 
 Paper on algebraic file synchroniser \cite{ramsey2001algebraic}.
+Might be interesting: "We identify useful alternatives for conflict resolution, including alternatives that enable users to recover from conflicts by making changes at a single replica."
+The algebra of commands is interesting for me (possibly without derive because files are atomic for us?).
+Note the following text where they discuss the implementation view of it!
+RENAME replaced with MOVE, DERIVE can't be differentiated from EDIT, MOVE replaced with REMOVE and CREATE.
+Having a lot of creates is good for my system because it resets version numbers!
+
+This paper explains why we want p2p sync \cite{reiher1996peer}.
+"The cost of using peer-to-peer replication, rather than client/server replication, is complexity of the algorithms used to control the replication."
+
+This paper discusses the insert delete ambiguity \cite{page1998perspectives}.
+See page 6 for it.
+"This resolves the insert/delete ambiguity at the cost of creating a garbage-collection problem: when is it safe to discard a logically deleted directory entry?"
+And here is where I got stuck: "Successfully eliminating insert/delete ambiguities requires that prior to discarding a logically deleted directory entry, a directory replica must not only know that all replicas are marked deleted, but further must know that all other replicas are also aware of this fact."
+And the following paragraph explains the soluton: "
+The garbage-collection algorithm proceeds in two phases.
+Phase one compiles the list of replicas that know the entry is deleted.
+Phase one ends and phase two begins at a replica when its list is complete, i.e., includes all replicas of the entry.
+Phase two compiles the list of replicas that are known to have finished phase one, and concludes when this second list contains all replicas.
+When phase two completes at a node, that node knows that all replicas know that all replicas have marked the entry deleted, and therefore it is safe to garbage collect the deleted entry.
+Any other node that ever asks about the status of that entry will get the response "entry unknown" from which it can correctly conclude that garbage collection has finished at that site, and hence can finish at the inquirer as well.
+There is no ambiguity since the inquirer knows, by virtue of being in phase two, that the other site once knew about the entry and its deletion.
+Further discussion of these algorithms is available elsewhere.
+"
+TODO: look at that solution and see if I can use it (what happens when new peers are added while the algorithm is running? Can I do this for all deleted objects at once (ie for the list) insteand of per object?).
+ALSO: page 7 has thoughts on remove / update conflicts.
+Basically they remove the dir and move the orphaned file to a special dir\footnote{TODO: make this a hidden dir and also use for conflicts? The dir is handled normally by the sync apart from how files land in it. Clients can then work on conflicts everywhere and the solutions will be propagated correctly.}.
+Also note the no updates lost policy!
+FINALLY: also note the name conflicts part!
