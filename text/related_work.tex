@@ -7,9 +7,9 @@ Then we will take a look at the academic side of file synchronization and discus
 
 \section{Existing Software}
 
-For any interent technology two options exist how to struture its architecture, broadly speaking.
+For any interent technology two options exist how to structure its architecture, broadly speaking.
 Most of the internet as it is today is cleanly divided in a client server structure where a client always request information from a central server.
-This is a strongly hierachical structure.
+This is a strongly hierarchical structure.
 The opposite of this is a distributed, peer to peer model, where a client requests information from any other client and in turn will also respond to queries from other clients.
 Both options have been used in existing file synchronization solutions.
 Therefore we have divided the existing software we will shortly discuss in the following sections between these two extremes.
@@ -23,7 +23,7 @@ These are often hosted by third parties in a distributed manner for reasons of p
 
 One of the most popular cloud storage providers currently, Dropbox~\cite{web:site:dropbox}, is known by many users looking for a solution that works across multiple operating systems.
 Positive features include web access to stored data, clients for many different platforms, easy sharing of data with outsiders, and ease of use.
-On the negative side the service relies on its backend servers, although computers can synchronize files between themselves on a local area network.
+On the negative side the service relies on its back end servers, although computers can synchronize files between themselves on a local area network.
 Dropbox also lacks any end to end encryption, but does encrypt data while in transit and when "at rest" in their data centers\footnote{See \url{https://blogs.dropbox.com/dropbox/2014/06/weve-got-your-back/}, retrieved on May 14, 2015}.
 Therefore it comes with little surprise that they were prominently featured in the Snowden leaks\footnote{See \url{http://rt.com/news/195244-snowden-rid-dropbox-privacy/}, retrieved on May 14, 2015}.
 The company does have full access to any data the user uploads to their servers, as long as they do not encrypt the files beforehand themselves.
@@ -35,7 +35,7 @@ None of the core applications has been open sourced to date, meaning even if Dro
 
 \subsubsection{Google Drive}
 
-Google Drive~\cite{web:site:gdrive} is similiar to Dropbox from its functionality.
+Google Drive~\cite{web:site:gdrive} is similar to Dropbox from its functionality.
 It does go a step further than Dropbox by integrating tightly with their suite of online applications for creating and editing documents, the so called Google Docs.
 As can thus be quickly seen Google also has full access to all data that users upload to their servers.
 This in turn means that under the PRISM program by the NSA, all such data is also retrievable by a fourth party\footnote{See \url{http://rt.com/usa/nsa-secretly-access-yahoo-google-982/}, retrieved on May 14, 2015}.
@@ -51,10 +51,10 @@ However solutions for encrypting the data sent over such services exist.
 One example of such a service is the Boxcryptor software~\cite{web:site:boxcryptor}.
 It encrypts all data before uploading it to the connected cloud storage service and decrypts it when retrieving it.
 The user keys are attached to the user's account.
-Assymmetric encryption is used to upload all keys to the companies key server so that other clients can retrieve and, with a correct password, decrypt the data.
+Asymmetric encryption is used to upload all keys to the companies key server so that other clients can retrieve and, with a correct password, decrypt the data.
 Sharing of data is still possible even for users without an account by utilizing special keys.
 
-The downside to this approach is mainly that it has to be used on top of an existing cloud storage service, althouh it works on most existing services.
+The downside to this approach is mainly that it has to be used on top of an existing cloud storage service, although it works on most existing services.
 However the software is again not open source and thus not independently verifiable.
 Boxcryptor also offers a free version of its service, but to access all security features a paid subscription is required.
 
@@ -83,7 +83,7 @@ Basic file sync stuff \cite{balasubramaniam1998file}.
 We: ignore links, file permissions, and unlike the paper file type (we never modify the file itself)!
 Detect updates definitions – look at them and point to how we want to do it.
 Reconciliation: we'll keep conflicts and propagate as new files, leaving the user to manually sort it out.
-Ideally, we'll offer assisstance however (mark them in the dir?).
+Ideally, we'll offer assistance however (mark them in the dir?).
 Insert/delete ambiguity!
 I might be able to synthesize rules from this, for example: if a deletion conflicts, leave it be but mark (and apply updates within it if appropriate).
 RUMOR --> sounds almost like mine, look at it!
@@ -105,7 +105,7 @@ This paper discusses the insert delete ambiguity \cite{page1998perspectives}.
 See page 6 for it.
 "This resolves the insert/delete ambiguity at the cost of creating a garbage-collection problem: when is it safe to discard a logically deleted directory entry?"
 And here is where I got stuck: "Successfully eliminating insert/delete ambiguities requires that prior to discarding a logically deleted directory entry, a directory replica must not only know that all replicas are marked deleted, but further must know that all other replicas are also aware of this fact."
-And the following paragraph explains the soluton: "
+And the following paragraph explains the solution: "
 The garbage-collection algorithm proceeds in two phases.
 Phase one compiles the list of replicas that know the entry is deleted.
 Phase one ends and phase two begins at a replica when its list is complete, i.e., includes all replicas of the entry.
@@ -115,9 +115,9 @@ Any other node that ever asks about the status of that entry will get the respon
 There is no ambiguity since the inquirer knows, by virtue of being in phase two, that the other site once knew about the entry and its deletion.
 Further discussion of these algorithms is available elsewhere.
 "
-TODO: look at that solution and see if I can use it (what happens when new peers are added while the algorithm is running? Can I do this for all deleted objects at once (ie for the list) insteand of per object?).
+TODO: look at that solution and see if I can use it (what happens when new peers are added while the algorithm is running? Can I do this for all deleted objects at once (ie for the list) instead of per object?).
 ALSO: page 7 has thoughts on remove / update conflicts.
-Basically they remove the dir and move the orphaned file to a special dir\footnote{TODO: make this a hidden dir and also use for conflicts? The dir is handled normally by the sync apart from how files land in it. Clients can then work on conflicts everywhere and the solutions will be propagated correctly.}.
+Basically they remove the DIR and move the orphaned file to a special dir\footnote{TODO: make this a hidden dir and also use for conflicts? The dir is handled normally by the sync apart from how files land in it. Clients can then work on conflicts everywhere and the solutions will be propagated correctly.}.
 Also note the no updates lost policy!
 FINALLY: also note the name conflicts part!
 
