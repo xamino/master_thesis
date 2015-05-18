@@ -183,7 +183,7 @@
 
 {\footnotesize
 {\bfseries Ulm University}\textbar ~89069 Ulm \textbar ~Germany
-\hfill\parbox[t]{38mm}{\bfseries \raggedleft Faculty of \@fakultaet\\ \mdseries \@institut}
+\hfill\parbox[t]{35mm}{\bfseries \raggedleft Faculty of \@fakultaet\\ \mdseries \@institut}
 \hspace*{140mm}\\[2cm]
 
 \parbox{140mm}{\bfseries \huge \@headline}\\[0.5em]
