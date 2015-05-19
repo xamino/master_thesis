@@ -102,8 +102,11 @@ Note the following text where they discuss the implementation view of it!
 RENAME replaced with MOVE, DERIVE can't be differentiated from EDIT, MOVE replaced with REMOVE and CREATE.
 Having a lot of creates is good for my system because it resets version numbers!
 
-This paper explains why we want p2p sync \cite{reiher1996peer}.
-"The cost of using peer-to-peer replication, rather than client/server replication, is complexity of the algorithms used to control the replication."
+% DONE
+In~\cite{reiher1996peer}, Reiher et al. nicely state the benefits and drawbacks of using a peer to peer system for file synchronization in regard to mobile devices.
+Benefits include not having to rely on an always on server, being able to transfer files without access to a central server, and transfering files over the shortest available network path.
+The authors list as drawbacks the higher required complexity of the algorithms used to control the replication.
+They conclude that peer to peer replication is well suited for mobile devices.
 
 This paper discusses the insert delete ambiguity \cite{page1998perspectives}.
 See page 6 for it.
