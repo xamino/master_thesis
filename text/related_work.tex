@@ -92,32 +92,37 @@ We discuss their broad content in no particular order, with a focus on what info
 \subsection{What is a File Synchronizer?}
 \label{sub:What is a File Synchronizer?}
 
-Basic file sync stuff \cite{balasubramaniam1998file}.
-We: ignore links, file permissions, and unlike the paper file type (we never modify the file itself)!
-Detect updates definitions – look at them and point to how we want to do it.
-Reconciliation: we'll keep conflicts and propagate as new files, leaving the user to manually sort it out.
-Ideally, we'll offer assistance however (mark them in the dir?).
-Insert/delete ambiguity!
-I might be able to synthesize rules from this, for example: if a deletion conflicts, leave it be but mark (and apply updates within it if appropriate).
-RUMOR --> sounds almost like mine, look at it!
-I also use pull method for updates (look at what the gossiping stuff is about maybe?).
-What happens for my spec when a change results in the same content?
-Theoretically nothing because version+1 and content hash is the same. :D
+This paper by Balasubramaniam and Pierce~\cite{balasubramaniam1998file} has the stated goal of offering up a framework for describing the behavior of file synchronizers.
+Notably they divide the process into two separate phases: update detection and reconciliation.
+Update detection is defined as the recognition of where updates have been made to the directory since the last synchronization.
+Reconciliation is defined as the combination of updates between peers to transfer all peers to a new, synchronized state.
+
+For Tinzenite we took a few things out of this paper: primarily the distinction between the update detection and the reconciliation phase.
+We will also initially ignore links and file permissions due to increased complexity, but unlike them we will never modify a file ourself\footnote{TODO: state this as a goal somewhere, maybe relate it to the UNIX way of writing software: focus on what we came to do!}.
+The paper also gave us a definition for the type of update detection strategy we wanted to try: namely the modtime inode strategy.
+Ideally we would take an on-line update detector but this seems impossible to do under Linux currently.
+Also of interest is the differentiation between pull and push models for propagating updates.
+Tinzenite intends to be a hybrid between the two: while the main work will be done via push, once peers have established a connection updates may also be propagated via pull for performance reasons.
+Of interest in the reconciliation section of the paper is the listing of the various possible states that two replicas of a directory can possibly reach given a set of operations.
+We intend to ensure that the core protocol for Tinzenite will be capable of cleanly handling all of them.
 
 \subsection{An Algebraic Approach to File Synchronization}
 \label{sub:An Algebraic Approach to File Synchronization}
 
-Paper on algebraic file synchroniser \cite{ramsey2001algebraic}.
-Might be interesting: "We identify useful alternatives for conflict resolution, including alternatives that enable users to recover from conflicts by making changes at a single replica."
-The algebra of commands is interesting for me (possibly without derive because files are atomic for us?).
-Note the following text where they discuss the implementation view of it!
-RENAME replaced with MOVE, DERIVE can't be differentiated from EDIT, MOVE replaced with REMOVE and CREATE.
-Having a lot of creates is good for my system because it resets version numbers!
+The paper by Ramsey and Csirmaz~\cite{ramsey2001algebraic} presents an algebra for reasoning about file system operations with the intended purpose of specifying an algorithm for file synchronization.
+Interesting for our work is the discussion of possible commands that can be executed on said file algebra.
+While from a user point of view a multitude of operations seems possible (create, remove, rename, move, derive, and edit) they distill these down to just three for the technical side: create, remove, and edit.
+Rename can be executed by removing the original named file and creating a new file with the new name while keeping the contents identical.
+Move can be executed much the same but keeps the name intact, instead changing the location where the new file is created.
+Derive is argued to be indistinguishable from edit without higher level knowledge: while not impossible, beyond the scope for Tinzenite.
+
+TODO: I think I can get more from this paper.
+Note for example section 6 and the algebra.
+Also take another look at the recon algo – can I use it / parts of it?
 
 \subsection{Peer-to-Peer Reconciliation Based Replication for Mobile Computers}
 \label{sub:Peer-to-Peer Reconciliation Based Replication for Mobile Computers}
 
-% DONE
 In~\cite{reiher1996peer}, Reiher et al. nicely state the benefits and drawbacks of using a peer to peer system for file synchronization in regard to mobile devices.
 Benefits include not having to rely on an always on server, being able to transfer files without access to a central server, and transfering files over the shortest available network path.
 The authors list as drawbacks the higher required complexity of the algorithms used to control the replication.
@@ -126,7 +131,14 @@ They conclude that peer to peer replication is well suited for mobile devices.
 \subsection{Perspectives on Optimistically Replicated, Peer-to-Peer Filing}
 \label{sub:Perspectives on Optimistically Replicated, Peer-to-Peer Filing}
 
-This paper discusses the insert delete ambiguity \cite{page1998perspectives}.
+The paper by Page et al.~\cite{page1998perspectives} is notable in our case for two main reasons.
+It offers up a nice set of definitions of problems that we must also solve for Tinzenite and even offers up relevant solutions.
+The authors also nicely discuss performance of their implementation.
+Focus of the paper is the evaluation of the use of optimistic replica consistency, automatic update conflict detection and repair, the peer to peer interaction model, and the Ficus design and construction.
+
+TODO: look at cites, might be able to use some of them too!
+
+This paper discusses the insert delete ambiguity.
 See page 6 for it.
 "This resolves the insert/delete ambiguity at the cost of creating a garbage-collection problem: when is it safe to discard a logically deleted directory entry?"
 And here is where I got stuck: "Successfully eliminating insert/delete ambiguities requires that prior to discarding a logically deleted directory entry, a directory replica must not only know that all replicas are marked deleted, but further must know that all other replicas are also aware of this fact."
@@ -155,3 +167,17 @@ Highlight what they do right and what they do wrong.
 I'll expand on these features in the implementation chapter.
 
 TODO: maybe also look at \url{http://www.symform.com/}.
+
+TODO: These things need to be worked into architecture chapter:
+Reconciliation: we'll keep conflicts and propagate as new files, leaving the user to manually sort it out.
+Ideally, we'll offer assistance however (mark them in the dir?).
+Insert/delete ambiguity!
+I might be able to synthesize rules from this, for example: if a deletion conflicts, leave it be but mark (and apply updates within it if appropriate).
+
+RUMOR --> sounds almost like mine, look at it!
+What happens for my spec when a change results in the same content?
+Theoretically nothing because version+1 and content hash is the same. :D
+
+Note the following text where they discuss the implementation view of it!
+RENAME replaced with MOVE, DERIVE can't be differentiated from EDIT, MOVE replaced with REMOVE and CREATE.
+Having a lot of creates is good for my system because it resets version numbers!
