@@ -1,5 +1,5 @@
 \chapter{Related and Existing Work}
-\label{chap:related}
+\label{chap:Related and Existing Work}
 
 This chapter serves two purposes.
 First we will discuss existing solutions and how our proposed implementation differentiates itself from them.
@@ -68,6 +68,7 @@ Apart form not relying on the availability and trustworthiness of a central serv
 As an added bonus the path data takes between two peers will always be the most direct path as no data must first go towards a third party.
 
 \subsubsection{BitTorrent Sync}
+\label{subs:BitTorrent Sync}
 
 An existing solution for a peer to peer data synchronization service is Sync~\cite{web:site:bittorrent_sync} from the BitTorrent company.
 It is built on existing torrent technology and thus keeps many of the positive features associated with torrents: reducing the impact of transferring large files over a limited network.
@@ -76,12 +77,20 @@ As the client server solutions before however Sync is closed source.
 While information is encrypted in transfer, it can not be stored safely on third party machines without additional user involvement.
 
 \subsubsection{Syncthing}
+\label{subs:Syncthing}
 
 Syncthing~\cite{web:site:synthing} is an open source file synchronization software on an equally free block exchange protocol.
 This protocol is a mixed data transfer and communication protocol in one, with encryption for all communication built directly in.
 Again however the user can not designate untrusted peers.
 
 \section{Papers}
+\label{sec:Papers}
+
+The following discussion concerns papers that we believe have an impact on our work.
+We discuss their broad content in no particular order, with a focus on what information we extracted and how we believe we can apply it to Tinzenite.
+
+\subsection{What is a File Synchronizer?}
+\label{sub:What is a File Synchronizer?}
 
 Basic file sync stuff \cite{balasubramaniam1998file}.
 We: ignore links, file permissions, and unlike the paper file type (we never modify the file itself)!
@@ -95,6 +104,9 @@ I also use pull method for updates (look at what the gossiping stuff is about ma
 What happens for my spec when a change results in the same content?
 Theoretically nothing because version+1 and content hash is the same. :D
 
+\subsection{An Algebraic Approach to File Synchronization}
+\label{sub:An Algebraic Approach to File Synchronization}
+
 Paper on algebraic file synchroniser \cite{ramsey2001algebraic}.
 Might be interesting: "We identify useful alternatives for conflict resolution, including alternatives that enable users to recover from conflicts by making changes at a single replica."
 The algebra of commands is interesting for me (possibly without derive because files are atomic for us?).
@@ -102,11 +114,17 @@ Note the following text where they discuss the implementation view of it!
 RENAME replaced with MOVE, DERIVE can't be differentiated from EDIT, MOVE replaced with REMOVE and CREATE.
 Having a lot of creates is good for my system because it resets version numbers!
 
+\subsection{Peer-to-Peer Reconciliation Based Replication for Mobile Computers}
+\label{sub:Peer-to-Peer Reconciliation Based Replication for Mobile Computers}
+
 % DONE
 In~\cite{reiher1996peer}, Reiher et al. nicely state the benefits and drawbacks of using a peer to peer system for file synchronization in regard to mobile devices.
 Benefits include not having to rely on an always on server, being able to transfer files without access to a central server, and transfering files over the shortest available network path.
 The authors list as drawbacks the higher required complexity of the algorithms used to control the replication.
 They conclude that peer to peer replication is well suited for mobile devices.
+
+\subsection{Perspectives on Optimistically Replicated, Peer-to-Peer Filing}
+\label{sub:Perspectives on Optimistically Replicated, Peer-to-Peer Filing}
 
 This paper discusses the insert delete ambiguity \cite{page1998perspectives}.
 See page 6 for it.
