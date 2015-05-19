@@ -60,24 +60,28 @@ Boxcryptor also offers a free version of its service, but to access all security
 
 \subsection{Peer to Peer Solutions}
 
-TODO: Explain how peer to peer solutions work.
-Notice that DHT should be briefly highlighted here already.
+Peer to peer systems work without a central server.
+The trade off is that such solutions require assistance in locating other peers, which means that some form of peer discovery must be implemented.
+While this could be done via a central server, nowadays the common solution to the problem is a distributed hash table which is used to look up the required peers.
+Once another peer has been found the connection can be established.
+Apart form not relying on the availability and trustworthiness of a central server, peer to peer solutions offer up a possible performance advantage as they can distribute bandwidth between every peer, even actively unchoke an over saturated peer.
+As an added bonus the path data takes between two peers will always be the most direct path as no data must first go towards a third party.
 
 \subsubsection{BitTorrent Sync}
 
-Negative: Closed source, peers can't be encrypted copies, ...
-Positive: no central point of failure, no strict internet requirement, ...
-Cite~\cite{web:site:bittorrent_sync}.
+An existing solution for a peer to peer data synchronization service is Sync~\cite{web:site:bittorrent_sync} from the BitTorrent company.
+It is built on existing torrent technology and thus keeps many of the positive features associated with torrents: reducing the impact of transferring large files over a limited network.
+Therefore it has no central point of failure and can even run without internet access by transferring files between computers on a local area network directly.
+As the client server solutions before however Sync is closed source.
+While information is encrypted in transfer, it can not be stored safely on third party machines without additional user involvement.
 
 \subsubsection{Syncthing}
 
-Negative: peers can't be encrypted copies, ...
-Positive: no central point of failure, no strict internet requirement, protocol is mixed data transfer and communication in one with security stuff added, ...
-Cite~\cite{web:site:synthing}.
+Syncthing~\cite{web:site:synthing} is an open source file synchronization software on an equally free block exchange protocol.
+This protocol is a mixed data transfer and communication protocol in one, with encryption for all communication built directly in.
+Again however the user can not designate untrusted peers.
 
 \section{Papers}
-
-%TODO look for papers that relate to my work
 
 Basic file sync stuff \cite{balasubramaniam1998file}.
 We: ignore links, file permissions, and unlike the paper file type (we never modify the file itself)!
