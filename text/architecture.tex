@@ -126,11 +126,44 @@ To differentiate between updates we require a \textit{"version"} attribute which
 Important for detecting file changes is the \textit{"content"} attribute which stores a hash of the file's binary blob.
 Finally the \textit{"shadow"} flag is used to notify a peer whether the file is locally accessible or must first be fetched from other peers.
 
-\section{Peer Futher Data – TODO}
+\subsection{Peer Futher Data}
 
 %TODO
 TODO: the peer will contain more stuff than just the model (although ideally the model would encompass everything).
 Need to also look at and introduce: deletion updates (can be model OR peer!) and peer list (how is this synced? needs to be considered!).
+
+\begin{figure}[htp]
+    \begin{lstlisting}[language=json,firstnumber=0]
+    {
+        "user":"hash_of_username.salt",
+        "directory_id":"random_hash",
+        "key":"encrypted_data",
+        "peers":[
+            {
+                "tox_id":"peer_tox_id",
+                "state":"active|removed"
+            },
+            ...
+        ]
+    }
+    \end{lstlisting}
+\caption[Authentication JSON Object]{TODO}
+\label{json:auth_object}
+\end{figure}
+
+Figure~\ref{json:auth_object} shows the management block that a peer keeps.
+The value of \textit{"user"} allows the allocation of a directory to a user name.
+This is important for example for the support of encrypted third party peers: they can attach accounts to the provided user name for controlling server side access.
+Therefore we also need a way to distinguish multiple synchronized directories from each other: this is the random unique hash stored in \textit{"directory\_id"}.
+Again, this can be used by third party service providers to differentiate the amount of directories that a user can store with them.
+The symmetric key for encrypting and decrypting data for encrypted peers is stored in \textit{"key"}, encrypted in turn by a to be defined scheme that decrypts it upon entry of the correct password by the user.
+
+Note that changing any of the values in the authentication block is not supported initially.
+To change the password or the user name hash, the Tinzenite peer must be removed and added anew.
+While cumbersome it offers the highest level of protection against possible security risks for now.
+
+Finally we also use the authentication block to store and synchronize the peer list of connected peers of a synchronized directory.
+Apart from the Tox identification we require to allow connections we also store a date that represents the date of when the peer was last seen.
 
 \section{Core Update API}
 
@@ -203,6 +236,10 @@ Should the same peer have been added multiple times at different existing peers 
 \caption[New Connection Sequence Diagram]{This diagram shows the interaction required to connect a new peer to the existing Tinzenite network.}
 \label{diagram:new_connection}
 \end{figure}
+
+TODO: missing password entry that allows the new peer to become a trusted peer!
+User must enter password that decrypts symmetric key.
+Will need to think of a way to change the password if required... :P
 
 Figure~\ref{diagram:new_connection} shows how a user interacts with a Tinzenite peer and the Tinzenite network (consisting of 1 to n other existing peers) to connect a new peer to the network for the first time.
 As prose: the users simply start the new peer client for the first time.
