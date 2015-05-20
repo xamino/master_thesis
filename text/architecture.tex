@@ -137,17 +137,18 @@ Need to also look at and introduce: deletion updates (can be model OR peer!) and
     {
         "user":"hash_of_username.salt",
         "directory_id":"random_hash",
-        "key":"encrypted_data",
-        "peers":[
-            {
-                "tox_id":"peer_tox_id",
-                "state":"active|removed"
-            },
+        "key":"encrypted_data.salt",
+        "active_peers":[
+            "peer_tox_id",
+            ...
+        ],
+        "removed_peers":[
+            "peer_tox_id",
             ...
         ]
     }
     \end{lstlisting}
-\caption[Authentication JSON Object]{TODO}
+\caption[Authentication JSON Object]{Shows the proposed contents of the authentication block. Apart from identifying information and the encrypted data encryption key note the peer lists – one for active peers and one for removed peers.}
 \label{json:auth_object}
 \end{figure}
 
@@ -163,7 +164,13 @@ To change the password or the user name hash, the Tinzenite peer must be removed
 While cumbersome it offers the highest level of protection against possible security risks for now.
 
 Finally we also use the authentication block to store and synchronize the peer list of connected peers of a synchronized directory.
-Apart from the Tox identification we require to allow connections we also store a date that represents the date of when the peer was last seen.
+As peers can be removed we need to keep a list of removed peers too.
+Peers that have been removed, thus placing their Tox identification within the removed list, can not be reactivated.
+The peer must be recreated and added as if it were a new peer.
+Since we do not expect a large number of peers to be removed and added over the lifetime of a Tinzenite directory, this list is never trimmed.
+A peer can detect a new peer by noticing its existence upon synchronization with another peer.
+If the new peer Tox identification is not in the removed list it is simply added to the active list.
+This ensures that peers that have been removed will never be added back to the active list which might pose a security risk\footnote{TODO: do something similar for removing files. Note that we WILL have to trim that list though at some point in time, but since we know which peers are active, this should be doable.}.
 
 \section{Core Update API}
 
