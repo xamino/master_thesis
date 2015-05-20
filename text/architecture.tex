@@ -211,9 +211,6 @@ These messages will then be sent asynchronously over the now established and typ
 \label{graph:connection_states}
 \end{figure}
 
-%TODO
-TODO: update graph connection\_states for inclusion of auth block.
-
 Figure~\ref{graph:connection_states} shows an informal state diagram of how a peer reaches the idle state where the connection is ready and set up.
 The switch from the disconnected state to the connected state is signaled by the underlying Tox connection, meaning it happens when the other peer is online and visible via the Tox channel.
 Once connected and if the peer itself is a trusted peer, a challenge is sent which contains a general identifier and an encrypted nonce.
