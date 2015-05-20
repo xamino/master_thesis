@@ -1,0 +1,10 @@
+digraph statemachine {
+    // label
+    start [shape="point" width="0.2"];
+    end [shape="circle" width="0.2" style="bold" label=""];
+    a [label="OBJECT"];
+    // define
+    start -> a [label=" CREATE "];
+    a -> a [label=" MODIFY "];
+    a -> end [label=" REMOVE "];
+}

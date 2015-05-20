@@ -128,9 +128,8 @@ Finally the \textit{"shadow"} flag is used to notify a peer whether the file is 
 
 \subsection{Peer Futher Data}
 
-%TODO
-TODO: the peer will contain more stuff than just the model (although ideally the model would encompass everything).
-Need to also look at and introduce: deletion updates (can be model OR peer!) and peer list (how is this synced? needs to be considered!).
+Apart from the model of the directory for reconciliation, each peer requires further information to work.
+The following short section describes the further information that strictly speaking does not belong to the directory model, but is still required for Tinzenite to work correctly.
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
@@ -173,8 +172,9 @@ If the new peer Tox identification is not in the removed list it is simply added
 This ensures that peers that have been removed will never be added back to the active list which might pose a security risk\footnote{TODO: do something similar for removing files. Note that we WILL have to trim that list though at some point in time, but since we know which peers are active, this should be doable.}.
 
 \section{Core Update API}
+\label{sec:Core Update API}
 
-This section describes the API that will be used to synchronize two models on separate peers where the models might diverge.
+This section describes the application interface that will be used to synchronize two models on separate peers where the models might diverge.
 To understand how this works, it is important to understand how Tinzenite is structured.
 
 Every peer views all connected peers as separate connections.
@@ -302,6 +302,7 @@ TODO: Also remember that multiple file transfers might be a problem.
 Do we limit the connection to one transfer at a time or can we fetch everything at once?
 
 \subsubsection{Update Object Message}
+\label{subs:Update Object Message}
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
@@ -312,7 +313,7 @@ Do we limit the connection to one transfer at a time or can we fetch everything 
         }
     }
     \end{lstlisting}
-\caption[Update Object Message]{The message broadcast by a peer to connected peers to notify that an update has happened.}
+\caption[Update Object Message]{The message broadcast by a peer to connected peers to notify that an update has happened. Operation can be any value of either create, remove, or modify.}
 \label{json:update_object}
 \end{figure}
 
@@ -324,18 +325,10 @@ What happens within a peer's model upon receiving such an update message differs
 There exist just four cases from Tinzenite's view: either the content has changed, a file attribute has changed, a file has been created, or a file has been removed.
 
 %TODO refer forwards to Tinzenite logic once I've worked that out
-Tinzenite continously checks the directory against the model of the same (see also TODO).
-In the case that it notices that a file is missing from the directory but that exists in the model Tinzenite fetches and creates that file.
 
 TODO: autsch, how to handle file deletions?
 They must be caught and handled correctly!
 I must synchronize and keep tab on which files have once existed and have been since deleted... :(
-
-In the case that the content has changed the \textit{"content"} attribute must be updated and a fetch message sent to retrieve the binary file so that the model matches the directory again.
-Somewhat more interesting is the case where the content remains the same
-
-What doesn't change from the system view is the contents of the file, which in turn means that the content hash remains the same, and its identification hash.
-Within the file model (compare section~\ref{sec:file_model}) this translates to changes to the \textit{"path"}, \textit{"name"}, and \textit{"version"} attributes.
 
 %TODO
 TODO: how are conflicts handled.
@@ -344,6 +337,54 @@ Nothing else needs to change for the API then – if the user resolves it manual
 
 TODO: on receiving an update: queue in connection specific command queue (one per connection because only one OP per connection) (update / redo existing fetch if applicable != FIFO); fetch first file in queue.
 Then wait a bit (?) before propagating update yourself (decouple receive and send time frames?). <-- Isn't this implementation details?
+
+\section{Operations}
+\label{sec:Operations}
+
+Tinzenite relies on the most basic file operations for manipulating both the model and the actual file directory.
+Therefore we require only the following three operations for the basic case to work:
+
+\begin{description}[leftmargin=5em,style=nextline,noitemsep,nolistsep]
+    \item[Create]
+        Files that have been created will be added to the model at the correct location and their attributes calculated, if not given.
+        Tinzenite then checks whether it needs to fetch the file if it wasn't created in its own directory.
+        Created files are detected by simply noticing files that do not exist in the model yet and are not listed as deleted.
+    \item[Remove]
+        File removing is one of the most complex cases in Tinzenite due to the insert delete ambiguity (see section~\ref{sub:Perspectives on Optimistically Replicated, Peer-to-Peer Filing}).
+        We solve this by storing the models of deleted files until the delete update has propagated to all currently known peers.
+        Only then is the model discarded also.
+        For this to work Tinzenite must always ensure that files that exist but are listed as deleted are not added back to the model as a new file by continously checking the deletion list.
+    \item[Modify]
+        Modification is either when the model does not match the file anymore, in which case a new file must be fetched, or the content on the local file has changed.
+        This is detected via the content hash.
+        In that case the model is updated to match the file again.
+\end{description}
+
+Of course those three operations are not the only operations that a user can do on directories or files.
+However they are all the operations that Tinzenite requires so that it can offer full functionality.
+
+Renaming objects can be handled by simply considering the old file to have been deleted and replacing it with the new file.
+This new file will just so happen to share the same content hash.
+Moving objects are handled much in the same way: by removing the file at its old location and creating it anew at the new location.
+
+\begin{figure}[htp]
+\centering
+    \includegraphics[width=4cm]{graph/sm_object_lifecycle}
+\caption[Object State Diagram]{The life cycle of every object, file and directory, in Tinzenite with the allowed operations.}
+\label{diagram:object_operations}
+\end{figure}
+
+Therefore the life cycle of an object is very simple, as can be seen in figure~\ref{diagram:object_operations}.
+Objects can only come into existence via the create operation.
+Once an object it is only possible to either modify the existing object or remove it.
+If an object has been removed it will stay removed unless the user creates a new clone of it.
+
+\section{Update Detection and Reconciliation}
+\label{sec:Update Detection and Reconciliation}
+
+TODO: work up how this stuff works from the related work – see section~\ref{sec:Conclusion}.
+
+Tinzenite continously checks the directory against the model of the same (see also TODO).
 
 \section{Advanced Features API}
 
