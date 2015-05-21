@@ -75,6 +75,7 @@ This includes file system or operating system dependent properties such as usage
         "identification":"subdir_random_hash",
         "path":"root_hash/subdir_random_hash",
         "name":"subdir",
+        "shadow":"false",
         "version":{
             "peer_name", "version",
             "peer_name", "version",
@@ -93,6 +94,8 @@ Figure~\ref{json:directory_model} shows an example of the proposed JSON structur
 The \textit{"identification"} attribute is a random generated hash that uniquely identifies the directory.
 The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory, notably replacing the real names of the directories with the corresponding identification attribute values.
 For trusted peers that store an unencrypted version of the directory the clear text \textit{"name"} is also stored here as an attribute.
+The \textit{"shadow"} flag is used to signal whether the contents of the directory are to be fetched or not.
+Note that this flag is not indicative of whether any nested objects are also shadow objects\footnote{This means that the flag is only read on receiving update messages: if no different policy for the updated object has been set the directory flag is used to determine whether to fetch the actual file or not. Directories are always created though.}.
 To differentiate between updates we require a \textit{"version"} attribute which represents a vector clock of peers and their last known version.
 Finally an \textit{"objects"} array is where the corresponding sub directories or files are placed.
 
@@ -125,6 +128,7 @@ For trusted peers that store an unencrypted version of the file the clear text \
 To differentiate between updates we require a \textit{"version"} attribute which represents a vector clock of peers and their last known version.
 Important for detecting file changes is the \textit{"content"} attribute which stores a hash of the file's binary blob.
 Finally the \textit{"shadow"} flag is used to notify a peer whether the file is locally accessible or must first be fetched from other peers.
+On sending updates it is also indicative to the receiving peer whether the file can be fetched from the sending peer: if the value is true than the peer does not have a copy of the file, only its model object.
 
 \subsection{Peer Futher Data}
 
@@ -324,26 +328,18 @@ Do we limit the connection to one transfer at a time or can we fetch everything 
 Figure~\ref{json:update_object} is a message for broadcasting a model update to other connected peers.
 The update message serves to keep both models in sync even after the initial synchronization at connection establishment.
 Upon receiving an update message the peer will most likely immediately respond with a fetch message to retrieve the updated file.
-
-What happens within a peer's model upon receiving such an update message differs on what kind of file operation it is.
-There exist just four cases from Tinzenite's view: either the content has changed, a file attribute has changed, a file has been created, or a file has been removed.
-
-%TODO refer forwards to Tinzenite logic once I've worked that out
-
-TODO: autsch, how to handle file deletions?
-They must be caught and handled correctly!
-I must synchronize and keep tab on which files have once existed and have been since deleted... :(
-
-%TODO
-TODO: how are conflicts handled.
-Easiest: clients detect files are same but different, create the two as new versions and rename so user can see.
-Nothing else needs to change for the API then – if the user resolves it manually the rename / delete of files will propagate as normal.
-
-TODO: on receiving an update: queue in connection specific command queue (one per connection because only one OP per connection) (update / redo existing fetch if applicable != FIFO); fetch first file in queue.
-Then wait a bit (?) before propagating update yourself (decouple receive and send time frames?). <-- Isn't this implementation details?
+If a peer receives a message for an operation that it has already applied, the message is silently discarded.
+This does not disturb the propagation of updates since the peer will have already sent the update to the other connected peers if it has the update already.
+In this way we ensure that every message propagates as far as possible without consuming unnecessary bandwidth\footnote{Peers are of course free to implement message sending in any way since the update messages are not critical for Tinzenite to work. Peers can simply only send update messages to a limited number of peers, down to none if bandwidth is scarce for example in the case of a mobile device.}.
 
 \section{Object Operations}
 \label{sec:Object Operations}
+
+In this section we will discuss the object operations that Tinzenite requires to work.
+Then we will specify the actual architecture of the messages we require for them.
+
+\subsection{Operations}
+\label{sub:Operations}
 
 Tinzenite relies on the most basic file operations for manipulating both the model and the actual file directory.
 Therefore we require only the following three operations for the basic case to work:
@@ -357,7 +353,7 @@ Therefore we require only the following three operations for the basic case to w
         File removing is one of the most complex cases in Tinzenite due to the insert delete ambiguity (see section~\ref{sub:Perspectives on Optimistically Replicated, Peer-to-Peer Filing}).
         We solve this by storing the models of deleted files until the delete update has propagated to all currently known peers.
         Only then is the model discarded also.
-        For this to work Tinzenite must always ensure that files that exist but are listed as deleted are not added back to the model as a new file by continously checking the deletion list.
+        For this to work Tinzenite must always ensure that files that exist but are listed as deleted are not added back to the model as a new file by continuously checking the deletion list.
     \item[Modify]
         Modification is either when the model does not match the file anymore, in which case a new file must be fetched, or the content on the local file has changed.
         This is detected via the content hash.
@@ -383,12 +379,98 @@ Objects can only come into existence via the create operation.
 Once an object it is only possible to either modify the existing object or remove it.
 If an object has been removed it will stay removed unless the user creates a new clone of it.
 
+\subsection{Specifications}
+\label{sub:Specifications}
+
+In this section we show the actual definition of the specification and expand on how Tinzenite peers react to them in detail.
+This specification makes up the core functionality of how the data synchronization happens within Tinzenite.
+Note that only trusted peers can initiate object operations: encrypted peers only react to messages and propagate them, never do messages originate from an encrypted peer.
+This is simply the case due to the fact that encrypted peers store the data in a non accessible format, therefore making operating on the data rather pointless.
+
+\subsubsection{Create}
+\label{subs:Create}
+
+The creation of an object can be trivially detected in Tinzenite.
+Basically there are two cases where an object must be created: the first is local manual creation which implies that the peer is the origin of the file; the second is creation via receiving an creation message from another peer.
+
+For the first case, if the object does not have a representation within the model and is not listed as deleted, it triggers the creation case.
+Tinzenite creates the correct object representation and inserts it into the correct place in the model.
+In the second case the peer will queue a fetch operation for the required file\footnote{Note that in the case that it receives an update with a set \textit{"shadow"} flag it will not try fetching the file from said peer as it doesn't have a copy of the file. As a special case files within shadowed directories will also never be fetched.}.
+Only when the file has been received completely is it placed at the correct location and the model updated.
+
+After the local model has been updated and everything is in order, the peer will send an update message to all connected peers.
+Figure~\ref{json:update_object} shows how such a message might look – note that the operation is labeled as \textit{"create"} accordingly.
+It is then up to all receiving peers to update their models and fetch the file, then propagate the update accordingly.
+
+\subsubsection{Modify}
+\label{subs:Modify}
+
+The modification of an object is not as trivially detected as an object creation – for the specifics of update detection see the following section~\ref{sec:Update Detection and Reconciliation}.
+Here we will only concern ourself with what happens once a modification has been detected.
+Again we have two cases for triggering this case: a local file has been modified or the peer has received an update message.
+
+If the modification is detected locally first we update the model to match and then initiate an update message.
+The message is of the format as shown in figure~\ref{json:update_object} with the operation now reading \textit{"modify"} instead.
+If, on the other hand, we receive such a message, we queue the fetching of the updated file.
+Upon receiving the changes we apply them and finally propagate the update to the other connected peers.
+
+\subsubsection{Remove}
+\label{subs:Remove}
+
+Finally the deletion of an object is the hardest case within Tinzenite because of the insert delete ambiguity as discussed in section~\ref{sub:Perspectives on Optimistically Replicated, Peer-to-Peer Filing}.
+It is non trivial to ensure that an object deletion has been received by all required peers so that it truly and finally can be removed from the system.
+A simple solution would be a list of all ever deleted objects, but unlike removed peers this list promises to grow quickly on often used synchronized directories.
+Therefore we require a sort of garbage collection so that we can trim the list from deleted files that have been applied to all known peers.
+
+For the base case we will look at how Tinzenite deletes an object that has been removed locally first, then discuss how the update propagates and what the other peers are required to do to ensure a safe and complete deletion.
+If a deletion happens the object model is moved to a special list outside of the object model and the actual object removed from the disc.
+Then the peer copies the list of currently known peers and places it with the object model.
+Finally it creates a second list of peers in which it places itself.
+This second list contains all the peers that have acknowledged receiving the deletion update.
+
+This deletion update is then propagated to the other peers.
+Each peer receives the update, removes the object and object model, enters itself into the second list, and propagates the update.
+Once the last peer enters itself into the acknowledgement list, thus making it equal to the first list of peers, it propagates the update one final time and can then delete the object model from the deletion space.
+The completed deletion update then traverses the peers backwards, each in turn deleting the update from its list and propagating it a last time.
+Thus when the last peer to receive the full deletion update removes the model, we can be assured that all relevant peers have removed the object.
+
+It is not immediately obvious why this works even should new peers be created while the deletion update is in progress.
+In fact this is only possible by adding a small modification to the outlined process.
+To show that the solution can work with the small modification we need to look at the two cases that can happen for a newly created peer, differentiated by where it first connects to.
+If it connects to a peer that has already received the deletion update the solution would work by default without any modification.
+This is the case since the new peer would receive the object model where the object has already been deleted.
+It must thus not be notified of the deletion.
+If, however, it connects to a peer that has yet to receive the deletion update even though it has already happened, we have a problem.
+The new peer is not listed among the peers that must acknowledge the update even though it has the object.
+Without the modification, this could result in the file being reintroduced by the new peer, undoing the deletion in effect.
+
+Therefore peers must expand the first list of known peers if a single criteria is met.
+This criteria is relatively straightforward: when receiving a deletion update each peer first checks the list against its own known peer list and in the case that they differ add all missing entries to the deletion update.
+If a newly created peer has connected it will already be within the list and thus be ensured to have the deletion update hang around until it has received it.
+
+Now a final note on what happens should a peer receive a deletion update for an object that it doesn't know.
+In this case the message can not simply be silently discarded as there is no other representation of the update in the object model.
+This could lead to orphaned updates if the peer acts as a bridge between two peers that were previously directly connected.
+Therefore unknown deletion updates should be propagated if possible.
+However, since orphaned updates can only happen as long as the peer list has not been fully updated between all peers, this is a sufficiently unlikely case that we can live with it.
+By adding a time stamp we can even detect orphaned deletion updates and warn the user to help in solving the issue.
+Alternatively we can also warn if we have too many possibly orphaned updates, although this would signify a larger issue.
+
 \section{Update Detection and Reconciliation}
 \label{sec:Update Detection and Reconciliation}
 
 TODO: work up how this stuff works from the related work – see section~\ref{sec:Conclusion}.
 
 Tinzenite continously checks the directory against the model of the same (see also TODO).
+
+%TODO
+TODO: how are conflicts handled.
+Easiest: clients detect files are same but different, create the two as new versions and rename so user can see.
+Nothing else needs to change for the API then – if the user resolves it manually the rename / delete of files will propagate as normal.
+
+%TODO
+TODO: on receiving an update: queue in connection specific command queue (one per connection because only one OP per connection) (update / redo existing fetch if applicable != FIFO); fetch first file in queue.
+Then wait a bit (?) before propagating update yourself (decouple receive and send time frames?). <-- Isn't this implementation details?
 
 \section{Advanced Features API}
 
