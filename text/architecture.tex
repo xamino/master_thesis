@@ -459,9 +459,16 @@ Alternatively we can also warn if we have too many possibly orphaned updates, al
 \section{Update Detection and Reconciliation}
 \label{sec:Update Detection and Reconciliation}
 
-TODO: work up how this stuff works from the related work – see section~\ref{sec:Conclusion}.
+This section describes the theoretical side of the update detection: how we detect updates on file systems in a way that does not consume too much resources of the hosting computer.
+Then we will discuss the interesting case of update reconciliation and how Tinzenite reacts to conflicts.
 
-Tinzenite continously checks the directory against the model of the same (see also TODO).
+\subsection{Update Detection}
+\label{sub:Update Detection}
+
+Tinzenite continuously checks the directory against the model of the same (see also TODO).
+
+\subsection{Update Reconciliation}
+\label{sub:Update Reconciliation}
 
 %TODO
 TODO: how are conflicts handled.
@@ -472,7 +479,8 @@ Nothing else needs to change for the API then – if the user resolves it manual
 TODO: on receiving an update: queue in connection specific command queue (one per connection because only one OP per connection) (update / redo existing fetch if applicable != FIFO); fetch first file in queue.
 Then wait a bit (?) before propagating update yourself (decouple receive and send time frames?). <-- Isn't this implementation details?
 
-\section{Advanced Features API}
+\section{Advanced Features}
+\label{sec:Advanced Features}
 
 TODO: Here is the list of what I consider to be the advanced features.
 Now do something sensible with it.
