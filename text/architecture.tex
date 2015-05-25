@@ -11,6 +11,7 @@ Next the messages used to facilitate the update of the model between clients wil
 Finally we will take a look at the advanced features and how they will be built on top of the previous work.
 
 \section{Peer Data Model}
+\label{sec:Peer Data Model}
 
 %TODO: ignore files / dirs? This should be implemented...
 
@@ -481,7 +482,46 @@ The model is temporarily stored so that Tinzenite can work with it until the rec
 To guarantee that the directory remains consistent with the model right from the start we propose a simple rule: the model of the local directory is updated atomically with the successful reception of the binary object updates.
 
 For each object in the received and temporarily stored model Tinzenite performs a series of checks.
+For the sake of decreasing algorithm complexity we start with the easy cases.
 First and foremost if the object is listed in the deleted list it is ignored.
+This means that the other peer has not received the deletion message yet.
+To avoid reintroducing already deleted objects they thus have to be ignored when reconciling.
+The other easy case is when the object is also not in the local model.
+This is the case when a file has been newly created.
+We can thus request the object from the remote peer without further logic required.
+
+If the object has neither been deleted nor created it can only have been modified.
+As this is where conflicts can happen the case is somewhat more complex.
+There are two simple paths here: if no modifications have happened either remotely or locally, nothing further must be done.
+If changes have been made remotely but not locally we can simply request the updated object from the remote peer and are also done.
+If, however, we detect both local changes that the remote peer does not know of and remote changes that are new to us we have found a conflict.
+
+Tinzenite uses only the model objects to detect changes, specifically only the version attribute.
+As shown in section~\ref{sec:Peer Data Model} the version attribute contains a list of peers and the last known version of the object they have.
+From this list we only ever are interested in the versions of the remote peer and the local peer.
+By comparing these two attributes between the versions that both peers have we can reliably detect how to proceed without losing data.
+
+\begin{table}[H]
+\centering
+\begin{tabulary}{\textwidth}{J || J | J }
+      & Local object not modified & Local object modified \\
+    \hline \hline
+    Remote object not modified & Nothing & Nothing (It is up to the remote peer to actively fetch this update.) \\
+    \hline
+    Remote object modified & Fetch remote object and apply update & Resolve conflict \\
+\end{tabulary}
+\caption[Peer Object Version States]{This table shows the four possible cases that can result from comparing the versions between two peers.}
+\label{table:version_states_possible}
+\end{table}
+
+Figure~\ref{table:version_states_possible} shows the four possible cases.
+Since there is nothing to do independent of our local state if the remote peer has no modifications, Tinzenite will check this first.
+This is done comparing the locally last known version of the object from the remote peer with the version the remote peer how has of the object from the temporarily stored model.
+If it is equal we can continue on to the next object.
+
+In the case that the remote object has a higher version number since the last synchronization we check first whether changes have been made to the local object.
+If not we can simply request the new version of the object and apply it to our model.
+However if we detect that our local object has also been updated we have ourselves a conflict.
 
 %TODO
 TODO: how are conflicts handled.
