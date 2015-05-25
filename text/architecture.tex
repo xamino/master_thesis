@@ -467,13 +467,35 @@ Then we will discuss the interesting case of update reconciliation and how Tinze
 
 Tinzenite continuously checks the directory against the model of the same (see also TODO).
 
+TODO: I need to put some thought into avoiding a conflict between the disk watcher and when Tinzenite updates the objects... :P
+
 \subsection{Update Reconciliation}
 \label{sub:Update Reconciliation}
+
+The core algorithm for how update reconciliation is done is another important element of Tinzenite.
+The following section introduces it and discusses the ramifications for the system based on the initial model synchronization, leaving aside the per object update messages at first.
+These will be discussed once the basic mode is understood.
+
+The reconciliation begins by receiving the model of the other peer.
+The model is temporarily stored so that Tinzenite can work with it until the reconciliation has finished.
+To guarantee that the directory remains consistent with the model right from the start we propose a simple rule: the model of the local directory is updated atomically with the successful reception of the binary object updates.
+
+For each object in the received and temporarily stored model Tinzenite performs a series of checks.
+First and foremost if the object is listed in the deleted list it is ignored.
 
 %TODO
 TODO: how are conflicts handled.
 Easiest: clients detect files are same but different, create the two as new versions and rename so user can see.
 Nothing else needs to change for the API then – if the user resolves it manually the rename / delete of files will propagate as normal.
+
+Can I simplify the object model by using a dirty flag instead of versions?
+I think so if both detect the conflict... but when can I reset the dirty flag?
+This doesn't seem practical.
+I'd have to store each other peer's state and send only the appropriate flags for this to work.
+
+Using version numbers with the content hash etc should be easier.
+If the version is the same the rest must be the same too, otherwise it is a conflict.
+If higher version detected you can just overwrite it locally.
 
 %TODO
 TODO: on receiving an update: queue in connection specific command queue (one per connection because only one OP per connection) (update / redo existing fetch if applicable != FIFO); fetch first file in queue.
