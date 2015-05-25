@@ -1,10 +1,6 @@
 \chapter{Architecture}
 \label{chap:architecture}
 
-%TODO
-TODO: rework everything when you are done with the related work chapter.
-See implementation stuff on garbage collection for deleted events, handling of conflicts, etc.
-
 The following section will define the data model each peer keeps of its data and specify the API for updating it between peers.
 First we will define and explain the model each peer keeps of the stored data.
 Next the messages used to facilitate the update of the model between clients will be discussed.
@@ -12,8 +8,6 @@ Finally we will take a look at the advanced features and how they will be built 
 
 \section{Peer Data Model}
 \label{sec:Peer Data Model}
-
-%TODO: ignore files / dirs? This should be implemented...
 
 % why again json
 Since we intend to use JSON for communication via Tox, it seems prudent to define the file model of a peer's data in the same way.
@@ -66,6 +60,17 @@ Such information must be stored separately by the peer and applied when working 
 Some properties are also not suited to be transferred between peers.
 This includes file system or operating system dependent properties such as usage rights, ownership, or flags.
 %TODO look into this. A security argument might be to simply strip all extra information on transit but leave it untouched on client side, even over file updates. This would mean that the user only has to setup a dir once with rights etc as he likes it before he can use it with Tinzenite.
+
+TODO: The following could be placed somewhere as reasoning for using vector clocks.
+Can I simplify the object model by using a dirty flag instead of versions?
+I think so if both detect the conflict... but when can I reset the dirty flag?
+This doesn't seem practical.
+I'd have to store each other peer's state and send only the appropriate flags for this to work.
+
+Using version numbers with the content hash etc should be easier.
+If the version is the same the rest must be the same too, otherwise it is a conflict.
+If higher version detected you can just overwrite it locally.
+Differences in content hashes are used as a trigger that a binary diff really must be fetched: otherwise it is only meta data update.
 
 \subsection{Directory Model}
 \label{sec:dir_model}
@@ -303,13 +308,6 @@ Note that apart from the identification we require no further information – th
 Now the peers need only get the binary files.
 Upon receiving the message the other peer starts a Tox file transfer which the initiating peer knows to accept as it just requested it.
 
-TODO: add capability for delta updates... if possible. :P
-Delta is difficult because we must effectively track parts of files instead of complete files... how to do this?
-use librsync! <-- Really good and easy to use, will save a ton of work!
-
-TODO: Also remember that multiple file transfers might be a problem.
-Do we limit the connection to one transfer at a time or can we fetch everything at once?
-
 \subsubsection{Update Object Message}
 \label{subs:Update Object Message}
 
@@ -468,7 +466,7 @@ Then we will discuss the interesting case of update reconciliation and how Tinze
 
 Tinzenite continuously checks the directory against the model of the same (see also TODO).
 
-TODO: I need to put some thought into avoiding a conflict between the disk watcher and when Tinzenite updates the objects... :P
+TODO write.
 
 \subsection{Update Reconciliation}
 \label{sub:Update Reconciliation}
@@ -523,29 +521,27 @@ In the case that the remote object has a higher version number since the last sy
 If not we can simply request the new version of the object and apply it to our model.
 However if we detect that our local object has also been updated we have ourselves a conflict.
 
-%TODO
-TODO: how are conflicts handled.
-Easiest: clients detect files are same but different, create the two as new versions and rename so user can see.
-Nothing else needs to change for the API then – if the user resolves it manually the rename / delete of files will propagate as normal.
+\subsubsection{Conflict Reconciliation}
+\label{subs:Conflict Reconciliation}
 
-Can I simplify the object model by using a dirty flag instead of versions?
-I think so if both detect the conflict... but when can I reset the dirty flag?
-This doesn't seem practical.
-I'd have to store each other peer's state and send only the appropriate flags for this to work.
+As stated before Tinzenite considers files to be atomic entities and thus will not modify them itself.
+Therefore no automatic conflict resolution will be implemented in the base Tinzenite system.
+Thus Tinzenite must support the user in resolving conflicts.
+We do this by clearly labeling conflicts by appending a special word to the object name\footnote{TODO: do we allow the naming of peers? Because we could use the names as the word that is added to the file name.}.
+So now we must store both versions of the conflict in a way that it can be easily resolved on any peer.
 
-Using version numbers with the content hash etc should be easier.
-If the version is the same the rest must be the same too, otherwise it is a conflict.
-If higher version detected you can just overwrite it locally.
-
-%TODO
-TODO: on receiving an update: queue in connection specific command queue (one per connection because only one OP per connection) (update / redo existing fetch if applicable != FIFO); fetch first file in queue.
-Then wait a bit (?) before propagating update yourself (decouple receive and send time frames?). <-- Isn't this implementation details?
+The solution we propose is in itself simple enough from a technical view.
+Basically, we remove the old version of the object and replace it with the two conflicting versions.
+As these are newly created files they can propagate through the network as any other object would, allowing the conflict resolution to happen even on peers that did not see the conflict initially.
+It is then up to the user to either keep both versions (likely renaming them) or merge the changes into one object and removing the other.
+Both cases will be propagated through the network as normal file operations.
 
 \section{Advanced Features}
 \label{sec:Advanced Features}
 
 TODO: Here is the list of what I consider to be the advanced features.
 Now do something sensible with it.
+Notably: discuss each in own subsection and explain how above specification allows them to be implemented.
 
 \begin{description}[leftmargin=2em,style=nextline,noitemsep,nolistsep]
 \item[Encryption Key Management]
@@ -561,4 +557,6 @@ Now do something sensible with it.
     By selecting specific files the client will then only update or retrieve the corresponding files or directories.
     TODO: what to do if a client knows of shadow files but can't get full set?
     Are shadow files also transitively synchronized?
+\item[Ignored Objects]
+    ignore files / dirs? This should be implemented...
 \end{description}

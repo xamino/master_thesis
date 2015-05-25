@@ -2,12 +2,26 @@
 \label{chap:implementation}
 
 %TODO a whole lot
+TODO: a whole lot.
 
 \section{Tools and Environment}
 
 \section{Tinzenite Library}
 
 TODO: on the topic of salted hashes: note where the salt is stored etc.
+
+%TODO
+TODO: on receiving an update: queue in connection specific command queue (one per connection because only one OP per connection) (update / redo existing fetch if applicable != FIFO); fetch first file in queue.
+Then wait a bit (?) before propagating update yourself (decouple receive and send time frames?). <-- Isn't this implementation details?
+
+TODO: add capability for delta updates... if possible. :P
+Delta is difficult because we must effectively track parts of files instead of complete files... how to do this?
+use librsync! <-- Really good and easy to use, will save a ton of work!
+
+TODO: Also remember that multiple file transfers might be a problem.
+Do we limit the connection to one transfer at a time or can we fetch everything at once?
+
+TODO: I need to put some thought into avoiding a conflict between the disk watcher and when Tinzenite updates the objects... :P
 
 \section{Client Peer}
 
