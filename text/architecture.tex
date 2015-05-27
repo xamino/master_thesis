@@ -55,25 +55,13 @@ Notably, unlike on the user's disk, the names contained in the path are the iden
 Apart from the above attributes Tinzenite must also track versions of files to allow detection of when files have been updated.
 We will use a vector clock~\cite{mattern1989virtual} to implement this.
 The vector of peers with the associated versions can also be used to detect collisions.
-Some further attributes will also be specified, but as they differ between file and directory model, these will be further discussed in the corresponding sections below.
+We avoid using a simple dirty flag for reasons of complexity: determining which peer's update to take in which order is not trivially doable with a simple boolean flag.
 
 It is important to note that the model will not be used to store peer reliant information.
 This includes for example where the directory is placed on the peer's file system.
 Such information must be stored separately by the peer and applied when working with the data model, for example when determining what the full path on the file system will be for a file that is to be written.
 Some properties are also not suited to be transferred between peers.
 This includes file system or operating system dependent properties such as usage rights, ownership, or flags.
-%TODO look into this. A security argument might be to simply strip all extra information on transit but leave it untouched on client side, even over file updates. This would mean that the user only has to setup a dir once with rights etc as he likes it before he can use it with Tinzenite.
-
-TODO: The following could be placed somewhere as reasoning for using vector clocks.
-Can I simplify the object model by using a dirty flag instead of versions?
-I think so if both detect the conflict... but when can I reset the dirty flag?
-This doesn't seem practical.
-I'd have to store each other peer's state and send only the appropriate flags for this to work.
-
-Using version numbers with the content hash etc should be easier.
-If the version is the same the rest must be the same too, otherwise it is a conflict.
-If higher version detected you can just overwrite it locally.
-Differences in content hashes are used as a trigger that a binary diff really must be fetched: otherwise it is only meta data update.
 
 \subsection{Directory Model}
 \label{sec:dir_model}
@@ -100,13 +88,17 @@ Differences in content hashes are used as a trigger that a binary diff really mu
 \end{figure}
 
 Figure~\ref{json:directory_model} shows an example of the proposed JSON structure for representing a directory.
+A directory is somewhat special as it does not require the synchronization of an attached binary file.
+This is the case for Tinzenite because directories are viewed independent from their content in most cases.
+
 The \textit{"identification"} attribute is a random generated hash that uniquely identifies the directory.
 The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory, notably replacing the real names of the directories with the corresponding identification attribute values.
 For trusted peers that store an unencrypted version of the directory the clear text \textit{"name"} is also stored here as an attribute.
+If the peer is encrypted the clear text is replaced by the encrypted version of it.
 The \textit{"shadow"} flag is used to signal whether the contents of the directory are to be fetched or not.
-Note that this flag is not indicative of whether any nested objects are also shadow objects\footnote{This means that the flag is only read on receiving update messages: if no different policy for the updated object has been set the directory flag is used to determine whether to fetch the actual file or not. Directories are always created though.}.
+Note that this flag is not indicative of whether any nested objects are also shadow objects\footnote{This means that the flag is only read on receiving update messages: if no different policy for the updated object has been set the directory flag is used to determine whether to fetch the actual file or not. Directories are always created on the file system though.}.
 To differentiate between updates we require a \textit{"version"} attribute which represents a vector clock of peers and their last known version.
-Finally an \textit{"objects"} array is where the corresponding sub directories or files are placed.
+Finally an \textit{"objects"} array is where the corresponding sub directories or files are recursively placed.
 
 \subsection{File Model}
 \label{sec:file_model}
@@ -134,14 +126,18 @@ Figure~\ref{json:file_model} shows an example of the proposed JSON structure for
 The \textit{"identification"} attribute is a random generated hash that uniquely identifies the file.
 The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory, notably replacing the real names of the directories with the corresponding identification hashes, and finally the file name with its hash too.
 For trusted peers that store an unencrypted version of the file the clear text \textit{"name"} is also stored here as an attribute.
-To differentiate between updates we require a \textit{"version"} attribute which represents a vector clock of peers and their last known version.
+If the peer is encrypted the clear text is replaced by the encrypted version of it.
+To differentiate between updates we require a \textit{"version"} attribute which represents a vector clock of peers and their last known version of this file.
 Important for detecting file changes is the \textit{"content"} attribute which stores a hash of the file's binary blob.
 Finally the \textit{"shadow"} flag is used to notify a peer whether the file is locally accessible or must first be fetched from other peers.
-On sending updates it is also indicative to the receiving peer whether the file can be fetched from the sending peer: if the value is true than the peer does not have a copy of the file, only its model object.
+On sending updates it is also indicative to the receiving peer whether the file can be fetched from the sending peer: if the value is true than the peer does not have a copy of the file, only its object model (see also section~\ref{sub:Shadow Files}).
 
 \subsection{Peer Futher Data}
 
-Apart from the model of the directory for reconciliation, each peer requires further information to work.
+TODO: This section may change, see todo at the end of this section.
+I might take a page from Git's book for this...
+
+Apart from the model of the directory for reconciliation each peer requires further information to work.
 The following short section describes the further information that strictly speaking does not belong to the directory model, but is still required for Tinzenite to work correctly.
 
 \begin{figure}[htp]
@@ -151,7 +147,10 @@ The following short section describes the further information that strictly spea
         "directory_id":"random_hash",
         "key":"encrypted_data.salt",
         "active_peers":[
-            "peer_tox_id",
+            {
+                "tox_id":"value",
+                "peer_name":"name"
+            },
             ...
         ],
         "removed_peers":[
@@ -160,7 +159,7 @@ The following short section describes the further information that strictly spea
         ]
     }
     \end{lstlisting}
-\caption[Authentication JSON Object]{Shows the proposed contents of the authentication block. Apart from identifying information and the encrypted data encryption key note the peer lists – one for active peers and one for removed peers.}
+\caption[Authentication JSON Object]{Shows the proposed contents of the authentication block. Apart from identifying information and the encrypted data encryption key note the peer lists – one for active peers and one for removed peers. The active list includes the canonical peer names for labeling conflicting files (see section~\ref{sub:Update Reconciliation}).}
 \label{json:auth_object}
 \end{figure}
 
@@ -171,7 +170,7 @@ Therefore we also need a way to distinguish multiple synchronized directories fr
 Again, this can be used by third party service providers to differentiate the amount of directories that a user can store with them.
 The symmetric key for encrypting and decrypting data for encrypted peers is stored in \textit{"key"}, encrypted in turn by a to be defined scheme that decrypts it upon entry of the correct password by the user.
 
-Note that changing any of the values in the authentication block is not supported initially.
+Note that changing any of the values in the authentication block is not supported initially beyond modifications of the peer lists.
 To change the password or the user name hash, the Tinzenite peer must be removed and added anew.
 While cumbersome it offers the highest level of protection against possible security risks for now.
 
@@ -183,6 +182,13 @@ Since we do not expect a large number of peers to be removed and added over the 
 A peer can detect a new peer by noticing its existence upon synchronization with another peer.
 If the new peer Tox identification is not in the removed list it is simply added to the active list.
 This ensures that peers that have been removed will never be added back to the active list which might pose a security risk\footnote{TODO: do something similar for removing files. Note that we WILL have to trim that list though at some point in time, but since we know which peers are active, this should be doable.}.
+
+TODO: This block might be totally doable as files within the meta directory, thus easily allowing updates.
+Proposal for this: make a sub dir in .tinzenite for it.
+Place there one file that is the actual auth block and two folders for the two peer lists.
+Each peer entry in the list is its own file within these folders.
+Thus removing peers can easily be done and even later be added back again.
+The implementation of white lists and black lists is thus easily doable too.
 
 \section{Core Update API}
 \label{sec:Core Update API}
