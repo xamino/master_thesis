@@ -36,7 +36,7 @@ An example of the proposed model structure can be seen in~\ref{list:model}.
         \item File
     \end{modellist}
 \end{modellist}
-\caption[Data Model Example Structure]{An example of how a data model of a directory is structured. The .tinzenite directory is discussed in section~\ref{sub:Meta Data}.}
+\caption[Data Model Example Structure]{An example of how a data model of a directory is structured. The .tinzenite directory is discussed in section~\ref{sec:Meta Data}.}
 \label{list:model}
 \end{figure}
 
@@ -131,64 +131,6 @@ To differentiate between updates we require a \textit{"version"} attribute which
 Important for detecting file changes is the \textit{"content"} attribute which stores a hash of the file's binary blob.
 Finally the \textit{"shadow"} flag is used to notify a peer whether the file is locally accessible or must first be fetched from other peers.
 On sending updates it is also indicative to the receiving peer whether the file can be fetched from the sending peer: if the value is true than the peer does not have a copy of the file, only its object model (see also section~\ref{sub:Shadow Files}).
-
-\subsection{Peer Futher Data}
-
-TODO: This section may change, see todo at the end of this section.
-I might take a page from Git's book for this...
-
-Apart from the model of the directory for reconciliation each peer requires further information to work.
-The following short section describes the further information that strictly speaking does not belong to the directory model, but is still required for Tinzenite to work correctly.
-
-\begin{figure}[htp]
-    \begin{lstlisting}[language=json,firstnumber=0]
-    {
-        "user":"hash_of_username.salt",
-        "directory_id":"random_hash",
-        "key":"encrypted_data.salt",
-        "active_peers":[
-            {
-                "tox_id":"value",
-                "peer_name":"name"
-            },
-            ...
-        ],
-        "removed_peers":[
-            "peer_tox_id",
-            ...
-        ]
-    }
-    \end{lstlisting}
-\caption[Authentication JSON Object]{Shows the proposed contents of the authentication block. Apart from identifying information and the encrypted data encryption key note the peer lists – one for active peers and one for removed peers. The active list includes the canonical peer names for labeling conflicting files (see section~\ref{sub:Update Reconciliation}).}
-\label{json:auth_object}
-\end{figure}
-
-Figure~\ref{json:auth_object} shows the management block that a peer keeps.
-The value of \textit{"user"} allows the allocation of a directory to a user name.
-This is important for example for the support of encrypted third party peers: they can attach accounts to the provided user name for controlling server side access.
-Therefore we also need a way to distinguish multiple synchronized directories from each other: this is the random unique hash stored in \textit{"directory\_id"}.
-Again, this can be used by third party service providers to differentiate the amount of directories that a user can store with them.
-The symmetric key for encrypting and decrypting data for encrypted peers is stored in \textit{"key"}, encrypted in turn by a to be defined scheme that decrypts it upon entry of the correct password by the user.
-
-Note that changing any of the values in the authentication block is not supported initially beyond modifications of the peer lists.
-To change the password or the user name hash, the Tinzenite peer must be removed and added anew.
-While cumbersome it offers the highest level of protection against possible security risks for now.
-
-Finally we also use the authentication block to store and synchronize the peer list of connected peers of a synchronized directory.
-As peers can be removed we need to keep a list of removed peers too.
-Peers that have been removed, thus placing their Tox identification within the removed list, can not be reactivated.
-The peer must be recreated and added as if it were a new peer.
-Since we do not expect a large number of peers to be removed and added over the lifetime of a Tinzenite directory, this list is never trimmed.
-A peer can detect a new peer by noticing its existence upon synchronization with another peer.
-If the new peer Tox identification is not in the removed list it is simply added to the active list.
-This ensures that peers that have been removed will never be added back to the active list which might pose a security risk\footnote{TODO: do something similar for removing files. Note that we WILL have to trim that list though at some point in time, but since we know which peers are active, this should be doable.}.
-
-TODO: This block might be totally doable as files within the meta directory, thus easily allowing updates.
-Proposal for this: make a sub dir in .tinzenite for it.
-Place there one file that is the actual auth block and two folders for the two peer lists.
-Each peer entry in the list is its own file within these folders.
-Thus removing peers can easily be done and even later be added back again.
-The implementation of white lists and black lists is thus easily doable too.
 
 \section{Core Update API}
 \label{sec:Core Update API}
@@ -435,7 +377,7 @@ A simple solution would be a list of all ever deleted objects, but unlike remove
 Therefore we require a sort of garbage collection so that we can trim the list from deleted files that have been applied to all known peers.
 
 For the base case we will look at how Tinzenite deletes an object that has been removed locally first, then discuss how the update propagates and what the other peers are required to do to ensure a safe and complete deletion.
-If a deletion happens the object and object model are moved to a special directory outside of the user viewable directory (see also section~\ref{sub:Meta Data}).
+If a deletion happens the object and object model are moved to a special directory outside of the user viewable directory (see also section~\ref{sec:Meta Data}).
 Then the peer copies the list of currently known peers and places it with the object model.
 Finally it creates a second list of peers in which it places itself.
 This second list contains all the peers that have acknowledged receiving the deletion update.
@@ -551,7 +493,7 @@ How this conflict is resolved is discussed in the next section.
 As stated before Tinzenite considers files to be atomic entities and thus will not modify them itself.
 Therefore no automatic conflict resolution will be implemented in the base Tinzenite system.
 Thus Tinzenite must support the user in resolving conflicts.
-We do this by clearly labeling conflicts by appending a special word to the object name\footnote{TODO: do we allow the naming of peers? Because we could use the names as the word that is added to the file name.}, possibly also referencing which operation has happened (either create, modify, or remove).
+We do this by clearly labeling conflicts by appending a special word to the object name, possibly also referencing which operation has happened (either create, modify, or remove).
 So now we must store both versions of the conflict in a way that it can be easily resolved on any peer.
 
 The solution we propose is in itself simple enough from a technical view.
@@ -562,9 +504,119 @@ Both cases will be propagated through the network as normal file operations.
 
 So for an extreme example case consider the following: a file present on two peers is modified on one peer but deleted on another.
 Now they synchronize and detect the conflict.
-Since by definition the deletion can not already have fully propagated as the other peer still could modify the object the file is still present in the meta data directory (see section~\ref{sub:Meta Data}).
+Since by definition the deletion can not already have fully propagated as the other peer still could modify the object the file is still present in the meta data directory (see section~\ref{sec:Meta Data}).
 Therefore both peers can access the other's version of the object and reintroduce it in the user viewable directory as normal conflicting updates.
 The deletion update will be overwritten by the higher version update of moving the file to its conflicting state, thus ensuring that it will not remain valid for long.
+
+\section{Meta Data}
+\label{sec:Meta Data}
+
+Special files and temporary storage space is offered by a hidden directory directly below the root directory.
+It will be specified as \textit{".tinzenite"} in a comparable manner to the \textit{.git} directory for Git.
+In short it contains organizational files, temporary objects, and the deletion directory for storing files until they have been fully removed by all peers.
+Figure~\ref{list:meta_folder} gives a broad overview of the proposed contents.
+
+\begin{figure}[htp]
+\begin{modellist}
+\item .tinzenite
+\begin{modellist}
+    \item .tinignore
+    \item org
+    \begin{modellist}
+        \item auth.json
+        \item peers
+        \begin{modellist}
+            \item peer.json
+            \item ...
+        \end{modellist}
+    \end{modellist}
+    \item removed
+    \begin{modellist}
+        \item ...
+    \end{modellist}
+    \item temp
+    \begin{modellist}
+        \item ...
+    \end{modellist}
+\end{modellist}
+\end{modellist}
+\caption[Meta Folder Structure]{Overview of the special meta information directory that Tinzenite uses to store relevant information required for the managing of the directory.}
+\label{list:meta_folder}
+\end{figure}
+
+Placing the meta data within the directory has a few benefits for the complexity of the system and enables it to utilize the full feature set of the implemented synchronization capabilities.
+The directory is only special in how conflicts are handled as the user should never have to resolve conflicts of meta data manually.
+We will therefore shortly note in each of the following sections how Tinzenite will handle the special cases if applicable.
+
+\subsection{Organizational Directory}
+\label{sub:Organizational Directory}
+
+The \textit{"org"} directory consists of two objects: the file containing the authentication information and a sub folder which contains a file for each known peer.
+Every file will be a simple text file with JSON contents.
+Figure~\ref{json:auth_object} shows the contents of the authentication file.
+
+\begin{figure}[htp]
+    \begin{lstlisting}[language=json,firstnumber=0]
+    {
+        "user":"hash_of_username.salt",
+        "directory_id":"random_hash",
+        "key":"encrypted_data.salt"
+    }
+    \end{lstlisting}
+\caption[Authentication JSON Object]{Shows the proposed contents of the authentication file.}
+\label{json:auth_object}
+\end{figure}
+
+TODO: note that the peer objects include the user given peer name, required for conflicts.
+
+\subsection{Removed Directory}
+\label{sub:Removed Directory}
+
+\subsection{Temporary Directory}
+\label{sub:Temporary Directory}
+
+TODO: note that the .tinignore file is for this folder as the contents are peer local.
+
+\subsection{OLD}
+\label{sub:OLD}
+
+Partially fetched files are stored in a special non synchronized sub directory\footnote{TODO: this depends on how I receive the files from Tox. If I get the complete thing this is unnecessary. Would be an easier case because the meta dir would require an ignore file by default.}.
+Another directory is used to store deleted files that have not yet propagated to all peers.
+
+TODO: following is old stuff, merge into above.
+
+Apart from the model of the directory for reconciliation each peer requires further information to work.
+The following short section describes the further information that strictly speaking does not belong to the directory model, but is still required for Tinzenite to work correctly.
+This information is stored within the hidden .tinzenite directory in a dedicated sub directory.
+
+TODO: Below here everything needs to be adapted...
+This block might be totally doable as files within the meta directory, thus easily allowing updates.
+Proposal for this: make a sub dir in .tinzenite for it.
+Place there one file that is the actual auth block and two folders for the two peer lists.
+Each peer entry in the list is its own file within these folders.
+Thus removing peers can easily be done and even later be added back again.
+The implementation of white lists and black lists is thus easily doable too.
+
+Figure~\ref{json:auth_object} shows the management block that a peer keeps.
+The value of \textit{"user"} allows the allocation of a directory to a user name.
+This is important for example for the support of encrypted third party peers: they can attach accounts to the provided user name for controlling server side access.
+Therefore we also need a way to distinguish multiple synchronized directories from each other: this is the random unique hash stored in \textit{"directory\_id"}.
+Again, this can be used by third party service providers to differentiate the amount of directories that a user can store with them.
+The symmetric key for encrypting and decrypting data for encrypted peers is stored in \textit{"key"}, encrypted in turn by a to be defined scheme that decrypts it upon entry of the correct password by the user.
+
+Note that changing any of the values in the authentication block is not supported initially beyond modifications of the peer lists.
+To change the password or the user name hash, the Tinzenite peer must be removed and added anew.
+While cumbersome it offers the highest level of protection against possible security risks for now.
+
+Finally we also use the authentication block to store and synchronize the peer list of connected peers of a synchronized directory.
+As peers can be removed we need to keep a list of removed peers too.
+Peers that have been removed, thus placing their Tox identification within the removed list, can not be reactivated.
+The peer must be recreated and added as if it were a new peer.
+Since we do not expect a large number of peers to be removed and added over the lifetime of a Tinzenite directory, this list is never trimmed.
+A peer can detect a new peer by noticing its existence upon synchronization with another peer.
+If the new peer Tox identification is not in the removed list it is simply added to the active list.
+This ensures that peers that have been removed will never be added back to the active list which might pose a security risk\footnote{TODO: do something similar for removing files. Note that we WILL have to trim that list though at some point in time, but since we know which peers are active, this should be doable.}.
+
 
 \section{Advanced Features}
 \label{sec:Advanced Features}
@@ -659,10 +711,3 @@ In the base case each received fetch results in the complete requested file to b
 Note that it well may be impossible to support sending only binary deltas of changes to an encrypted peer due to a single change within the file resulting in a completely new encrypted cipher representation of the file.
 We will look into this again if we have the time to optimize the logic of clients.
 We believe that by choosing a correct block cipher we can optimize this by sending only the changed blocks at the cost of some security.
-
-\subsection{Meta Data}
-\label{sub:Meta Data}
-
-Special files and temporary storage space is offered by a hidden directory directly below the root directory.
-Partially fetched files are stored in a special non synchronized sub directory\footnote{TODO: this depends on how I receive the files from Tox. If I get the complete thing this is unnecessary. Would be an easier case because the meta dir would require an ignore file by default.}.
-Another directory is used to store deleted files that have not yet propagated to all peers.
