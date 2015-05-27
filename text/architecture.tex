@@ -422,14 +422,14 @@ A simple solution would be a list of all ever deleted objects, but unlike remove
 Therefore we require a sort of garbage collection so that we can trim the list from deleted files that have been applied to all known peers.
 
 For the base case we will look at how Tinzenite deletes an object that has been removed locally first, then discuss how the update propagates and what the other peers are required to do to ensure a safe and complete deletion.
-If a deletion happens the object model is moved to a special list outside of the object model and the actual object removed from the disc.
+If a deletion happens the object and object model are moved to a special directory outside of the user viewable directory (see also section~\ref{sub:Meta Data}).
 Then the peer copies the list of currently known peers and places it with the object model.
 Finally it creates a second list of peers in which it places itself.
 This second list contains all the peers that have acknowledged receiving the deletion update.
 
 This deletion update is then propagated to the other peers.
-Each peer receives the update, removes the object and object model, enters itself into the second list, and propagates the update.
-Once the last peer enters itself into the acknowledgement list, thus making it equal to the first list of peers, it propagates the update one final time and can then delete the object model from the deletion space.
+Each peer receives the update, moves the object and updates the object model, enters itself into the second list, and propagates the update.
+Once the last peer enters itself into the acknowledgement list, thus making it equal to the first list of peers, it propagates the update one final time and can then delete the object model from the deletion space and the actual object.
 The completed deletion update then traverses the peers backwards, each in turn deleting the update from its list and propagating it a last time.
 Thus when the last peer to receive the full deletion update removes the model, we can be assured that all relevant peers have removed the object.
 
@@ -467,6 +467,7 @@ Then we will discuss the interesting case of update reconciliation and how Tinze
 Tinzenite continuously checks the directory against the model of the same (see also TODO).
 
 TODO write.
+Directories MUST always check sub directories for changes before you can delete or modify them (at creation time they are empty by default).
 
 \subsection{Update Reconciliation}
 \label{sub:Update Reconciliation}
@@ -480,16 +481,18 @@ The model is temporarily stored so that Tinzenite can work with it until the rec
 To guarantee that the directory remains consistent with the model right from the start we propose a simple rule: the model of the local directory is updated atomically with the successful reception of the binary object updates.
 
 For each object in the received and temporarily stored model Tinzenite performs a series of checks.
-For the sake of decreasing algorithm complexity we start with the easy cases.
-First and foremost if the object is listed in the deleted list it is ignored.
-This means that the other peer has not received the deletion message yet.
-To avoid reintroducing already deleted objects they thus have to be ignored when reconciling.
-The other easy case is when the object is also not in the local model.
-This is the case when a file has been newly created.
+For the sake of decreasing algorithm complexity we start with the easy case of file creation.
+In this case the object has not previously been stored in the local model.
+This is the case when a file has been newly created on a remote peer.
 We can thus request the object from the remote peer without further logic required.
 
+If the object is listed in the deleted list we can possibly ignore it outright.
+This would mean that the other peer has not received the deletion message yet.
+To avoid reintroducing already deleted objects they thus have to be ignored when reconciling.
+If however the objected has been modified we must reconcile this conflict.
+
 If the object has neither been deleted nor created it can only have been modified.
-As this is where conflicts can happen the case is somewhat more complex.
+As this is where conflicts can regularly happen the case is somewhat more complex.
 There are two simple paths here: if no modifications have happened either remotely or locally, nothing further must be done.
 If changes have been made remotely but not locally we can simply request the updated object from the remote peer and are also done.
 If, however, we detect both local changes that the remote peer does not know of and remote changes that are new to us we have found a conflict.
@@ -499,7 +502,7 @@ As shown in section~\ref{sec:Peer Data Model} the version attribute contains a l
 From this list we only ever are interested in the versions of the remote peer and the local peer.
 By comparing these two attributes between the versions that both peers have we can reliably detect how to proceed without losing data.
 
-\begin{table}[H]
+\begin{table}[htp]
 \centering
 \begin{tabulary}{\textwidth}{J || J | J }
       & Local object not modified & Local object modified \\
@@ -520,6 +523,7 @@ If it is equal we can continue on to the next object.
 In the case that the remote object has a higher version number since the last synchronization we check first whether changes have been made to the local object.
 If not we can simply request the new version of the object and apply it to our model.
 However if we detect that our local object has also been updated we have ourselves a conflict.
+How this conflict is resolved is discussed in the next section.
 
 \subsubsection{Conflict Reconciliation}
 \label{subs:Conflict Reconciliation}
@@ -527,7 +531,7 @@ However if we detect that our local object has also been updated we have ourselv
 As stated before Tinzenite considers files to be atomic entities and thus will not modify them itself.
 Therefore no automatic conflict resolution will be implemented in the base Tinzenite system.
 Thus Tinzenite must support the user in resolving conflicts.
-We do this by clearly labeling conflicts by appending a special word to the object name\footnote{TODO: do we allow the naming of peers? Because we could use the names as the word that is added to the file name.}.
+We do this by clearly labeling conflicts by appending a special word to the object name\footnote{TODO: do we allow the naming of peers? Because we could use the names as the word that is added to the file name.}, possibly also referencing which operation has happened (either create, modify, or remove).
 So now we must store both versions of the conflict in a way that it can be easily resolved on any peer.
 
 The solution we propose is in itself simple enough from a technical view.
@@ -535,6 +539,12 @@ Basically, we remove the old version of the object and replace it with the two c
 As these are newly created files they can propagate through the network as any other object would, allowing the conflict resolution to happen even on peers that did not see the conflict initially.
 It is then up to the user to either keep both versions (likely renaming them) or merge the changes into one object and removing the other.
 Both cases will be propagated through the network as normal file operations.
+
+So for an extreme example case consider the following: a file present on two peers is modified on one peer but deleted on another.
+Now they synchronize and detect the conflict.
+Since by definition the deletion can not already have fully propagated as the other peer still could modify the object the file is still present in the meta data directory (see section~\ref{sub:Meta Data}).
+Therefore both peers can access the other's version of the object and reintroduce it in the user viewable directory as normal conflicting updates.
+The deletion update will be overwritten by the higher version update of moving the file to its conflicting state, thus ensuring that it will not remain valid for long.
 
 \section{Advanced Features}
 \label{sec:Advanced Features}
@@ -562,7 +572,7 @@ An example for how we propose to implement this feature is the Git source contro
 By specifying the paths to directories and files within a so called \textit{.gitignore} visibility of these can be finely controlled.
 
 In Tinzenite we plan to implement this functionality in a similar manner.
-The file containing these rules can be synchronized just as any other file.
+The file containing these rules can be synchronized just as any other file at any level within a directory.
 Any new objects detected by Tinzenite that are listed in this file will not be created within the model, effectively keeping it out of the system.
 Since it may well happen that such a file is created at a later point and thus introduce an uncertainty in handling the to be ignored files we propose a simple solution: the file is only ever applied for object creations.
 Once a file has been created within the model it will be modified and deleted as any other file within the system, independent on the ignore file.
@@ -615,11 +625,24 @@ One way to mitigate this risk is by allowing user defined shadowed files only fo
 \subsection{Encrypted Peers}
 \label{sub:Encrypted Peers}
 
-TODO
+The final advanced feature that is vital for the encrypted peer for third party support is how encryption is handled within the protocol.
+Trigger for detecting that a peer is encrypted is when the challenge is not correctly responded or denied (if it outright fails Tinzenite probably should warn the user as it would mean that someone is trying to guess the response).
+Once the other peer has been identified as an encrypted peer it is up to the local peer to enforce the correct encryption on files and obfuscation on model objects.
+
+Every attribute that contains user information is encrypted with the encryption key.
+Primarily within the model this means that the object \textit{"name"} is encrypted.
+Apart from this attribute only the content hash is different although not encrypted – it is instead the hash of the encrypted file.
+The file itself is fully encrypted when the peer receives a fetch request from the encrypted peer.
+Only ever this encrypted file is to be shared.
+
+In the base case each received fetch results in the complete requested file to be encrypted in its current version and sent.
+Note that it well may be impossible to support sending only binary deltas of changes to an encrypted peer due to a single change within the file resulting in a completely new encrypted cipher representation of the file.
+We will look into this again if we have the time to optimize the logic of clients.
+We believe that by choosing a correct block cipher we can optimize this by sending only the changed blocks at the cost of some security.
 
 \subsection{Meta Data}
 \label{sub:Meta Data}
 
-TODO.
-What do we do with ignore file, keys, etc.
-Sync in special hidden directory!
+Special files and temporary storage space is offered by a hidden directory directly below the root directory.
+Partially fetched files are stored in a special non synchronized sub directory\footnote{TODO: this depends on how I receive the files from Tox. If I get the complete thing this is unnecessary. Would be an easier case because the meta dir would require an ignore file by default.}.
+Another directory is used to store deleted files that have not yet propagated to all peers.
