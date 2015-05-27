@@ -15,7 +15,7 @@ This will allow easy application of updates without having to explicitly transla
 
 An important feature that the model must have is that it works independent of the file types.
 Therefore there are only two assumptions we will make of the structure of the directory that a peer will work on: namely that it contains files sorted in directories.
-Out of this we can immediately synthesize our two main components we will require: a file model and a directory model.
+Out of this tree view we can immediately synthesize our two main components we will require: a file model (a leaf) and a directory model (a node).
 Since a peer is intended to have directory as the root node from which to run, the core element will always be a directory.
 An example of the proposed model structure can be seen in~\ref{list:model}.
 
@@ -23,7 +23,10 @@ An example of the proposed model structure can be seen in~\ref{list:model}.
 \begin{modellist}
 \item Root Directory
     \begin{modellist}
-        \item File
+        \item .tinzenite Directory
+            \begin{modellist}
+                \item ...
+            \end{modellist}
         \item Sub Directory
             \begin{modellist}
                 \item File
@@ -33,7 +36,7 @@ An example of the proposed model structure can be seen in~\ref{list:model}.
         \item File
     \end{modellist}
 \end{modellist}
-\caption[Data Model Example Structure]{An example of how a data model of a directory is structured.}
+\caption[Data Model Example Structure]{An example of how a data model of a directory is structured. The .tinzenite directory is discussed in section~\ref{sub:Meta Data}.}
 \label{list:model}
 \end{figure}
 
@@ -44,13 +47,13 @@ Therefore additional information that Tinzenite requires to function will need t
 Each object in the model will for identification purposes be specified by a hash.
 This hash will be a unique randomly generated hash.
 This hash allows us to decouple the name of the object from its model representation, effectively serving the same function as node identification numbers when stored on a disk.
-This is required so that we can differentiate a renamed file from a removed file and update a model accordingly.
+This is required so that we can differentiate a renamed file from a removed file and update the model accordingly.
 Furthermore each model object will contain a path variable that specifies the complete path of the object in the directory tree.
 This has the purpose of allowing the placement of all files in the correct locations on disk.
 Notably, unlike on the user's disk, the names contained in the path are the identifying hashes.
 
 Apart from the above attributes Tinzenite must also track versions of files to allow detection of when files have been updated.
-We will use a vector clock\footnote{TODO: find and link paper?} to implement this.
+We will use a vector clock~\cite{mattern1989virtual} to implement this.
 The vector of peers with the associated versions can also be used to detect collisions.
 Some further attributes will also be specified, but as they differ between file and directory model, these will be further discussed in the corresponding sections below.
 
@@ -337,6 +340,9 @@ In this way we ensure that every message propagates as far as possible without c
 In this section we will discuss the object operations that Tinzenite requires to work.
 Then we will specify the actual architecture of the messages we require for them.
 
+TODO: allow and include a move update?
+May well make a lot a whole bit easier to implement.
+
 \subsection{Operations}
 \label{sub:Operations}
 
@@ -365,6 +371,7 @@ However they are all the operations that Tinzenite requires so that it can offer
 Renaming objects can be handled by simply considering the old file to have been deleted and replacing it with the new file.
 This new file will just so happen to share the same content hash.
 Moving objects are handled much in the same way: by removing the file at its old location and creating it anew at the new location.
+Peers are of course free to go about removing and moving files in a more intelligent manner, saving the costs of fetching a renamed or moved file from another peer if the data is already locally available.
 
 \begin{figure}[htp]
 \centering
@@ -466,8 +473,15 @@ Then we will discuss the interesting case of update reconciliation and how Tinze
 
 Tinzenite continuously checks the directory against the model of the same (see also TODO).
 
+%TODO
 TODO write.
 Directories MUST always check sub directories for changes before you can delete or modify them (at creation time they are empty by default).
+Can directories only be removed if all sub files are removed first?
+This could be a sensible way to implement this...
+
+TODO.
+I'm not sure how I can implement this yet and whether I will use an external library for a file watcher.
+I'll get back to this at a later point in time.
 
 \subsection{Update Reconciliation}
 \label{sub:Update Reconciliation}
