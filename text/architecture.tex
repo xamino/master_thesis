@@ -560,14 +560,40 @@ Figure~\ref{json:auth_object} shows the contents of the authentication file.
     {
         "user":"hash_of_username.salt",
         "directory_id":"random_hash",
+        "directory_name":"value",
         "key":"encrypted_data.salt"
     }
     \end{lstlisting}
-\caption[Authentication JSON Object]{Shows the proposed contents of the authentication file.}
+\caption[Authentication JSON Object]{An example of the proposed contents of the authentication file.}
 \label{json:auth_object}
 \end{figure}
 
-TODO: note that the peer objects include the user given peer name, required for conflicts.
+The value of \textit{"user"} allows the allocation of a directory to a user name.
+This is important for example for the support of encrypted third party peers: they can attach accounts to the provided user name for controlling server side access.
+Therefore we also need a way to distinguish multiple synchronized directories from each other: this is the random unique hash stored in \textit{"directory\_id"}.
+Again, this can be used by third party service providers to differentiate the amount of directories that a user can store with them.
+The user given name of the directory is stored in \textit{"directory\_name"}.
+The symmetric key for encrypting and decrypting data for encrypted peers is stored in \textit{"key"}, encrypted in turn by a to be defined scheme that decrypts it upon entry of the correct password by the user.
+
+Note that changing any of the values in the authentication file is not supported initially.
+This is especially true for the encryption key as there is no simple way to update all encrypted peers to a new key.
+While cumbersome it offers the highest level of protection against possible security risks for now.
+
+\begin{figure}[htp]
+    \begin{lstlisting}[language=json,firstnumber=0]
+    {
+        "name":"value",
+        "tox_id":"tox_id_value",
+        "encrypted":"bool"
+    }
+    \end{lstlisting}
+\caption[Peer JSON Object]{An example of a peer JSON object. Note that the encryption attribute is not to be trusted, it is only an optimization.}
+\label{json:peer_object}
+\end{figure}
+
+Within the \textit{"peer"} sub directory Tinzenite stores the information for all known peers for each directory.
+Figure~\ref{json:peer_object} shows the proposed structure of a peer file.
+One of these exist for all known peers.
 
 \subsection{Removed Directory}
 \label{sub:Removed Directory}
@@ -588,35 +614,6 @@ TODO: following is old stuff, merge into above.
 Apart from the model of the directory for reconciliation each peer requires further information to work.
 The following short section describes the further information that strictly speaking does not belong to the directory model, but is still required for Tinzenite to work correctly.
 This information is stored within the hidden .tinzenite directory in a dedicated sub directory.
-
-TODO: Below here everything needs to be adapted...
-This block might be totally doable as files within the meta directory, thus easily allowing updates.
-Proposal for this: make a sub dir in .tinzenite for it.
-Place there one file that is the actual auth block and two folders for the two peer lists.
-Each peer entry in the list is its own file within these folders.
-Thus removing peers can easily be done and even later be added back again.
-The implementation of white lists and black lists is thus easily doable too.
-
-Figure~\ref{json:auth_object} shows the management block that a peer keeps.
-The value of \textit{"user"} allows the allocation of a directory to a user name.
-This is important for example for the support of encrypted third party peers: they can attach accounts to the provided user name for controlling server side access.
-Therefore we also need a way to distinguish multiple synchronized directories from each other: this is the random unique hash stored in \textit{"directory\_id"}.
-Again, this can be used by third party service providers to differentiate the amount of directories that a user can store with them.
-The symmetric key for encrypting and decrypting data for encrypted peers is stored in \textit{"key"}, encrypted in turn by a to be defined scheme that decrypts it upon entry of the correct password by the user.
-
-Note that changing any of the values in the authentication block is not supported initially beyond modifications of the peer lists.
-To change the password or the user name hash, the Tinzenite peer must be removed and added anew.
-While cumbersome it offers the highest level of protection against possible security risks for now.
-
-Finally we also use the authentication block to store and synchronize the peer list of connected peers of a synchronized directory.
-As peers can be removed we need to keep a list of removed peers too.
-Peers that have been removed, thus placing their Tox identification within the removed list, can not be reactivated.
-The peer must be recreated and added as if it were a new peer.
-Since we do not expect a large number of peers to be removed and added over the lifetime of a Tinzenite directory, this list is never trimmed.
-A peer can detect a new peer by noticing its existence upon synchronization with another peer.
-If the new peer Tox identification is not in the removed list it is simply added to the active list.
-This ensures that peers that have been removed will never be added back to the active list which might pose a security risk\footnote{TODO: do something similar for removing files. Note that we WILL have to trim that list though at some point in time, but since we know which peers are active, this should be doable.}.
-
 
 \section{Advanced Features}
 \label{sec:Advanced Features}
