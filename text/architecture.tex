@@ -185,7 +185,7 @@ Peers further away from a network perspective will seem to be online only after 
 We solve this issue by having the peers use a random back off time whenever a request expects an answer\footnote{For example the challenge message for establishing a trusted connection.}.
 
 Since we can not trust the other side of the Tox channel to be a Tinzenite peer, the peer initiating a connection will not advance beyond a step where it expects an answer.
-This means that for example an attacker would either receive only a challenge (to which he can't respond without knowing the keys) or the anonymized model and peer list\footnote{The peer list is the more problematic of the two as it can be used to determine the size of the user's Tinzenite peer network. However to allow encrypted peers to facilitate file transfer between two mutually exclusively online peers, it must know this information. This is mitigated by the fact that Tox IDs are hard to guess and not shared beyond the Tinzenite peer network. TODO: move this to the security section / chapter / whatever?} (which doesn't offer up any useful information as per specifications).
+This means that for example an attacker would either receive only a challenge (to which he can't respond without knowing the keys) or the anonymized model and peer list\footnote{The peer list is the more problematic - see section~\ref{sec:Security Considerations}.} (which doesn't offer up any useful information as per specifications).
 
 \subsection{New Connection Establishment}
 
@@ -271,7 +271,7 @@ Upon receiving the message the other peer starts a Tox file transfer which the i
         }
     }
     \end{lstlisting}
-\caption[Update Object Message]{The message broadcast by a peer to connected peers to notify that an update has happened. Operation can be any value of either create, remove, or modify.}
+\caption[Update Object Message]{The message broadcast by a peer to connected peers to notify that an update has happened. Operation can be any value of either create, remove, move, or modify.}
 \label{json:update_object}
 \end{figure}
 
@@ -288,14 +288,11 @@ In this way we ensure that every message propagates as far as possible without c
 In this section we will discuss the object operations that Tinzenite requires to work.
 Then we will specify the actual architecture of the messages we require for them.
 
-TODO: allow and include a move update?
-May well make a lot a whole bit easier to implement.
-
 \subsection{Operations}
 \label{sub:Operations}
 
-Tinzenite relies on the most basic file operations for manipulating both the model and the actual file directory.
-Therefore we require only the following three operations for the basic case to work:
+Tinzenite relies only on the most basic file operations for manipulating both the model and the actual file directory.
+Therefore we require only the following four operations for the basic case to work:
 
 \begin{description}[leftmargin=5em,style=nextline,noitemsep,nolistsep]
     \item[Create]
@@ -307,19 +304,20 @@ Therefore we require only the following three operations for the basic case to w
         We solve this by storing the models of deleted files until the delete update has propagated to all currently known peers.
         Only then is the model discarded also.
         For this to work Tinzenite must always ensure that files that exist but are listed as deleted are not added back to the model as a new file by continuously checking the deletion list.
+    \item[Move]
+        Moving a file could be represented as a remove followed by a create at the new location.
+        For sake of complexity however we include a move command so that we can better represent both renaming operations and move operations.
+        A move is detected if a file is removed and added somewhere else but retains its content hash.
+        This allows detection of both move and renaming operations.
     \item[Modify]
         Modification is either when the model does not match the file anymore, in which case a new file must be fetched, or the content on the local file has changed.
         This is detected via the content hash.
         In that case the model is updated to match the file again.
 \end{description}
 
-Of course those three operations are not the only operations that a user can do on directories or files.
+These four operations are not the only operations that a user can do on directories or files.
 However they are all the operations that Tinzenite requires so that it can offer full functionality.
-
-Renaming objects can be handled by simply considering the old file to have been deleted and replacing it with the new file.
-This new file will just so happen to share the same content hash.
-Moving objects are handled much in the same way: by removing the file at its old location and creating it anew at the new location.
-Peers are of course free to go about removing and moving files in a more intelligent manner, saving the costs of fetching a renamed or moved file from another peer if the data is already locally available.
+Strictly speaking Tinzenite would actually only require three to work completely: the move operation can be replaced by remove and create (as discussed in section~\ref{sub:An Algebraic Approach to File Synchronization}).
 
 \begin{figure}[htp]
 \centering
@@ -330,7 +328,8 @@ Peers are of course free to go about removing and moving files in a more intelli
 
 Therefore the life cycle of an object is very simple, as can be seen in figure~\ref{diagram:object_operations}.
 Objects can only come into existence via the create operation.
-Once an object it is only possible to either modify the existing object or remove it.
+Objects can either be changed by changing their content, which is a modify operation, or by changing their location, which is a move operation.
+Finally objects can also be removed.
 If an object has been removed it will stay removed unless the user creates a new clone of it.
 
 \subsection{Specifications}
@@ -356,17 +355,18 @@ After the local model has been updated and everything is in order, the peer will
 Figure~\ref{json:update_object} shows how such a message might look – note that the operation is labeled as \textit{"create"} accordingly.
 It is then up to all receiving peers to update their models and fetch the file, then propagate the update accordingly.
 
-\subsubsection{Modify}
-\label{subs:Modify}
+\subsubsection{Modify or Move}
+\label{subs:Modify or Move}
 
 The modification of an object is not as trivially detected as an object creation – for the specifics of update detection see the following section~\ref{sec:Update Detection and Reconciliation}.
 Here we will only concern ourself with what happens once a modification has been detected.
 Again we have two cases for triggering this case: a local file has been modified or the peer has received an update message.
 
 If the modification is detected locally first we update the model to match and then initiate an update message.
-The message is of the format as shown in figure~\ref{json:update_object} with the operation now reading \textit{"modify"} instead.
-If, on the other hand, we receive such a message, we queue the fetching of the updated file.
+The message is of the format as shown in figure~\ref{json:update_object} with the operation now reading \textit{"modify"} or \textit{"move"} instead accordingly.
+If, on the other hand, we receive such a message, we queue the fetching of the updated file in the modify case.
 Upon receiving the changes we apply them and finally propagate the update to the other connected peers.
+If the operation is a simpler move operation the change must not be fetched as it can be executed locally immediately.
 
 \subsubsection{Remove}
 \label{subs:Remove}
@@ -421,15 +421,15 @@ Then we will discuss the interesting case of update reconciliation and how Tinze
 
 Tinzenite continuously checks the directory against the model of the same (see also TODO).
 
+TODO.
+I'm not sure how I can implement this yet and whether I will use an external library for a file watcher.
+I'll get back to this at a later point in time.
+
 %TODO
 TODO write.
 Directories MUST always check sub directories for changes before you can delete or modify them (at creation time they are empty by default).
 Can directories only be removed if all sub files are removed first?
 This could be a sensible way to implement this...
-
-TODO.
-I'm not sure how I can implement this yet and whether I will use an external library for a file watcher.
-I'll get back to this at a later point in time.
 
 \subsection{Update Reconciliation}
 \label{sub:Update Reconciliation}
@@ -466,7 +466,7 @@ By comparing these two attributes between the versions that both peers have we c
 
 \begin{table}[htp]
 \centering
-\begin{tabulary}{\textwidth}{J || J | J }
+\begin{tabulary}{\textwidth}{R || C | C }
       & Local object not modified & Local object modified \\
     \hline \hline
     Remote object not modified & Nothing & Nothing (It is up to the remote peer to actively fetch this update.) \\
@@ -478,7 +478,7 @@ By comparing these two attributes between the versions that both peers have we c
 \end{table}
 
 Figure~\ref{table:version_states_possible} shows the four possible cases.
-Since there is nothing to do independent of our local state if the remote peer has no modifications, Tinzenite will check this first.
+Since there is nothing to do independent of our local state if the remote peer has no modifications\footnote{This is the case because the other peer is responsible for requesting our local changes: the local peer has no obligation to actively push changes.}, Tinzenite will check this first.
 This is done comparing the locally last known version of the object from the remote peer with the version the remote peer how has of the object from the temporarily stored model.
 If it is equal we can continue on to the next object.
 
@@ -594,26 +594,27 @@ While cumbersome it offers the highest level of protection against possible secu
 Within the \textit{"peer"} sub directory Tinzenite stores the information for all known peers for each directory.
 Figure~\ref{json:peer_object} shows the proposed structure of a peer file.
 One of these exist for all known peers.
+The name of each peer is placed here along the Tox ID required for allowing connections to the directory network.
+Peers accept connections from all listed peers based on the Tox ID.
+The encryption attribute is an optimization: peers for which this value is true don't need to receive and decline a challenge.
+It is important to note that the other way around is not true: if the value is false the other peer must still respond successfully to the challenge.
 
 \subsection{Removed Directory}
 \label{sub:Removed Directory}
 
+The \textit{"removed"} directory stores objects that are pending removal as described in section~\ref{subs:Remove}.
+Each object is stored in a sub directory in this directory that is labeled according to their unique hash to avoid name conflicts.
+Objects that are within this directory have a somewhat different model representation due to the need to acknowledge all removed objects throughout the network before being able to truly remove it permanently.
+
 \subsection{Temporary Directory}
 \label{sub:Temporary Directory}
 
-TODO: note that the .tinignore file is for this folder as the contents are peer local.
-
-\subsection{OLD}
-\label{sub:OLD}
-
-Partially fetched files are stored in a special non synchronized sub directory\footnote{TODO: this depends on how I receive the files from Tox. If I get the complete thing this is unnecessary. Would be an easier case because the meta dir would require an ignore file by default.}.
-Another directory is used to store deleted files that have not yet propagated to all peers.
-
-TODO: following is old stuff, merge into above.
-
-Apart from the model of the directory for reconciliation each peer requires further information to work.
-The following short section describes the further information that strictly speaking does not belong to the directory model, but is still required for Tinzenite to work correctly.
-This information is stored within the hidden .tinzenite directory in a dedicated sub directory.
+The \textit{"temp"} directory is used for files that are peer local and is thus excluded from the synchronization by an entry in the \textit{.tinignore} file.
+Objects for which this is the case is temporary models that the peer has received from another peer in the case that storing it is required.
+More importantly Tinzenite uses this directory to store temporary files that are to be sent or received.
+Receiving files are transmitted as blocks by Tox: therefore, to keep the RAM storage requirements down, these blocks are immediately written to disk within this directory.
+This will also allow Tinzenite to resume downloads even in the case that the computer is restarted while the process is still in process (meaning even if the Tinzenite peer must restart).
+Depending on the size of the file, files that are to be transmitted encrypted are also encrypted within this temporary directory.
 
 \section{Advanced Features}
 \label{sec:Advanced Features}
@@ -697,6 +698,7 @@ One way to mitigate this risk is by allowing user defined shadowed files only fo
 The final advanced feature that is vital for the encrypted peer for third party support is how encryption is handled within the protocol.
 Trigger for detecting that a peer is encrypted is when the challenge is not correctly responded or denied (if it outright fails Tinzenite probably should warn the user as it would mean that someone is trying to guess the response).
 Once the other peer has been identified as an encrypted peer it is up to the local peer to enforce the correct encryption on files and obfuscation on model objects.
+Note that encrypted peers can only react to messages and propagate them, never create new messages as happens on trusted peers when a user changes something.
 
 Every attribute that contains user information is encrypted with the encryption key.
 Primarily within the model this means that the object \textit{"name"} is encrypted.

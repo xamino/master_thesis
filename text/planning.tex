@@ -148,7 +148,12 @@ Future work could include web client – should I add this here too?
 TODO: write that App, add shadow file feature
 
 \section{Security Considerations}
+\label{sec:Security Considerations}
 
 TODO: place all the security stuff here...
 Also note how security has been implemented throughout the concept.
 If I place it here I won't have to reexplain it in the architecture chapter.
+
+The peer list is the more problematic of the two as it can be used to determine the size of the user's Tinzenite peer network.
+However to allow encrypted peers to facilitate file transfer between two mutually exclusively online peers, it must know this information.
+This is mitigated by the fact that Tox IDs are hard to guess and not shared beyond the Tinzenite peer network.
