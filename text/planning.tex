@@ -186,12 +186,16 @@ Golang was created at Google in 2007, announced and open sourced in 2009.
 The reason for yet another language is given in the language's frequently asked questions page as: "Go is an attempt to combine the ease of programming of an interpreted, dynamically typed language with the efficiency and safety of a statically typed, compiled language. It also aims to be modern, with support for networked and multicore computing. Finally, it is intended to be fast: it should take at most a few seconds to build a large executable on a single computer."~\cite{web:site:golang:faq}.
 Since Tinzenite is a networked system and offers many possible applications for using concurrent operations it was deemed a good match for this thesis.
 
+Golang, much like Java, comes with a wide range of available default packages to use directly within a program.
+Beyond the basics we will make use of the provided cypher package to implement all encryption related tasks where required.
+
 \subsection{Hadoop}
 
 As the encrypted server peer is intended to run as a service for multiple parallel different Tinzenite peers of multiple users it will require some extra work into how to store the expected large size of the data.
 We will therefore look into using Hadoop~\cite{web:site:hadoop} for data storage.
 This will allow third parties to run a single instance of the server peer even for many users at once while being able to reliably service all data.
 
+%TODO
 TODO: Need to rewrite / add to this once I've actually used Hadoop.
 Currently I'm somewhat uninformed on the exact consequences of using this for the server peer.
 
@@ -215,20 +219,14 @@ By comparing the new version block for block it can then determine which blocks 
 The library is again written in C, therefore requiring a binding for us to be able to directly use its functionality.
 We found and plan to use the binding offered at \cite{web:site:librsync:golang}.
 
-\subsection{NaCL}
-
-TODO: NaCL for encryption of files?
-Need to also look into Golang bindings or equivalent library.
-
 \section{Software Scope}
 \label{sec:Software Scope}
 
-TODO: section for listing actual conceptual work I'll have to do before starting implementation.
-Also consider implementing a working but "quiet" client – no file transfers but reads out communications.
+This section is dedicated to differentiating the possible client applications we will implement as reference implementations.
+Note that the exact feature set is to be determined by the required development time of each feature and thus might lead to some features not being done with the thesis.
+Those features can be implemented at a later time if so desired.
 
-TODO: Or, instead of a quiet client, just start with the protocol implementation before actually enabling Tinzenite to send files.
-
-\subsection{Core Application Library}
+\subsection{Tinzenite Core Library}
 
 TODO: all the core logic should be strictly kept separate from the user side of the software.
 The library will encapsulate the JSON communication and states of said API.
@@ -240,19 +238,6 @@ This means that we will have to define a library API for interfacing with it.
 The library will not handle writing or reading data from the user's disk: these capabilities will be offloaded to the implementation of the client programs.
 This will ensure a maximum of adaptability for clients, meaning that they will not be constrained by the cross platform capabilities of the library itself.
 %TODO of course, Toxcore might pose a problem here... :P
-
-\begin{table}[H]
-\centering
-%TODO clean table formatting for use everywhere... :P
-\begin{tabulary}{\textwidth}{p{2.5cm} || J}
-	Initialize & Prepares Tinzenite and starts the underlying libraries, notably connects to the Tox network. Note that once initialized, files will be sent and written immediately. Settings and options must be handed over on initialization.\\
-	\hline
-    Register Callbacks & Given object will be called for all callbacks.\\
-    %TODO: what callbacks should be specificed? register for all should be an option, but registering for any should be possible too!
-\end{tabulary}
-\caption[Tinzenite Library API]{Methods for accessing the Tinzenite library.}
-\label{table:lib:api}
-\end{table}
 
 TODO: What about helper functions?
 Should be cleanly separate too.
