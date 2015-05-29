@@ -155,26 +155,65 @@ For our experiences and how exactly we used them see chapter~\ref{chap:implement
 
 \subsection{Tox}
 
-TODO: list, explain~\cite{web:site:tox}.
-Possible binding here~\cite{web:site:tox:golang}.
+A core aspect of this thesis is implementing the system using the peer to peer encrypted communication channel provided by the Tox communication suite~\cite{web:site:tox}.
+Initially developed as a Skype replacement the underlying transport layer was also intended to be usable for alternative services.
+We will make use of this and let Tox handle most of the communication aspects.
+
+Unlike many other communication applications, Tox does not require the creation of an account online.
+A user can create as many Tox identities as desired.
+Each identity consists of a public and private key where the public key is the identity of the user~\cite{web:site:tox:crypto}.
+Tox identities are dynamically mapped to the user's current internet address whenever the users are online via a distributed hash table.
+Once two users are online at the same time (off line messaging is still being implemented at this time) and have added each other as friends (which stores the other's Tox identity for future usage) they can establish a communication channel.
+The Tox messaging clients use the channel to facilitate text, audio, and video chats, with support for file transfers.
+All data is encrypted with perfect forward secrecy and sent directly from one client to the other\footnote{Although TCP relay tunneling is sometimes used to punch through obstructions.}.
+
+Tinzenite will build on the peer to peer, distributed, and encrypted communication channel provided.
+In our case each directory on each peer will be its own Tox identity.
+Every directory that is synchronized between multiple devices has its own network of friends which consists of the group of authorized peers.
+For the setup Tinzenite will require the user to allow the initial connection to any single other peer.
+The friend list is then synchronized by Tinzenite between all peers automatically.
+
+Since Tox itself is written in C and we intend to use Golang we require a binding for the Tox core.
+We intend to use an existing binding - specifically this one \cite{web:site:tox:golang} - to allow us to concentrate on the core aspects of our thesis.
 
 \subsection{Golang}
 
-TODO: list, explain
+Our implementation language of choice is Golang, usually referred to by the shorthand Go~\cite{web:site:golang}.
+The language is new to the author of this thesis but will hopefully provide to be an interesting intellectual challenge.
+Since the main language at Ulm University is mostly Java for student work, this thesis will hopefully also offer some insight into the differences between the two.
+
+Golang was created at Google in 2007, announced and open sourced in 2009.
+The reason for yet another language is given in the language's frequently asked questions page as: "Go is an attempt to combine the ease of programming of an interpreted, dynamically typed language with the efficiency and safety of a statically typed, compiled language. It also aims to be modern, with support for networked and multicore computing. Finally, it is intended to be fast: it should take at most a few seconds to build a large executable on a single computer."~\cite{web:site:golang:faq}.
+Since Tinzenite is a networked system and offers many possible applications for using concurrent operations it was deemed a good match for this thesis.
 
 \subsection{Hadoop}
 
-TODO: list, explain
-See~\cite{web:site:hadoop}.
+As the encrypted server peer is intended to run as a service for multiple parallel different Tinzenite peers of multiple users it will require some extra work into how to store the expected large size of the data.
+We will therefore look into using Hadoop~\cite{web:site:hadoop} for data storage.
+This will allow third parties to run a single instance of the server peer even for many users at once while being able to reliably service all data.
+
+TODO: Need to rewrite / add to this once I've actually used Hadoop.
+Currently I'm somewhat uninformed on the exact consequences of using this for the server peer.
 
 \subsection{JSON}
 
-TODO: list, explain
+Since the underlying Tox channel is initially text based we propose to implement all peer to peer communication as a human readable messaging format.
+We will therefore utilize Javascript object notation, short JSON, as a machine readable message format while retaining easy readability for developers.
+As an added bonus Golang has high level support for converting language structures into and from JSON.
 
 \subsection{Librsync}
 
-TODO: librsync~\cite{web:site:librsync} for the delta file transfer?
-Golang binding at~\cite{web:site:librsync:golang}.
+The feature of delta updates is again not a trivial matter and we thus turn to existing solutions to shorten our work load in this regard.
+We intend to utilize librsync~\cite{web:site:librsync} for the implementation of the specifics.
+
+The librsync library is similar to the rsync and xdelta programs.
+Unlike the two however librsync does not require the file in both before and after state to create a delta.
+Requiring both versions of the file would immediately remove any benefit of using file deltas in our case as we would be required to send the file completely anyway.
+Librsync avoids this by only sending a signature of the original version of the file which consists of block-wise hashes of the contents.
+By comparing the new version block for block it can then determine which blocks have been changed and send only the corresponding data.
+
+The library is again written in C, therefore requiring a binding for us to be able to directly use its functionality.
+We found and plan to use the binding offered at \cite{web:site:librsync:golang}.
 
 \subsection{NaCL}
 
