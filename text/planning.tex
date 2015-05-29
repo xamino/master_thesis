@@ -74,29 +74,75 @@ These include for example the ability to share single files within a synchronize
 This feature is excluded because it requires a more complicated security and encryption model that we do not feel capable of implementing securely.
 Security is hard to do correctly, therefore we will limit ourselves before jeopardizing the security of the whole system.
 
+Another feature that would be sensible to have is data obfuscation for encrypted peers.
+This would make it even more difficult for nefarious services to extract any information from a hosted encrypted peer.
+This would however require a more advanced and distinguished transmission mode for encrypted peers.
+Furthermore data deniability is most definitely beyond the capabilities of the proposed implementation (and since the core goal of Tinzenite is data availabilty, somewhat contrary).
+If a user allows full access to the directory to an untrusted party there is little that we can do to mitigate the security breach.
+
+Please note that many further features are not dependent on the capability of the Tinzenite system but on the implementation of peers.
+An example for this is web access to an encrypted storage: this is a feature that explicitly can be implemented in a secure way\footnote{The key for decrypting the data can be unlocked by the user in the web browser by entering the correct pass phrase. Utilizing the shadow file capability the web application would act as a temporary trusted peer until the user is done with his data access.}.
+However we make no guarantee that we will get around to implementing it.
+
 \subsection{Scope}
 
 In this brief section we will go through the exact scope that this work is to fulfill.
+We therefore divide the above features into three categories, ranging from required to have the thesis considered successful to those that can be added as extras.
+Furthermore we we expand on the actual implementation work we intend for each scope definition.
 
-\begin{description}[leftmargin=2em,style=nextline,noitemsep,nolistsep]
-\item[MUST have]
-    These features are required for the thesis to be considered basically successful.
-    This means that the basic fundamentals of the proposed complete scope have been met and are in working order.
-    Specifically this includes a fully working computer client based on a specified API on which all future work can be built on.
-    This client must offer the basics required to get the system to work in a user friendly manner from setup through daily usage.
-    Data transfer between multiple clients must work as expected with collision detection and correct version iteration upon updates.
-\item[SHOULD have]
-    Features in this category are features that built on the MUST have features and are thus not strictly required.
-    In broad terms this includes two important aspects.
-    First and foremost is the capability of having a client that only retains an encrypted version of the data.
-    Built on this the second aspect is the server client that only ever retains an encrypted data set.
-    The server also adds the capability of handling multiple users' data on a distributed file system capable of handling the large data size that are to be expected for multiple concurrent users.
-    Further aspects that fall under the SHOULD have category are delta data updates and automatic key management for encrypted clients.
-\item[COULD have]
-    These features are features that will only be implemented if all previous features have been successfully integrated.
-    They are not required for the thesis to be considered overly successful but would be nice to have to fully complete the proposed scope.
-    Primary aspects that would be added in this phase are a mobile client, most likely as an application for Android, and a web interface for accessing encrypted server clients.
-    A further smaller aspect would be shadow file capabilities so that data can be selectively synchronized on constrained devices, specifically mobile devices for example.
+\subsubsection{MUST Have}
+\label{subs:MUST Have}
+
+These features are required for the thesis to be considered basically successful.
+This means that the basic fundamentals of the proposed complete scope have been met and are in working order.
+Specifically this includes a fully working computer client based on a specified API on which all future work can be built on.
+This client must offer the basics required to get the system to work in a user friendly manner from setup through daily usage.
+Data transfer between multiple clients must work as expected with collision detection and correct version iteration upon updates.
+
+\begin{description}[leftmargin=13em,style=nextline,noitemsep,nolistsep]
+\item[Protocol]
+    The core protocol must be fully capable of the basic file synchronization.
+\item[Peer to Peer Architecture]
+    The base client and library must be capable of running without a centralized system.
+\item[Secure Transport]
+    All communication must be fully encrypted.
+\item[Object Atomicity]
+    Files must not be modified by the system beyond the modifications required for the synchronization.
+\end{description}
+
+\subsubsection{SHOULD Have}
+\label{subs:SHOULD Have}
+
+Features in this category are features that built on the MUST have features and are thus not strictly required.
+In broad terms this includes two important aspects.
+First and foremost is the capability of having a client that only retains an encrypted version of the data.
+Built on this the second aspect is the server client that only ever retains an encrypted data set.
+The server also adds the capability of handling multiple users' data on a distributed file system capable of handling the large data size that are to be expected for multiple concurrent users.
+
+\begin{description}[leftmargin=9em,style=nextline,noitemsep,nolistsep]
+\item[Third Party Client]
+    The capability of supporting encrypted clients should be implemented.
+\item[Client Agnostic]
+    This feature should be a given once we have started implementation of the second peer program.
+\item[Usability]
+    The base usage of Tinzenite should be trivial for most users from a usability perspective.
+\end{description}
+
+\subsubsection{COULD Have}
+\label{subs:COULD Have}
+
+These features are features that will only be implemented if all previous features have been successfully integrated.
+They are not required for the thesis to be considered overly successful but would be nice to have to fully complete the proposed scope.
+Primary aspects that would be added in this phase are a mobile client, most likely as an application for Android, and possibly even a web interface for accessing encrypted server clients.
+A further smaller aspect would be shadow file capabilities so that data can be selectively synchronized on constrained devices, specifically mobile devices for example.
+
+\begin{description}[leftmargin=7.5em,style=nextline,noitemsep,nolistsep]
+\item[Shadow Files]
+    Peers could be allowed to only fetch files that the user explicitly wishes to have synchronized on a peer basis.
+\item[Delta Updates]
+    Transfer times of files over limited bandwidths could be optimized by only transferring the differences between them.
+\item[Concurrency]
+    The core library could support communicating with multiple peers concurrently, thus working around bandwidth constraints.
 \end{description}
 
 \section{Dependencies}
