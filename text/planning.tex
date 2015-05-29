@@ -298,9 +298,15 @@ Not a lot for the communication: Tox still theoretically guarantees a fully encr
 Since the to be stored data is encrypted on trusted peers before being sent, direct access to the user's data should also prove difficult, pending that the encryption algorithm is secure enough.
 
 One possibility that we must protect against is that third party peers are considered as trusted update propagation points.
-Without checks this can be used to introduce bogus updates into the system: random data can be used to overwrite valid files and deletion updates initiated.
+Without checks this can be used to introduce bogus updates into the system: random data can be used to overwrite valid files with the modify operation and create, remove, and move updates initiated.
 The first case can be easily detected without further changes to the core protocol: the inclusion of content hashes within the object model removes this threat.
-As the hash is also encrypted before file transfer
+As the hash is also encrypted before file transfer, decryption and comparison to the decrypted file will flag invalid updates.
+
+% TODO 
+More difficult is catching the illegal introduction of create, move, and remove updates.
+TODO: I require a solution for this.
+How do I ensure that only valid updates are accepted?
+Watch out for providing both original and encrypted original in the same message: this will allow the encryption key to be calculated trivially!
 
 Some information is leaked however.
 While we take care to encrypt object names and obfuscate their paths by replacing all names with the object identification hashes within the object model, we can not easily obfuscate the directory structure, thus theoretically allowing an attacker to gleam information by analyzing it.

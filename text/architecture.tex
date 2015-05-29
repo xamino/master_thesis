@@ -700,9 +700,12 @@ Trigger for detecting that a peer is encrypted is when the challenge is not corr
 Once the other peer has been identified as an encrypted peer it is up to the local peer to enforce the correct encryption on files and obfuscation on model objects.
 Note that encrypted peers can only react to messages and propagate them, never create new messages as happens on trusted peers when a user changes something.
 
+%TODO: may have to put some further work into securing updates between trusted peers via encrypted peers.
+
 Every attribute that contains user information is encrypted with the encryption key.
 Primarily within the model this means that the object \textit{"name"} is encrypted.
 Apart from this attribute only the content hash is also encrypted to ensure that the encrypted file blob is valid\footnote{The hash can not be simply a hash of the encrypted file because this would make introducing bogus but seemingly valid data update trivial. Furthermore encrypted peers must not be capable of changing the hash as updates can not originate from them.}.
+This in turn means that the path attribute must be updated to use the all encrypted hashes instead of the clear text hashes.
 The file itself is fully encrypted when the peer receives a fetch request from the encrypted peer.
 Only ever this encrypted file is to be shared.
 
