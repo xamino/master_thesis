@@ -21,35 +21,58 @@ Expanding on this we hope to implement a peer client for normal computers and a 
 \section{Features}
 \label{sec:Features}
 
-TODO: list features that I want to have.
-These should come from and directly link to the existing software and their weaknesses and strengths.
-The following is not yet the final list but should be a good start.
-These features are system features, NOT single program features: these come below.
-
-TODO UPDATE: where to put single features? need to go SOMEWHERE.
-Need to list: revision history, restoring deleted stuff, shadow files, delta sync, etc.
+This section will define the features we would like Tinzenite to have, including features that for now go beyond the scope of the thesis.
+Therefore we will classify the features by scope for reference afterwards.
+The exact features we would like to have have been synthesized from the existing and related work (see section~\ref{chap:Related and Existing Work}).
 
 \begin{description}[leftmargin=2em,style=nextline,noitemsep,nolistsep]
-\item[API]
-    Design of an extensible API on which all communication between peers will be based.
-    We will specifiy an API based on JSON encoded messages that will be sent as text messages via the Tox protocol.
+\item[Protocol]
+    Design of an extensible protocol on which all communication between peers will be based.
+    We will specify the protocol as JSON encoded messages that will be sent as text messages via the Tox protocol.
+    The open specification will allow the development of compatible peers by others, important for the extensibility of the system.
 \item[Peer to Peer Architecture]
     The complete software suite should run in a direct peer to peer mode to remove the requirement of third parties to facilitate data exchange and to remove the associated security risk.
     This includes the server client as it should be capable of exchanging data even with other server clients.
+    As the underlying Tox provides direct peer to peer connections this should be a given from the beginning.
+    We also hope that this feature will allow clients to synchronize independently of the internet: peers should be capable of utilizing local connections directly.
 \item[Secure Transport]
     All communication between all clients should always be fully end to end encrypted.
-\item[Client Encryption]
-    Any client can be set to only retain an encrypted version of the data.
-    In this case the keys for accessing said data are only stored between unencrypted clients.
-\item[Server Client]
-    A dedicated client for third party servers.
+    This feature is also provided by the underlying communications software.
+\item[Third Party Client]
+    A dedicated client for third party servers that holds only an encrypted copy of the data.
     Notable features are that a single instance should handle multiple users' accounts.
     Since large data amounts are to be expected, the server client will be capable of integrating the Hadoop distributed file system to directly support that.
+    Support for commercialization of a service based on this client will be provided.
+    This includes size and amount distinction based on a per user basis.
+    Notably this feature requires peers to authenticate themselves against each other if they are trusted peers.
+\item[Shadow Files]
+    It should be possible to avoid having to fetch unwanted files for space constrained clients.
+    Dubbed shadow objects, this feature could be important for mobile devices as they run on power and bandwidth constraints.
+\item[Delta Updates]
+    Since it is wasteful to transfer redundant data when only small parts of files are changed, we would like to add the capability to only send the delta difference between two files.
+    Note that this is not required for the core functionality but a nice to have optimization.
+\item[Object Atomicity]
+    We believe that the proposed system should concentrate on one thing and do it well\footnote{Also known as the Unix philosophy.}.
+    Therefore we will not touch the content of files, instead treating them as singular objects.
+    This should help to guarantee that files are never modified by the system beyond the required operations for synchronization.
+    In particular this forbids automatically merging changes in files.
+    All conflicts must be resolved by the user: we do not intend to guess the correct resolution strategy for any file type.
+\item[Client Agnostic]
+    As stated we propose to implement the core protocol functionality in a central library that can be used by different clients independent of their concrete purpose and implementation.
+    Therefore we will implement the library as platform agnostic as possible, relying on clients to implement the required file operations and system calls as required.
+\item[Concurrency]
+    Building on one of the original goals of Golang, we plan on implementing the core library of Tinzenite in an efficient strategy by fully utilizing the language's built in concurrency.
+    This should allow Tinzenite to make full use of multi core systems and avoid locking the library up should a single process lock up.
+\item[Usability]
+    Last but not least in any way we hope to implement reference software in a way that any user can, after the initial setup, use Tinzenite without complex interactions.
+    Once the peers for a directory are setup Tinzenite should run as non-intrusive as possible while retaining the user's confidence in the reliability of the system.
+    An example for a usability feature might for example be a way to easily authenticate newly connected peers via QR codes or word based hashes instead of the full Tox ID.
 \end{description}
 
-TODO: Maybe I should also specifically list what Tinzenite won't be... ?
-For example: what about the ability to publicly share something?
-How can we support this without breaking security?
+There are also features that would be nice to have but are beyond the goal of this thesis.
+These include for example the ability to share single files within a synchronized directory with outside users, as seen in Google Drive or Dropbox for example.
+This feature is excluded because it requires a more complicated security and encryption model that we do not feel capable of implementing securely.
+Security is hard to do correctly, therefore we will limit ourselves before jeopardizing the security of the whole system.
 
 \subsection{Scope}
 
