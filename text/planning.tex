@@ -228,44 +228,86 @@ Those features can be implemented at a later time if so desired.
 
 \subsection{Tinzenite Core Library}
 
-TODO: all the core logic should be strictly kept separate from the user side of the software.
-The library will encapsulate the JSON communication and states of said API.
-Clients will have to register hocks for incoming updates, files, and notify the library of updated (delta) files.
+The Tinzenite core library is the central reference implementation of the protocol.
+It builds directly on the Tox core library and wraps the complete communication of Tinzenite.
+Programs that implement the provided functionality will attach callbacks and call public methods.
 
-To keep development of clients as easy as possible while at the same time keeping the API consisten between them we will separate the core logic for Tinzenite from any user oriented code.
-Therefore the library will encapsulate the Toxcore library and build on it the core features required for clients to work.
-This means that we will have to define a library API for interfacing with it.
-The library will not handle writing or reading data from the user's disk: these capabilities will be offloaded to the implementation of the client programs.
+To keep development of clients as easy as possible while at the same time keeping the protocol consistent between them we will separate the core logic for Tinzenite from any user oriented code.
+The core library will not handle writing or reading data from the user's disk: these capabilities will be offloaded to the implementation of the client programs.
 This will ensure a maximum of adaptability for clients, meaning that they will not be constrained by the cross platform capabilities of the library itself.
-%TODO of course, Toxcore might pose a problem here... :P
+The only limiting factor for porting the library to other platforms is the availability of the required Tox core library beneath it.
 
-TODO: What about helper functions?
-Should be cleanly separate too.
-Notably probably includes delta of files, ...?, etc.
+The core library will also offer helper functions in a sub package to make developing clients as easy as possible.
+These will likely include functions for handling delta updates, encryption, and even update detection.
+Note that file system watchers will be outside the scope of the core library as every platform may require an adapted file watching program.
 
 \subsection{Client Peer}
 
-TODO: list and explain features of basic computer client (how to connect peers, how to encrypt), remember that usability is important.
-Features: password protected everything as with TextSecure?
-Visibility of operations is important.
-Will also need to put some thought into support of shadow files – what exactly are they and what happens when I click on one?
+The basic client peer will be developed first and serve to validate the protocol.
+The primarily targeted platform is Linux, but we hope to offer Microsoft Windows compatible executables too.
+As Golang is not operating system specific porting the peer should not be overly difficult.
+
+This software will be the target of the user's primary interaction with the Tinzenite system.
+Therefore we plan on including full coverage for required assistance in connecting peers and setting them up.
+The client peer as we will implement it will always be a trusted peer and thus store the user's data in clear text on the disk.
+That means that we will have to include file watcher functionality to trigger model updates beyond the capability to receive and apply them.
+Advanced features that may be implemented include but are not limited to support for shadow files and a low system footprint so that the client software can be run continuously without negatively impacting the operating system performance.
+
+From the user's point of view the client software will provide an interface to connect to and accept new and existing peers.
+On the other hand the removal of peers must also be supported from the client software.
+It may also be possible to look into representing the state of synchronization within the file manager so that the user has visual feedback on the directory.
+Furthermore quick and easy to understand system status information should also be available to quickly see the health of the synchronization network.
 
 \subsection{Server Peer}
 
-TODO: write that basically encrypted peer that can handle multiple accounts, stores data via Hadoop.
-Future work could include web client – should I add this here too?
+The server peer will be the second software that we plan on implementing.
+Theoretically we can already rely on the stability and working functionality of the underlying core library for the basic features.
+New here will be everything pertaining to the encryption of data.
+
+As previously stated the server peer will be responsible for possibly many simultaneous users.
+This means we will use the Hadoop file system instead of direct disk storage for storing user data.
+The server peer will also offer us the ability to conduct optimizations into the speed and concurrency of the core library.
+As advanced features we will implement shadow files for implementing storage constraints and support for the possible web application temporary trusted peer.
+Unlike the client peer however we do not require user interfaces (these will be provided by the service provider for the user) and file watchers as updates can not originate from the encrypted data set.
 
 \subsection{Mobile Peer}
 
-TODO: write that App, add shadow file feature
+Finally and if the allotted time allows we intend to complete the Tinzenite software suite by implementing a mobile client for the Android platform~\cite{web:site:android}.
+Apart from the specific touchscreen oriented interface this peer would prove that Tinzenite can run on mobile platforms.
+Further work may be done here to ensure that Tinzenite runs in a mobile friendly way.
+This implies low power consumption and low bandwidth capabilities.
+Therefore support for shadow files and deltas are almost strictly required to meet the needs of a mobile peer.
 
 \section{Security Considerations}
 \label{sec:Security Considerations}
 
-TODO: place all the security stuff here...
-Also note how security has been implemented throughout the concept.
-If I place it here I won't have to reexplain it in the architecture chapter.
+As stated in the motivation for this thesis (see section~\ref{sec:Motivation}) security and privacy are a primary concerns for this thesis.
+As such we will give a brief overview of conceptual thoughts on the security of the proposed work.
+Please note however that a full security review is not the goal of this work or within its scope.
+Nonetheless we hope to offer something secure enough for practical usage.
 
-The peer list is the more problematic of the two as it can be used to determine the size of the user's Tinzenite peer network.
+First we will concern ourselves with a network of only trusted peers.
+In this case Tinzenite should be very secure as long as the user ensures that no man in the middle attack happens on setting up initial connections between new peers.
+All further communications are encrypted and authorized by Tox.
+This in turn means that Tinzenite remains as secure as the software it is built on.
+As with any software all security is for naught should the user make an error or allow the stored data to leak outside of Tinzenite.
+This is especially true as Tinzenite does not offer protection from other programs reading out the stored data in a clear text directory as this would make intended changes increasingly difficult.
+
+So what changes when the server peer or other similarly encrypted third party peers are given access to the network?
+Not a lot for the communication: Tox still theoretically guarantees a fully encrypted and authorized data channel.
+Since the to be stored data is encrypted on trusted peers before being sent, direct access to the user's data should also prove difficult, pending that the encryption algorithm is secure enough.
+
+One possibility that we must protect against is that third party peers are considered as trusted update propagation points.
+Without checks this can be used to introduce bogus updates into the system: random data can be used to overwrite valid files and deletion updates initiated.
+The first case can be easily detected without further changes to the core protocol: the inclusion of content hashes within the object model removes this threat.
+As the hash is also encrypted before file transfer
+
+Some information is leaked however.
+While we take care to encrypt object names and obfuscate their paths by replacing all names with the object identification hashes within the object model, we can not easily obfuscate the directory structure, thus theoretically allowing an attacker to gleam information by analyzing it.
+This is only made easier by the fact that file sizes are roughly the same whether encrypted or not, with an accuracy down to the block size of the encryption scheme.
+The information leak could be mitigated by implementing the core protocol with encrypted oblivious storage~\cite{goldreich1987towards}: however this may well be worthy of its own thesis and thus not further considered here.
+
+Possibly even more problematic is the clear text storage of the peer list even on encrypted peers as it can be used to determine the size of the user's Tinzenite peer network.
 However to allow encrypted peers to facilitate file transfer between two mutually exclusively online peers, it must know this information.
 This is mitigated by the fact that Tox IDs are hard to guess and not shared beyond the Tinzenite peer network.
+They however can be used to monitor the user's devices by utilizing the Tox distributed hash table to get current internet protocol addresses.
