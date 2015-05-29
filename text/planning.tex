@@ -1,17 +1,25 @@
 \chapter{Concept}
 \label{chap:concept}
 
-The following chapter discusses all conceptual work that went into realizing Tinzenite.
+The following chapter discusses all conceptual work that went into creating Tinzenite.
 We will first give an overview of the basic goals of this thesis.
-Then we will discuss the dependencies we chose to base the system on.
-Important for every piece of software is the core data model and API for updating said model.
+Next we will expand on the goals by discussing the features we would like Tinzenite to have and defining their scope.
+Then we will give an overview on the software we would like to build on.
 Finally we will highlight the features and differences of each software aspect of the Tinzenite system.
 
 \section{Basic Goals}
+\label{sec:Basic Goals}
 
-TODO: maybe move broad scope before features? But it builds on features... :P
+The stated goal of Tinzenite is to offer a peer to peer solution for file synchronization that builds on the strengths of Tox.
+It is important to us to build the system in a way that it is secure from unauthorized access by third parties, even if they retain a copy of the data.
+In fact we propose an explicit client for third party support so that third parties can offer a storage peer as a service.
 
-\subsection{Features}
+Therefore we will need to develop a protocol for a decentralized and distributed system that relies on the underlying secure channel provided.
+It seems clear that to minimize developer work we will implement a reference software library for the core protocol.
+Expanding on this we hope to implement a peer client for normal computers and a third party client that securely stores the user's data off site.
+
+\section{Features}
+\label{sec:Features}
 
 TODO: list features that I want to have.
 These should come from and directly link to the existing software and their weaknesses and strengths.
@@ -69,6 +77,7 @@ In this brief section we will go through the exact scope that this work is to fu
 \end{description}
 
 \section{Dependencies}
+\label{sec:Dependencies}
 
 This section briefly highlights the technologies we chose to support our work.
 These range from software solutions to data organization standards.
@@ -95,6 +104,7 @@ TODO: list, explain
 TODO: list, explain
 
 \section{Software Scope}
+\label{sec:Software Scope}
 
 TODO: section for listing actual conceptual work I'll have to do before starting implementation.
 Also consider implementing a working but "quiet" client – no file transfers but reads out communications.
