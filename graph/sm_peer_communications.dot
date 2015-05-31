@@ -14,11 +14,11 @@ digraph statemachine {
     conn -> c [label=" Trusted_Peer:\nTrue "];
     c -> c [label=" Send:Challenge "];
     c -> d [label=" Receive:Challenge:Valid "];
-    c -> epeer [label=" Receive:Challenge:Invalid "];
+    c -> epeer [label=" Receive:Challenge:\nInvalid "];
     d -> d [label=" Send:Model\n+Auth "];
     d -> idle [label=" Receive:Model+Auth "];
     conn -> epeer [label=" Trusted_Peer:\nFalse "];
-    epeer -> epeer [label=" Send:Anon_Model\n+Auth "];
-    epeer -> idle [label=" Receive:Anon_Model\n+Auth "];
+    epeer -> epeer [label=" Send:Meta_Request "]
+    epeer -> idle [label=" Receive:Meta "];
     idle -> end;
 }

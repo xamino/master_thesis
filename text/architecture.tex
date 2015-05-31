@@ -93,8 +93,7 @@ This is the case for Tinzenite because directories are viewed independent from t
 
 The \textit{"identification"} attribute is a random generated hash that uniquely identifies the directory.
 The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory, notably replacing the real names of the directories with the corresponding identification attribute values.
-For trusted peers that store an unencrypted version of the directory the clear text \textit{"name"} is also stored here as an attribute.
-If the peer is encrypted the clear text is replaced by the encrypted version of it.
+The clear text \textit{"name"} is also stored here as an attribute.
 The \textit{"shadow"} flag is used to signal whether the contents of the directory are to be fetched or not.
 Note that this flag is not indicative of whether any nested objects are also shadow objects\footnote{This means that the flag is only read on receiving update messages: if no different policy for the updated object has been set the directory flag is used to determine whether to fetch the actual file or not. Directories are always created on the file system though.}.
 To differentiate between updates we require a \textit{"version"} attribute which represents a vector clock of peers and their last known version.
@@ -125,8 +124,7 @@ Finally an \textit{"objects"} array is where the corresponding sub directories o
 Figure~\ref{json:file_model} shows an example of the proposed JSON structure for representing a file object.
 The \textit{"identification"} attribute is a random generated hash that uniquely identifies the file.
 The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory, notably replacing the real names of the directories with the corresponding identification hashes, and finally the file name with its hash too.
-For trusted peers that store an unencrypted version of the file the clear text \textit{"name"} is also stored here as an attribute.
-If the peer is encrypted the clear text is replaced by the encrypted version of it.
+The clear text \textit{"name"} is also stored here as an attribute.
 To differentiate between updates we require a \textit{"version"} attribute which represents a vector clock of peers and their last known version of this file.
 Important for detecting file changes is the \textit{"content"} attribute which stores a hash of the file's binary blob.
 Finally the \textit{"shadow"} flag is used to notify a peer whether the file is locally accessible or must first be fetched from other peers.
@@ -148,26 +146,27 @@ Therefore a single peer has a base state of no connected other peers.
 
 In this section we will discuss how Tinzenite connects to other peers.
 As we distinguish between trusted and encrypted peers we must determine how the data we will send is to be modified accordingly.
-If the initiating peer is already encrypted, the connection by default will be considered anonymous.
-If not the peer must query the other peer.
+Note that encrypted peers by default will not initiate connections, only trusted peers as they are the only peers capable of working on the user's data.
+
+Once the connection type has been determined it will be applied to all following communication.
+In general this means that compared to a trusted communication all communication to an encrypted peer is used to command it operations.
+Since the encrypted peer has no access to either model or actual objects, all operations must be performed by the trusted peer and relied once encrypted back to the other peer.
+Essentially a trusted peer must first unpack an encrypted peer, apply updates as necessary, send them back, and then repack it.
+This ensures that encrypted peers never have a chance of accessing or modifying any of the data.
+
+Initially the trusted peer queries each connected peer in turn.
 Since we can not trust the other peer to give an honest answer this query must be cryptographically secure.
 Attackers that illegitimately wants to connect to a trusted peer thus can not establish a clear connection without the required keys, which they should not be in possession of\footnote{Tinzenite is designed to avoid revealing keys to outsiders. However outside attacks are beyond its control such as for example key loggers.}.
 Only if the challenge is successfully replied to is the other peer considered trusted and the following communication not anonymous.
 If the challenge is ignored the other peer is considered as an encrypted peer and the following communication adapted to fit.
 Should the challenge be incorrectly answered we can consider possibly warning the user or even blacklisting the peer.
-
-Once the connection type has been determined it will be applied to all following communication.
-In general this means that compared to a trusted communication identifying information and file contents will be encrypted.
-The peer list will be synchronized but the encryption keys not.
-The model exchange and all update messages will be partially encrypted too to preserve data security.
-
 The next and final step to a ready and idle connection state is the exchange of models.
 Once this is done both peers can compare the received models with their local ones and determine which files they need to update from the other peer.
 These messages will then be sent asynchronously over the now established and typified communication channel accordingly.
 
 \begin{figure}[htp]
 \centering
-    \includegraphics[width=\textwidth]{graph/sm_peer_communications}
+    \includegraphics[width=12cm]{graph/sm_peer_communications}
 \caption[Connection State Diagram]{This diagram shows how peers handle the establishment of a connection to a known peer.}
 \label{graph:connection_states}
 \end{figure}
@@ -185,7 +184,7 @@ Peers further away from a network perspective will seem to be online only after 
 We solve this issue by having the peers use a random back off time whenever a request expects an answer\footnote{For example the challenge message for establishing a trusted connection.}.
 
 Since we can not trust the other side of the Tox channel to be a Tinzenite peer, the peer initiating a connection will not advance beyond a step where it expects an answer.
-This means that for example an attacker would either receive only a challenge (to which he can't respond without knowing the keys) or the anonymized model and peer list\footnote{The peer list is the more problematic - see section~\ref{sec:Security Considerations}.} (which doesn't offer up any useful information as per specifications).
+This means that for example an attacker would either receive only a challenge (to which he can't respond without knowing the keys) or the request for the meta information block to which he'd have to correctly answer.
 
 \subsection{New Connection Establishment}
 
@@ -214,7 +213,7 @@ To ensure that no man in the middle attack can happen the users will now have to
 This means allowing the connection there and ideally ensuring that the seen Tox ID is identical with the new peer's Tox ID.
 Once the connection has been confirmed on the other peer a channel is opened.
 
-The peer then receives the authentication block to set up the basic information it requires.
+The peer then receives the authentication block to set up the basic information it requires as part of the bootstrapping process.
 Notably this also allows the user to define the new peer as a trusted peer by entering the password that unlocks the encryption key used for the stored data.
 Access to the key also allows the peer to respond to other peers as a trusted peer.
 The new peer address and its information will now be synchronized throughout the already connected peers once they are available, removing the need to add the new peer manually to each and every one.
@@ -233,9 +232,7 @@ On the other hand encrypted peers can simply remove the data immediately as they
 
 \subsection{Model Management}
 
-This section will describe how a peer receives and sends messages via the Tox channel.
-Since we will be required to distinguish between encrypted and trusted connections we will start off with the trusted one and then briefly highlight the differences required for an encrypted connection.
-
+This section will describe how a trusted peer receives and sends messages via the Tox channel.
 Once the setup has been completed, as seen in section~\ref{sec:conn_management}, the models must be updated if they do not match.
 This happens normally when files and directories have changed through user or system interaction.
 
@@ -281,6 +278,33 @@ Upon receiving an update message the peer will most likely immediately respond w
 If a peer receives a message for an operation that it has already applied, the message is silently discarded.
 This does not disturb the propagation of updates since the peer will have already sent the update to the other connected peers if it has the update already.
 In this way we ensure that every message propagates as far as possible without consuming unnecessary bandwidth\footnote{Peers are of course free to implement message sending in any way since the update messages are not critical for Tinzenite to work. Peers can simply only send update messages to a limited number of peers, down to none if bandwidth is scarce for example in the case of a mobile device.}.
+
+\subsection{Encrypted Management}
+\label{sub:Encrypted Management}
+
+Communication with the encrypted peer is a special case as all operations on the encrypted files must happen on the trusted peer.
+Since the encrypted peers can not resolve conflicts we must ensure that no conflicts ever happen specifically on the encrypted data.
+We do this by ensuring that only ever one trusted peer may synchronize with an encrypted peer by utilizing a locking mechanism.
+
+\subsubsection{Locking Operation}
+\label{subs:Locking Operation}
+
+TODO: signal lock, lock acceptance, lock denial, and lock freeing.
+
+\subsubsection{Request Operation}
+\label{subs:Fetch Operation}
+
+TODO: note difference to fetch operation above.
+Most important that this operation can request the encrypted model of the encrypted peer.
+
+\subsubsection{Put Operation}
+\label{subs:Put Operation}
+
+TODO: command to tell the other peer to receive the following file transfer.
+Places new model and object plus deltas on the encrypted peer, ready for other peers to find later.
+
+%TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
+TODO: ONCE THE ABOVE HAVE BEEN DONE I WILL NEED TO ADD SHORT HINTS TO HOW CONLFICTS ARE RESOLVED FROM THE VIEW POINT OF THE ENCRYPTED PEERS (MEANING BY HAVING TRUSTED PEERS RESOVLE THEM FOR US AND JUST TELLING US IN WHAT STATE TO PLACE THE ENCRYPTED FILES NOW).
 
 \section{Object Operations}
 \label{sec:Object Operations}
@@ -733,16 +757,24 @@ So what changes when the server peer or other similarly encrypted third party pe
 Not a lot for the communication: Tox still theoretically guarantees a fully encrypted and authorized data channel.
 Since the to be stored data is encrypted on trusted peers before being sent, direct access to the user's data should also prove difficult, pending that the encryption algorithm is secure enough.
 
+TODO: change the following, encrypted peers have just become simple data dumps!
 One possibility that we must protect against is that third party peers are considered as trusted update propagation points.
-Without checks this can be used to introduce bogus updates into the system: random data can be used to overwrite valid files with the modify operation and create, remove, and move updates initiated.
+Without checks this can be used to introduce bogus updates into the system: random data can be used to overwrite valid files with the modify operation.
+Furthermore create, remove, and move updates can be initiated without the user's consent.
 The first case can be easily detected without further changes to the core protocol: the inclusion of content hashes within the object model removes this threat.
 As the hash is also encrypted before file transfer, decryption and comparison to the decrypted file will flag invalid updates.
+It is therefore theoretically impossible to overwrite valid data by having access to an encrypted peer.
 
-% TODO
-More difficult is catching the illegal introduction of create, move, and remove updates.
-TODO: I require a solution for this.
-How do I ensure that only valid updates are accepted?
-Watch out for providing both original and encrypted original in the same message: this will allow the encryption key to be calculated trivially!
+The second case is much more difficult to catch: the illegal introduction of create, move, and remove updates.
+We propose to do this via a signing these transactions.
+For this we take the operation name plus the file hash and sign them using a public private key pair which we also store in the \textit{auth.json} file.
+
+TODO: Houston, we have a problem.
+One: encrypted peers must be able to merge.
+Two: encrypted peers are contrary however not to be allowed to introduce changes...
+Solution: encrypted peers are dumb data dumps.
+They only retain the last known version of model and files, all encrypted(!).
+Trusted peers can lock them, synchronize, tell them of differences, and once in sync, re-lock them.
 
 Some information is leaked however.
 While we take care to encrypt object names and obfuscate their paths by replacing all names with the object identification hashes within the object model, we can not easily obfuscate the directory structure, thus theoretically allowing an attacker to gleam information by analyzing it.

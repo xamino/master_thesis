@@ -32,25 +32,24 @@ The exact features we would like to have have been synthesized from the existing
     The open specification will allow the development of compatible peers by others, important for the extensibility of the system.
 \item[Peer to Peer Architecture]
     The complete software suite should run in a direct peer to peer mode to remove the requirement of third parties to facilitate data exchange and to remove the associated security risk.
-    This includes the server client as it should be capable of exchanging data even with other server clients.
     As the underlying Tox provides direct peer to peer connections this should be a given from the beginning.
     We also hope that this feature will allow clients to synchronize independently of the internet: peers should be capable of utilizing local connections directly.
 \item[Secure Transport]
     All communication between all clients should always be fully end to end encrypted.
     This feature is also provided by the underlying communications software.
 \item[Third Party Client]
-    A dedicated client for third party servers that holds only an encrypted copy of the data.
+    A dedicated client for untrusted third party servers that holds only an encrypted copy of the data.
     Notable features are that a single instance should handle multiple users' accounts.
     Since large data amounts are to be expected, the server client will be capable of integrating the Hadoop distributed file system to directly support that.
     Support for commercialization of a service based on this client will be provided.
     This includes size and amount distinction based on a per user basis.
-    Notably this feature requires peers to authenticate themselves against each other if they are trusted peers.
+    For trusted peers this feature requires peers to authenticate themselves against each other to differentiate the level of trust.
 \item[Shadow Files]
     It should be possible to avoid having to fetch unwanted files for space constrained clients.
     Dubbed shadow objects, this feature could be important for mobile devices as they run on power and bandwidth constraints.
 \item[Delta Updates]
     Since it is wasteful to transfer redundant data when only small parts of files are changed, we would like to add the capability to only send the delta difference between two files.
-    Note that this is not required for the core functionality but a nice to have optimization.
+    Note that this is not required for the core functionality to work but a nice to have optimization that can be optionally offered.
 \item[Object Atomicity]
     We believe that the proposed system should concentrate on one thing and do it well\footnote{Also known as the Unix philosophy.}.
     Therefore we will not touch the content of files, instead treating them as singular objects.
@@ -63,6 +62,10 @@ The exact features we would like to have have been synthesized from the existing
 \item[Concurrency]
     Building on one of the original goals of Golang, we plan on implementing the core library of Tinzenite in an efficient strategy by fully utilizing the language's built in concurrency.
     This should allow Tinzenite to make full use of multi core systems and avoid locking the library up should a single process lock up.
+\item[Passive Peer]
+    Since the third party client already stores all data fully encrypted, support for a passive encrypted peer could be easily added.
+    This would allow the user to use storage devices as additional peers which can be activated by pointing Tinzenite at them whenever they are connected.
+    Much like using mobile active peers as data bridges this feature would allow passive peers to also serve as data bridges while keeping the data fully secure.
 \item[Usability]
     Last but not least in any way we hope to implement reference software in a way that any user can, after the initial setup, use Tinzenite without complex interactions.
     Once the peers for a directory are setup Tinzenite should run as non-intrusive as possible while retaining the user's confidence in the reliability of the system.
@@ -77,7 +80,7 @@ Security is hard to do correctly, therefore we will limit ourselves before jeopa
 Another feature that would be sensible to have is data obfuscation for encrypted peers.
 This would make it even more difficult for nefarious services to extract any information from a hosted encrypted peer.
 This would however require a more advanced and distinguished transmission mode for encrypted peers.
-Furthermore data deniability is most definitely beyond the capabilities of the proposed implementation (and since the core goal of Tinzenite is data availabilty, somewhat contrary).
+Furthermore data deniability is most definitely beyond the capabilities of the proposed implementation (and since the core goal of Tinzenite is data availability, somewhat contrary).
 If a user allows full access to the directory to an untrusted party there is little that we can do to mitigate the security breach.
 
 Please note that many further features are not dependent on the capability of the Tinzenite system but on the implementation of peers.
@@ -97,7 +100,7 @@ These features are required for the thesis to be considered basically successful
 This means that the basic fundamentals of the proposed complete scope have been met and are in working order.
 Specifically this includes a fully working computer client based on a specified API on which all future work can be built on.
 This client must offer the basics required to get the system to work in a user friendly manner from setup through daily usage.
-Data transfer between multiple clients must work as expected with collision detection and correct version iteration upon updates.
+Data transfer between multiple trusted clients must work as expected with collision detection and correct version iteration upon updates.
 
 \begin{description}[leftmargin=13em,style=nextline,noitemsep,nolistsep]
 \item[Protocol]
@@ -116,7 +119,7 @@ Data transfer between multiple clients must work as expected with collision dete
 Features in this category are features that built on the MUST have features and are thus not strictly required.
 In broad terms this includes two important aspects.
 First and foremost is the capability of having a client that only retains an encrypted version of the data.
-Built on this the second aspect is the server client that only ever retains an encrypted data set.
+Built on this the second aspect is the server client that only ever retains an encrypted data set for each of multiple users.
 The server also adds the capability of handling multiple users' data on a distributed file system capable of handling the large data size that are to be expected for multiple concurrent users.
 
 \begin{description}[leftmargin=9em,style=nextline,noitemsep,nolistsep]
@@ -143,6 +146,8 @@ A further smaller aspect would be shadow file capabilities so that data can be s
     Transfer times of files over limited bandwidths could be optimized by only transferring the differences between them.
 \item[Concurrency]
     The core library could support communicating with multiple peers concurrently, thus working around bandwidth constraints.
+\item[Passive Peer]
+    Built on top of the functionality required for the third party client we could also implement the capability that Tinzenite can use passive storage as passive encrypted peers.
 \end{description}
 
 \section{Dependencies}
@@ -268,12 +273,21 @@ As previously stated the server peer will be responsible for possibly many simul
 This means we will use the Hadoop file system instead of direct disk storage for storing user data.
 The server peer will also offer us the ability to conduct optimizations into the speed and concurrency of the core library.
 As advanced features we will implement shadow files for implementing storage constraints and support for the possible web application temporary trusted peer.
+
 Unlike the client peer however we do not require user interfaces (these will be provided by the service provider for the user) and file watchers as updates can not originate from the encrypted data set.
+These encrypted peers will also utilize a different subset of the communication protocol as they operate essentially as blind data dumps.
 
 \subsection{Mobile Peer}
 
-Finally and if the allotted time allows we intend to complete the Tinzenite software suite by implementing a mobile client for the Android platform~\cite{web:site:android}.
+If the allotted time allows we intend to complete the Tinzenite software suite by implementing a mobile client for the Android platform~\cite{web:site:android}.
 Apart from the specific touchscreen oriented interface this peer would prove that Tinzenite can run on mobile platforms.
 Further work may be done here to ensure that Tinzenite runs in a mobile friendly way.
 This implies low power consumption and low bandwidth capabilities.
 Therefore support for shadow files and deltas are almost strictly required to meet the needs of a mobile peer.
+
+\subsection{Passive Peer}
+
+While not in itself a program, support for blind passive data dumps as passive peers is another aspect we would love to try out.
+This feature would require of Tinzenite to run the base encrypted peer logic on a given directory without the communication aspect via Tox.
+These passive peers would allow easy backups of directories on passive storage media that can be easily updated by connecting it to an active peer.
+Depending on the remaining time after implementing the active peers we may extend the core library to support this feature as we do not believe it to require overly complicated further development work.
