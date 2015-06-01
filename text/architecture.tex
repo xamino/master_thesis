@@ -72,7 +72,7 @@ This includes file system or operating system dependent properties such as usage
         "identification":"subdir_random_hash",
         "path":"root_hash/subdir_random_hash",
         "name":"subdir",
-        "shadow":"false",
+        "shadow":"true|false",
         "version":{
             "peer_name", "version",
             "peer_name", "version",
@@ -114,7 +114,7 @@ Finally an \textit{"objects"} array is where the corresponding sub directories o
             ...
         },
         "content":"content_hash",
-        "shadow":"false"
+        "shadow":"true|false"
     }
     \end{lstlisting}
 \caption[File JSON Model]{An example of a file JSON object.}
@@ -237,6 +237,7 @@ Once the setup has been completed, as seen in section~\ref{sec:conn_management},
 This happens normally when files and directories have changed through user or system interaction.
 
 \subsubsection{Fetch File Message}
+\label{subs:Fetch File Message}
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
@@ -244,7 +245,7 @@ This happens normally when files and directories have changed through user or sy
         "operation":"fetch",
         "identification":"object_identification_hash",
         "TODO":"ADD LIBRSYNC STUFF HERE",
-        "delta":"true/false"
+        "delta":"true|false"
     }
     \end{lstlisting}
 \caption[Fetch Object Message]{The message sent to initiate a file transfer.}
@@ -262,7 +263,7 @@ Upon receiving the message the other peer starts a Tox file transfer which the i
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
     {
-        "operation":"create",
+        "operation":"create|remove|move|modify",
         "object":{
             ...
         }
@@ -289,22 +290,69 @@ We do this by ensuring that only ever one trusted peer may synchronize with an e
 \subsubsection{Locking Operation}
 \label{subs:Locking Operation}
 
-TODO: signal lock, lock acceptance, lock denial, and lock freeing.
+\begin{figure}[htp]
+    \begin{lstlisting}[language=json,firstnumber=0]
+    {
+        "operation":"lock",
+        "lock":"request|accept|deny|remove",
+        "nonce":"random_number"
+    }
+    \end{lstlisting}
+\caption[Lock Peer Message]{Message for negotiating a lock for a peer.}
+\label{json:lock_peer}
+\end{figure}
+
+Figure~\ref{json:lock_peer} shows the format of the message used to negotiate a lock for an encrypted peer.
+The trusted peer first sends a request to which the encrypted peer can either answer with accept if no lock is currently active or deny if there is.
+Once locked we must ensure that the encrypted peer will not become stuck in a locked state: we do this by having it implement a time out.
+This time out resets after every received interaction from the trusted peer (so that we do not accidentally time out on long file transfers for example).
+If the trusted peer tries an operation while locked out, the encrypted peer will respond with a denial message every time.
+Once the trusted peer is done with its operations it should remove the lock by sending a remove message.
+To make associating locks easier on both sides we include a random nonce for identification purposes within the message.
 
 \subsubsection{Request Operation}
 \label{subs:Fetch Operation}
 
-TODO: note difference to fetch operation above.
-Most important that this operation can request the encrypted model of the encrypted peer.
+\begin{figure}[htp]
+    \begin{lstlisting}[language=json,firstnumber=0]
+    {
+        "operation":"request",
+        "request":"model|object",
+        "object":"object_unique_hash"
+    }
+    \end{lstlisting}
+\caption[Request Message]{Message used to request objects from an encrypted peer. Note that the object attribute isn't including if requesting the model.}
+\label{json:request_message}
+\end{figure}
 
-\subsubsection{Put Operation}
-\label{subs:Put Operation}
+Figure~\ref{json:request_message} highlights the message used to get the encrypted peer to initiate a file transfer of the requested file or the encrypted model.
+Unlike the fetch message seen in section~\ref{subs:Fetch File Message} this operation is explicitely different as it will only result in encrypted files being sent.
+Furthermore the option to request the model from the other peer as an explicit action further differentiates the two operations.
 
-TODO: command to tell the other peer to receive the following file transfer.
-Places new model and object plus deltas on the encrypted peer, ready for other peers to find later.
+The encrypted peer will most likely respond with a file transfer of the requested object if the trusted peer has successfully locked it.
+If not, the trusted peer will receive lock denial messages until it has successfully locked the connection.
 
-%TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO
-TODO: ONCE THE ABOVE HAVE BEEN DONE I WILL NEED TO ADD SHORT HINTS TO HOW CONLFICTS ARE RESOLVED FROM THE VIEW POINT OF THE ENCRYPTED PEERS (MEANING BY HAVING TRUSTED PEERS RESOVLE THEM FOR US AND JUST TELLING US IN WHAT STATE TO PLACE THE ENCRYPTED FILES NOW).
+\subsubsection{Apply Operation}
+\label{subs:Apply Operation}
+
+\begin{figure}[htp]
+    \begin{lstlisting}[language=json,firstnumber=0]
+    {
+        "operation":"apply",
+        "subject":"model|object|remove",
+        "object":"object_unique_hash"
+    }
+    \end{lstlisting}
+\caption[Apply Message]{Message used to apply operations on an encrypted peer. Note that the object attribute isn't including if the subject is the model.}
+\label{json:apply_message}
+\end{figure}
+
+Since files must also be uploaded to the encrypted peer we further require an apply operation message as seen in figure~\ref{json:apply_message}.
+Notably the encrypted peer will overwrite any already existing encrypted object if the receiving object matches the unique identification.
+This means the apply message can be used to both overwrite files with updates and create new files as needed.
+To upload the new model to match the encrypted peer's files the subject is stated as model, resulting in the encrypted peer receiving a new encrypted model and replacing any old version with it.
+To permanently delete files from the encrypted peer in the object removal case the subject is set to remove, with the object identification given.
+On the topic of removing objects from encrypted peers and how it plays together with remvoing objects from trusted peers in a safe manner see also section~\ref{subs:Remove}.
 
 \section{Object Operations}
 \label{sec:Object Operations}
