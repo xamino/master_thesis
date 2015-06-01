@@ -55,6 +55,7 @@ Notably, unlike on the user's disk, the names contained in the path are the iden
 Apart from the above attributes Tinzenite must also track versions of files to allow detection of when files have been updated.
 We will use a vector clock~\cite{mattern1989virtual} to implement this.
 The vector of peers with the associated versions can also be used to detect collisions.
+Note that the vector clock must only store the versions for active, trusted peers as these are the only peers where versions can differ upon user interaction.
 We avoid using a simple dirty flag for reasons of complexity: determining which peer's update to take in which order is not trivially doable with a simple boolean flag.
 
 It is important to note that the model will not be used to store peer reliant information.
@@ -359,6 +360,7 @@ On the topic of removing objects from encrypted peers and how it plays together 
 
 In this section we will discuss the object operations that Tinzenite requires to work.
 Then we will specify the actual architecture of the messages we require for them.
+Finally we discuss how updates propagate through the network, especially concerning the differences between trusted and encrypted peers.
 
 \subsection{Operations}
 \label{sub:Operations}
@@ -409,8 +411,7 @@ If an object has been removed it will stay removed unless the user creates a new
 
 In this section we show the actual definition of the specification and expand on how Tinzenite peers react to them in detail.
 This specification makes up the core functionality of how the data synchronization happens within Tinzenite.
-Note that only trusted peers can initiate object operations: encrypted peers only react to messages and propagate them, never do messages originate from an encrypted peer.
-This is simply the case due to the fact that encrypted peers store the data in a non accessible format, therefore making operating on the data rather pointless.
+Note that these operations are only for trusted peers: since encrypted peers can not work on the stored data they have no need for the file operations.
 
 \subsubsection{Create}
 \label{subs:Create}
@@ -422,10 +423,7 @@ For the first case, if the object does not have a representation within the mode
 Tinzenite creates the correct object representation and inserts it into the correct place in the model.
 In the second case the peer will queue a fetch operation for the required file\footnote{Note that in the case that it receives an update with a set \textit{"shadow"} flag it will not try fetching the file from said peer as it doesn't have a copy of the file. As a special case files within shadowed directories will also never be fetched.}.
 Only when the file has been received completely is it placed at the correct location and the model updated.
-
-After the local model has been updated and everything is in order, the peer will send an update message to all connected peers.
-Figure~\ref{json:update_object} shows how such a message might look – note that the operation is labeled as \textit{"create"} accordingly.
-It is then up to all receiving peers to update their models and fetch the file, then propagate the update accordingly.
+Finally the update is propagated as specified in section~\ref{sub:Update Propagation}.
 
 \subsubsection{Modify or Move}
 \label{subs:Modify or Move}
@@ -437,7 +435,7 @@ Again we have two cases for triggering this case: a local file has been modified
 If the modification is detected locally first we update the model to match and then initiate an update message.
 The message is of the format as shown in figure~\ref{json:update_object} with the operation now reading \textit{"modify"} or \textit{"move"} instead accordingly.
 If, on the other hand, we receive such a message, we queue the fetching of the updated file in the modify case.
-Upon receiving the changes we apply them and finally propagate the update to the other connected peers.
+Upon receiving the changes we apply them and finally propagate the update to the other connected trusted peers.
 If the operation is a simpler move operation the change must not be fetched as it can be executed locally immediately.
 
 \subsubsection{Remove}
@@ -450,9 +448,9 @@ Therefore we require a sort of garbage collection so that we can trim the list f
 
 For the base case we will look at how Tinzenite deletes an object that has been removed locally first, then discuss how the update propagates and what the other peers are required to do to ensure a safe and complete deletion.
 If a deletion happens the object and object model are moved to a special directory outside of the user viewable directory (see also section~\ref{sec:Meta Data}).
-Then the peer copies the list of currently known peers and places it with the object model.
+Then the peer copies the list of currently known trusted peers\footnote{Note that encrypted peers must not be considered because they basically mirror only active peers, meaning they are guaranteed to correctly apply deletions once the active peers have reconciled it.} and places it with the object model.
 Finally it creates a second list of peers in which it places itself.
-This second list contains all the peers that have acknowledged receiving the deletion update.
+This second list contains all the trusted peers that have acknowledged receiving the deletion update.
 
 This deletion update is then propagated to the other peers.
 Each peer receives the update, moves the object and updates the object model, enters itself into the second list, and propagates the update.
@@ -482,6 +480,20 @@ However, since orphaned updates can only happen as long as the peer list has not
 By adding a time stamp we can even detect orphaned deletion updates and warn the user to help in solving the issue.
 Alternatively we can also warn if we have too many possibly orphaned updates, although this would signify a larger issue.
 
+\subsection{Update Propagation}
+\label{sub:Update Propagation}
+
+There are two modes for propagating updates throughout the Tinzenite network.
+The first case is when sending the updates to trusted peers; the other is updating encrypted peers.
+For trusted peers the peer will send an update message (although it must not: remote trusted peers will fetch updates themselves whenever requesting an update on the model).
+Figure~\ref{json:update_object} shows how such a message might look.
+It is then up to all receiving peers to update their models and fetch the file, then propagate the update recursively.
+
+Encrypted peers serve only as storage space for trusted peers and it is thus up to the trusted peers to keep the encrypted peers updated to their own state, merging locally if required.
+Encrypted peers are updated manually by the trusted peer and do not propagate update messages since they are passive communication partners\footnote{Actually encrypted peers are not allowed to send update messages as they can not be trusted to truthfully convey them. See section~\ref{sec:Security Considerations}.}.
+Trusted peers thus update encrypted peers by updating them to match their own models.
+If the model received from an encrypted peer has been updated by another trusted peer, it is up to the local peer to fetch all changes, apply them locally, update its model, then update the encrypted peer to match the merged state of all known changes.
+
 \section{Update Detection and Reconciliation}
 \label{sec:Update Detection and Reconciliation}
 
@@ -509,6 +521,7 @@ This could be a sensible way to implement this...
 The core algorithm for how update reconciliation is done is another important element of Tinzenite.
 The following section introduces it and discusses the ramifications for the system based on the initial model synchronization, leaving aside the per object update messages at first.
 These will be discussed once the basic mode is understood.
+Note that only trusted peers actively resolve updates, although reconciliation can happen for models received from both trusted and encrypted peers.
 
 The reconciliation begins by receiving the model of the other peer.
 The model is temporarily stored so that Tinzenite can work with it until the reconciliation has finished.
@@ -627,6 +640,10 @@ The \textit{"org"} directory consists of two objects: the file containing the au
 Every file will be a simple text file with JSON contents.
 Figure~\ref{json:auth_object} shows the contents of the authentication file.
 
+%TODO
+TODO: rework the following: auth.json is sent explicitly much like model but without key as special message, instead with list of trusted peer IDs.
+Otherwise everything else is encrypted.
+
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
     {
@@ -656,7 +673,7 @@ While cumbersome it offers the highest level of protection against possible secu
     {
         "name":"value",
         "tox_id":"tox_id_value",
-        "encrypted":"bool"
+        "encrypted":"true|false"
     }
     \end{lstlisting}
 \caption[Peer JSON Object]{An example of a peer JSON object. Note that the encryption attribute is not to be trusted, it is only an optimization.}
@@ -704,7 +721,25 @@ Each peer is required to enforce the size restriction given by itself.
 If the size limit has been reached it should only allow further updates as shadow files.
 The interesting case is of course what happens to files that are modified above the limit: we propose either making the file a shadow file as soon as it crosses the limit or allowing modifications to push the size above the limit.
 Since shadow files are already part of the Tinzenite protocol no further protocol support for this feature must be considered.
-It is up to the server peer to implement this in a safe and user friendly way.
+
+\begin{figure}[htp]
+    \begin{lstlisting}[language=json,firstnumber=0]
+    {
+        "operation":"info",
+        "size_limit":"bytes_value",
+        "size_current":"bytes_value",
+        "message":"message_text"
+    }
+    \end{lstlisting}
+\caption[Information Message]{Message used by encrypted peers to send the user messages.}
+\label{json:info_message}
+\end{figure}
+
+For encrypted peers the enforcement of size restrictions must be handled by the active peers.
+This in turn means however that encrypted peers must be capable of denying additional updates.
+The message for this is defined as in figure~\ref{json:info_message}.
+It is sent upon an apply message that exceeds the size limit after the file transfer is denied.
+The trusted peer can then notify the user and possibly even immediately mark the file as a shadow file in the encrypted peers model.
 
 \subsection{Ignored Objects}
 \label{sub:Ignored Objects}
@@ -753,6 +788,7 @@ It will then have to wait for another peer to offer the update where the attribu
 
 The better solution would be to introduce a third value for the shadow attribute: temp.
 This value is to be set when the peer knows of an update and has applied it to its model but has not fetched the binary file update yet.
+Note that this is a local value only and should not be sent to other peers: in that case all instances of temp should be removed with true.
 When connecting to other peers the peer can then request all available files marked as temp and fully update them as required.
 This approach has the added advantage of allowing a peer to notify the user that the file has been updated but not fetched yet.
 We may also use this functionality to signal slow network transfer speeds: the user could at a glance see that the update is pending, possibly avoiding unnecessary conflicts.
@@ -769,22 +805,14 @@ One way to mitigate this risk is by allowing user defined shadowed files only fo
 
 The final advanced feature that is vital for the encrypted peer for third party support is how encryption is handled within the protocol.
 Trigger for detecting that a peer is encrypted is when the challenge is not correctly responded or denied (if it outright fails Tinzenite probably should warn the user as it would mean that someone is trying to guess the response).
-Once the other peer has been identified as an encrypted peer it is up to the local peer to enforce the correct encryption on files and obfuscation on model objects.
-Note that encrypted peers can only react to messages and propagate them, never create new messages as happens on trusted peers when a user changes something.
+If the peer is already marked as a non trusted peer the challenge must never even be offered in the first case of course.
+Once the other peer has been identified as an encrypted peer it is up to the local peer to enforce the correct encryption on files.
 
-%TODO: may have to put some further work into securing updates between trusted peers via encrypted peers.
-
-Every attribute that contains user information is encrypted with the encryption key.
-Primarily within the model this means that the object \textit{"name"} is encrypted.
-Apart from this attribute only the content hash is also encrypted to ensure that the encrypted file blob is valid\footnote{The hash can not be simply a hash of the encrypted file because this would make introducing bogus but seemingly valid data update trivial. Furthermore encrypted peers must not be capable of changing the hash as updates can not originate from them.}.
-This in turn means that the path attribute must be updated to use the all encrypted hashes instead of the clear text hashes.
-The file itself is fully encrypted when the peer receives a fetch request from the encrypted peer.
-Only ever this encrypted file is to be shared.
-
-In the base case each received fetch results in the complete requested file to be encrypted in its current version and sent.
-Note that it well may be impossible to support sending only binary deltas of changes to an encrypted peer due to a single change within the file resulting in a completely new encrypted cipher representation of the file.
-We will look into this again if we have the time to optimize the logic of clients.
-We believe that by choosing a correct block cipher we can optimize this by sending only the changed blocks at the cost of some security.
+Explicitly this means that encrypted peers only receive encrypted blobs of files, not knowing what is in them and where to store them in relation to each other.
+This is all right however: encrypted peers only store the list of all encrypted files with the encrypted directory model alongside.
+Notable exception is the \textit{org} directory as previously discussed.
+Encrypted peers must only be able to send and receive objects as requested by a trusted peer.
+For this each binary encrypted file is stored with the name of its unique identification hash, allowing the encrypted peer to know which files to send and which to overwrite as required.
 
 \section{Security Considerations}
 \label{sec:Security Considerations}
@@ -805,30 +833,18 @@ So what changes when the server peer or other similarly encrypted third party pe
 Not a lot for the communication: Tox still theoretically guarantees a fully encrypted and authorized data channel.
 Since the to be stored data is encrypted on trusted peers before being sent, direct access to the user's data should also prove difficult, pending that the encryption algorithm is secure enough.
 
-TODO: change the following, encrypted peers have just become simple data dumps!
-One possibility that we must protect against is that third party peers are considered as trusted update propagation points.
-Without checks this can be used to introduce bogus updates into the system: random data can be used to overwrite valid files with the modify operation.
-Furthermore create, remove, and move updates can be initiated without the user's consent.
-The first case can be easily detected without further changes to the core protocol: the inclusion of content hashes within the object model removes this threat.
-As the hash is also encrypted before file transfer, decryption and comparison to the decrypted file will flag invalid updates.
-It is therefore theoretically impossible to overwrite valid data by having access to an encrypted peer.
-
-The second case is much more difficult to catch: the illegal introduction of create, move, and remove updates.
-We propose to do this via a signing these transactions.
-For this we take the operation name plus the file hash and sign them using a public private key pair which we also store in the \textit{auth.json} file.
-
-TODO: Houston, we have a problem.
-One: encrypted peers must be able to merge.
-Two: encrypted peers are contrary however not to be allowed to introduce changes...
-Solution: encrypted peers are dumb data dumps.
-They only retain the last known version of model and files, all encrypted(!).
-Trusted peers can lock them, synchronize, tell them of differences, and once in sync, re-lock them.
+Since encrypted peers receive the model and all associated files only fully encrypted, this should not provide to be a problem from a security standpoint.
+Trying to overwrite user data by replacing the binary blobs with random blobs is detected by trusted peers when comparing the unencrypted file with its hash from the unencrypted model: if they don't match the update can be marked as invalid and corresponding action taken.
+Detecting a wrong model is trivially done by decrypting it and checking if it is valid syntax.
 
 Some information is leaked however.
-While we take care to encrypt object names and obfuscate their paths by replacing all names with the object identification hashes within the object model, we can not easily obfuscate the directory structure, thus theoretically allowing an attacker to gleam information by analyzing it.
+Since we encrypt on a per file basis it is theoretically possible to analyze file usage associated with size to identify pieces of the user's directory.
 This is only made easier by the fact that file sizes are roughly the same whether encrypted or not, with an accuracy down to the block size of the encryption scheme.
 The information leak could be mitigated by implementing the core protocol with encrypted oblivious storage~\cite{goldreich1987towards}: however this may well be worthy of its own thesis and thus not further considered here.
 
+% TODO possible future work!
+
+TODO: rewrite the following after introducing sending meta info to encrypted peers.
 Possibly even more problematic is the clear text storage of the peer list even on encrypted peers as it can be used to determine the size of the user's Tinzenite peer network.
 However to allow encrypted peers to facilitate file transfer between two mutually exclusively online peers, it must know this information.
 This is mitigated by the fact that Tox IDs are hard to guess and not shared beyond the Tinzenite peer network.
