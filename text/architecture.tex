@@ -662,10 +662,6 @@ The \textit{"org"} directory consists of two objects: the file containing the au
 Every file will be a simple text file with JSON contents.
 Figure~\ref{json:auth_object} shows the contents of the authentication file.
 
-%TODO
-TODO: rework the following: auth.json is sent explicitly much like model but without key as special message, instead with list of trusted peer IDs.
-Otherwise everything else is encrypted.
-
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
     {
@@ -839,14 +835,22 @@ For this each binary encrypted file is stored with the name of its unique identi
 \subsection{File Versioning}
 \label{sub:File Versioning}
 
-TODO: state how it would be implemented etc.
-Probably future work however, may move this at a later point.
+Another advanced feature that would be very nice to have and close the gap of feature parity between Tinzenite and other existing services would be the capability to offer file versions built directly into the protocol.
+Indeed the core protocol would not even have to be changed to support this: all that is required is the capability to keep old files for a specific time somewhere where the peer can reinstate them if the user wishes it.
 
-\subsubsection{Delta Updates}
-\label{subs:Delta Updates}
+Therefore all that is needed is a definition of space where these old files can be stored.
+We propose placing these files in a further directory labeled \textit{"versions"} within the \textit{.tinzenite} directory.
+For each file object a directory with the name of the file identification is created as required where old versions can be stored.
+To differentiate the multiple copies each file must be uniquely named: we propose a simple number for each version that increments.
 
-TODO: note how we propose this to work with librsync.
-Also note that for future work we can delta model updates if available / required (good for large models).
+It is important to be able to limit the amount of versions stored to keep the size of the directory manageable.
+We believe that this could simple be done by telling any single client how many different copies of files are to be stored, for example the last six.
+If a new version is added and it exceeds this self imposed limit the peer can simply trigger a normal removal, thus deleting the version from all peers once the removal has propagated.
+
+Further work could then be done to decrease the size of the versions by only keeping one base copy and storing only binary deltas.
+Again this would require somewhat extensive work on peer logic but no change in the core protocol.
+To differentiate full copies and delta files we propose an identifying name change would suffice: by appending a special marker behind the version number we could differentiate the type.
+The actual synchronization of deltas or full binaries is again already fully implemented in the core protocol and would work as any other file.
 
 \section{Security Considerations}
 \label{sec:Security Considerations}
@@ -878,10 +882,18 @@ The information leak could be mitigated by implementing the core protocol with e
 
 % TODO possible future work!
 
-TODO: rewrite the following after introducing sending meta info to encrypted peers.
 Possibly even more problematic is the clear text storage of the peer list even on encrypted peers as it can be used to determine the size of the user's Tinzenite peer network.
 However to allow encrypted peers to facilitate file transfer between two mutually exclusively online peers, it must know this information.
 This is mitigated by the fact that Tox IDs are hard to guess and not shared beyond the Tinzenite peer network.
-They however can be used to monitor the user's devices by utilizing the Tox distributed hash table to get current internet protocol addresses.
+They however can be used to monitor the user's devices by utilizing the Tox distributed hash table to get current internet protocol addresses\footnote{TODO: IIRC Tox actually mitigates this via a form of onion routing. Take a look if the sentence is correct!}.
 
-TODO: Invalid challenge --> kick
+A further note on the challenge response part when establishing a known connection between two peers, as seen in section~\ref{sec:conn_management}.
+We have defined that the connection is not established if the response is invalid.
+As a bonus feature a client may well even actively warn the user of the invalid response, allowing the user to decide how to react correctly.
+The user could either remove the peer from the directory network or initiate it anew so that everything returns to working order.
+It should never happen that an encrypted peer answers invalidly even once if the system is not compromised and running as specified.
+Therefore we may consider immediately removing the peer as if the user had manually removed it to ensure tighter security – of course the fact that a peer had been removed should still be immediately communicated to the user.
+
+TODO: change the auth.json file to include trusted peer list.
+Thus even peers can be sent only encrypted save for the list in auth.json which is used to determine if a peer may connect by the encrypted peer.
+It is then important the clear version of the auth.json file is NEVER pulled so that no peers can be introduced by the server peer.
