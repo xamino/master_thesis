@@ -1,6 +1,12 @@
 \chapter{Architecture}
 \label{chap:architecture}
 
+NOTICE \& TODO: Thanks for reading.
+Note that the architecture is not fully done yet, pending some actual implementation code.
+Therefore the challenge response method is not further defined yet when establishing a connection; the sending of a special version of the auth.json file to encrypted peers is not yet integrated here (although required as the encrypted peer needs a list of trusted peers for access control too); the security considerations will probably need to be fleshed out a bit more; and various other subtleties.
+This will all be fixed for the final version however of course, no worries.
+Have fun!
+
 The following section will define the data model each peer keeps of its data and specify the API for updating it between peers.
 First we will define and explain the model each peer keeps of the stored data.
 Next the messages used to facilitate the update of the model between clients will be discussed.
