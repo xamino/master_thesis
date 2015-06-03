@@ -71,7 +71,7 @@ This includes file system or operating system dependent properties such as usage
     \begin{lstlisting}[language=json,firstnumber=0]
     {
         "identification":"subdir_random_hash",
-        "path":"root_hash/subdir_random_hash",
+        "path":"root_hash",
         "name":"subdir",
         "shadow":"true|false",
         "version":{
@@ -93,12 +93,18 @@ A directory is somewhat special as it does not require the synchronization of an
 This is the case for Tinzenite because directories are viewed independent from their content in most cases.
 
 The \textit{"identification"} attribute is a random generated hash that uniquely identifies the directory.
-The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory, notably replacing the real names of the directories with the corresponding identification attribute values.
+The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory to where the directory lies, notably replacing the real names of the directories with the corresponding identification attribute values.
 The clear text \textit{"name"} is also stored here as an attribute.
 The \textit{"shadow"} flag is used to signal whether the contents of the directory are to be fetched or not.
 Note that this flag is not indicative of whether any nested objects are also shadow objects\footnote{This means that the flag is only read on receiving update messages: if no different policy for the updated object has been set the directory flag is used to determine whether to fetch the actual file or not. Directories are always created on the file system though.}.
 To differentiate between updates we require a \textit{"version"} attribute which represents a vector clock of peers and their last known version.
+
+% TODO: later maybe add an example model.json somewhere and link to it once Tinzenite runs?
+
 Finally an \textit{"objects"} array is where the corresponding sub directories or files are recursively placed.
+To model a directory as shown for example in figure~\ref{list:model} Tinzenite begins the model with directory model for the root directory.
+Within the objects array are then the two files and the two further directories.
+Each directory object in turn also stores sub objects in its object array, thus recursively modeling an entire directory.
 
 \subsection{File Model}
 \label{sec:file_model}
@@ -107,7 +113,7 @@ Finally an \textit{"objects"} array is where the corresponding sub directories o
     \begin{lstlisting}[language=json,firstnumber=0]
     {
         "identification":"file_random_hash",
-        "path":"root_hash/subdir_random_hash/file_random_hash",
+        "path":"root_hash/subdir_random_hash",
         "name":"file",
         "version":{
             "peer_name", "version",
@@ -124,7 +130,7 @@ Finally an \textit{"objects"} array is where the corresponding sub directories o
 
 Figure~\ref{json:file_model} shows an example of the proposed JSON structure for representing a file object.
 The \textit{"identification"} attribute is a random generated hash that uniquely identifies the file.
-The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory, notably replacing the real names of the directories with the corresponding identification hashes, and finally the file name with its hash too.
+The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory, notably replacing the real names of the directories with the corresponding identification hashes.
 The clear text \textit{"name"} is also stored here as an attribute.
 To differentiate between updates we require a \textit{"version"} attribute which represents a vector clock of peers and their last known version of this file.
 Important for detecting file changes is the \textit{"content"} attribute which stores a hash of the file's binary blob.
@@ -187,6 +193,10 @@ We solve this issue by having the peers use a random back off time whenever a re
 Since we can not trust the other side of the Tox channel to be a Tinzenite peer, the peer initiating a connection will not advance beyond a step where it expects an answer.
 This means that for example an attacker would either receive only a challenge (to which he can't respond without knowing the keys) or the request for the meta information block to which he'd have to correctly answer.
 
+A short note on closing a connection: once established this happens when the underlying Tox channel is terminated.
+Furthermore if something interrupts the establishment of a connection, both peers will simply reset to the starting point.
+Establishing a connection is done every time a peer reconnects.
+
 \subsection{New Connection Establishment}
 
 The previous section described how Tinzenite connects to known peers.
@@ -237,26 +247,36 @@ This section will describe how a trusted peer receives and sends messages via th
 Once the setup has been completed, as seen in section~\ref{sec:conn_management}, the models must be updated if they do not match.
 This happens normally when files and directories have changed through user or system interaction.
 
-\subsubsection{Fetch File Message}
-\label{subs:Fetch File Message}
+\subsubsection{Request Operation}
+\label{subs:Request Operation}
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
     {
-        "operation":"fetch",
-        "identification":"object_identification_hash",
-        "TODO":"ADD LIBRSYNC STUFF HERE",
-        "delta":"true|false"
+        "operation":"request",
+        "request":"model|object",
+        "object":"object_unique_hash",
+        "delta":"true|false",
+        "TODO":"ADD LIBRSYNC STUFF HERE"
     }
     \end{lstlisting}
-\caption[Fetch Object Message]{The message sent to initiate a file transfer.}
-\label{json:fetch_file}
+\caption[Request Message]{Message used to request objects from another peer. Note that if requesting the model the object attribute can be omitted.}
+\label{json:request_message}
 \end{figure}
 
-Figure~\ref{json:fetch_file} shows how a message to initiate a file transfer is structured.
+Figure~\ref{json:request_message} shows how a message to initiate a file transfer is structured.
 Note that apart from the identification we require no further information – the model has been independently updated.
-Now the peers need only get the binary files.
+Now the peers need only actually get the binary files.
 Upon receiving the message the other peer starts a Tox file transfer which the initiating peer knows to accept as it just requested it.
+
+By switching the request attribute from object to model the other peer, whether encrypted or trusted, can be commanded to resend its current model.
+In that case no further attributes are required and can be left out, although it may be possible to utilize the delta capability on large models.
+This is required for example in the case that the other peer does not send singular object update messages for the reason of conserving power or bandwidth.
+Thus periodically actively requesting a full model update will still allow updates to propagate independent of individual update messages at some point in time.
+
+This message is also explicitly used to get an encrypted peer to initiate a file transfer of the requested file or the encrypted model.
+The encrypted peer will most likely respond with a file transfer of the requested object if the trusted peer has successfully locked it.
+If not, the trusted peer will receive lock denial messages until it has successfully locked the connection.
 
 \subsubsection{Update Object Message}
 \label{subs:Update Object Message}
@@ -311,28 +331,6 @@ If the trusted peer tries an operation while locked out, the encrypted peer will
 Once the trusted peer is done with its operations it should remove the lock by sending a remove message.
 To make associating locks easier on both sides we include a random nonce for identification purposes within the message.
 
-\subsubsection{Request Operation}
-\label{subs:Fetch Operation}
-
-\begin{figure}[htp]
-    \begin{lstlisting}[language=json,firstnumber=0]
-    {
-        "operation":"request",
-        "request":"model|object",
-        "object":"object_unique_hash"
-    }
-    \end{lstlisting}
-\caption[Request Message]{Message used to request objects from an encrypted peer. Note that the object attribute isn't including if requesting the model.}
-\label{json:request_message}
-\end{figure}
-
-Figure~\ref{json:request_message} highlights the message used to get the encrypted peer to initiate a file transfer of the requested file or the encrypted model.
-Unlike the fetch message seen in section~\ref{subs:Fetch File Message} this operation is explicitely different as it will only result in encrypted files being sent.
-Furthermore the option to request the model from the other peer as an explicit action further differentiates the two operations.
-
-The encrypted peer will most likely respond with a file transfer of the requested object if the trusted peer has successfully locked it.
-If not, the trusted peer will receive lock denial messages until it has successfully locked the connection.
-
 \subsubsection{Apply Operation}
 \label{subs:Apply Operation}
 
@@ -354,6 +352,29 @@ This means the apply message can be used to both overwrite files with updates an
 To upload the new model to match the encrypted peer's files the subject is stated as model, resulting in the encrypted peer receiving a new encrypted model and replacing any old version with it.
 To permanently delete files from the encrypted peer in the object removal case the subject is set to remove, with the object identification given.
 On the topic of removing objects from encrypted peers and how it plays together with remvoing objects from trusted peers in a safe manner see also section~\ref{subs:Remove}.
+
+\subsection{Message Timing}
+\label{sub:Message Timing}
+
+Now we must define when which messages are sent.
+For the initial creation of a connection the order of messages can be seen in figure~\ref{diagram:new_connection}.
+Once the connection is established we must differentiate between trusted peers and encrypted peers.
+
+For trusted peers we propose the following message timing to enable rapid propagation of updates throughout the network.
+Upon connection both peers will first exchange models, providing essentially a snapshot of differences since the last synchronization.
+Peers will thus immediately begin updating each other so that the directory returns to the same state on both instances.
+If local changes happen during or after the model has been exchanged the update messages are used to notify the other model of the update without having to retransmit the entire model again.
+However to ensure that all updates do propagate at some point, ideally rather faster than longer, we propose that each peer resend the model every few units.
+The exact spacing of when the complete model is resent is again up to the peer itself and can be adjusted per instance.
+This allows mobile peers to work more energy efficient by synchronizing less often in comparison to desktop peers where power and bandwidth usage don't play a prominent role.
+
+Since encrypted peers work passively it is again up to the trusted peers to ensure that they are queried regularly.
+Once a lock has been established it is important that the trusted peer completes the exchange of models and files rapidly so that the encrypted peer can be unlocked again for other trusted peers.
+This is enforced with a lock time out if no further messages are received from the trusted peer or it disconnects while locked.
+
+From the user perspective we hope to offer easy to use and clearly labeled settings that allow great flexibility in how fast directory synchronization happens within Tinzenite for all relevant peers.
+Therefore the client peer and the mobile peer will offer sane default values that can be modified if the user so wishes.
+We will make sure to highlight the effects of setting the timing values to extremes of course as too great or too little time between messages will result in deficiencies for the user experience.
 
 \section{Object Operations}
 \label{sec:Object Operations}
@@ -485,8 +506,9 @@ Alternatively we can also warn if we have too many possibly orphaned updates, al
 
 There are two modes for propagating updates throughout the Tinzenite network.
 The first case is when sending the updates to trusted peers; the other is updating encrypted peers.
-For trusted peers the peer will send an update message (although it must not: remote trusted peers will fetch updates themselves whenever requesting an update on the model).
+For trusted peers the peer may send an update message.
 Figure~\ref{json:update_object} shows how such a message might look.
+At the latest the update propagates when peers exchange models as discussed in section~\ref{sub:Message Timing}.
 It is then up to all receiving peers to update their models and fetch the file, then propagate the update recursively.
 
 Encrypted peers serve only as storage space for trusted peers and it is thus up to the trusted peers to keep the encrypted peers updated to their own state, merging locally if required.
@@ -814,6 +836,18 @@ Notable exception is the \textit{org} directory as previously discussed.
 Encrypted peers must only be able to send and receive objects as requested by a trusted peer.
 For this each binary encrypted file is stored with the name of its unique identification hash, allowing the encrypted peer to know which files to send and which to overwrite as required.
 
+\subsection{File Versioning}
+\label{sub:File Versioning}
+
+TODO: state how it would be implemented etc.
+Probably future work however, may move this at a later point.
+
+\subsubsection{Delta Updates}
+\label{subs:Delta Updates}
+
+TODO: note how we propose this to work with librsync.
+Also note that for future work we can delta model updates if available / required (good for large models).
+
 \section{Security Considerations}
 \label{sec:Security Considerations}
 
@@ -849,3 +883,5 @@ Possibly even more problematic is the clear text storage of the peer list even o
 However to allow encrypted peers to facilitate file transfer between two mutually exclusively online peers, it must know this information.
 This is mitigated by the fact that Tox IDs are hard to guess and not shared beyond the Tinzenite peer network.
 They however can be used to monitor the user's devices by utilizing the Tox distributed hash table to get current internet protocol addresses.
+
+TODO: Invalid challenge --> kick

@@ -5,20 +5,20 @@ digraph statemachine {
     conn [label="Connected"];
     epeer [label="Encrypted Peer"];
     c [label="Unauthorized"];
-    d [label="Unencrypted Authorized"];
+    d [label="Unencrypted\nAuthorized"];
     idle [label="Idle"];
     end [shape="circle" width="0.2" style="bold" label=""];
     // define
     start -> a;
     a -> conn [label=" Connect "];
     conn -> c [label=" Trusted_Peer:\nTrue "];
+    c -> end [label=" Receive:\nChallenge:\nInvalid "];
     c -> c [label=" Send:Challenge "];
-    c -> d [label=" Receive:Challenge:Valid "];
-    c -> epeer [label=" Receive:Challenge:\nInvalid "];
+    c -> d [label=" Receive:\nChallenge:\nValid "];
     d -> d [label=" Send:Model\n+Auth "];
     d -> idle [label=" Receive:Model+Auth "];
     conn -> epeer [label=" Trusted_Peer:\nFalse "];
     epeer -> epeer [label=" Send:Meta_Request "]
     epeer -> idle [label=" Receive:Meta "];
-    idle -> end;
+    idle -> end [label=" Disconnected "];
 }

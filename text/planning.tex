@@ -262,6 +262,10 @@ From the user's point of view the client software will provide an interface to c
 On the other hand the removal of peers must also be supported from the client software.
 It may also be possible to look into representing the state of synchronization within the file manager so that the user has visual feedback on the directory.
 Furthermore quick and easy to understand system status information should also be available to quickly see the health of the synchronization network.
+We also plan on offering the option on pausing the peer from synchronizing so that the user can retain control over bandwidth usage.
+
+Finally as an added bonus the client peer can detect conflicts and offer help in resolving them.
+Ideally the software would at least highlight conflicts for the user so that they can be resolved in a timely fashion even if the directory consists of a large amount of files.
 
 \subsection{Server Peer}
 
@@ -284,6 +288,7 @@ Apart from the specific touchscreen oriented interface this peer would prove tha
 Further work may be done here to ensure that Tinzenite runs in a mobile friendly way.
 This implies low power consumption and low bandwidth capabilities.
 Therefore support for shadow files and deltas are almost strictly required to meet the needs of a mobile peer.
+When first starting up the mobile peer for the first time it may even be beneficial to ask the user whether the mobile peer should pull all data or just immediately mark everything as shadow objects, thus requiring the user to mark files manually to be fetched locally but reducing bandwidth requirements enormously.
 
 \subsection{Passive Peer}
 
