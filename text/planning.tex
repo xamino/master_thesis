@@ -14,9 +14,8 @@ The stated goal of Tinzenite is to offer a peer to peer solution for file synchr
 It is important to us to build the system in a way that it is secure from unauthorized access by third parties, even if they retain a copy of the data.
 In fact we propose an explicit client for third party support so that third parties can offer a storage peer as a service.
 
-Therefore we will need to develop a protocol for a decentralized and distributed system that relies on the underlying secure channel provided.
-It seems clear that to minimize developer work we will implement a reference software library for the core protocol.
-Expanding on this we hope to implement a peer client for normal computers and a third party client that securely stores the user's data off site.
+Therefore we will need to develop a protocol for a decentralized and distributed system that relies on the underlying secure channel.
+Based on this we hope to implement a proof of concept peer client for normal computers and a third party client that securely stores the user's data off site.
 
 \section{Features}
 \label{sec:Features}
@@ -25,6 +24,7 @@ This section will define the features we would like Tinzenite to have, including
 Therefore we will classify the features by scope for reference afterwards.
 The exact features we would like to have have been synthesized from the existing and related work (see section~\ref{chap:Related and Existing Work}).
 
+%TODO the features should be less specific here: exact stuff I'd put into the description of each software piece I wrote.
 \begin{description}[leftmargin=2em,style=nextline,noitemsep,nolistsep]
 \item[Protocol]
     Design of an extensible protocol on which all communication between peers will be based.
@@ -39,11 +39,6 @@ The exact features we would like to have have been synthesized from the existing
     This feature is also provided by the underlying communications software.
 \item[Third Party Client]
     A dedicated client for untrusted third party servers that holds only an encrypted copy of the data.
-    Notable features are that a single instance should handle multiple users' accounts.
-    Since large data amounts are to be expected, the server client will be capable of integrating the Hadoop distributed file system to directly support that.
-    Support for commercialization of a service based on this client will be provided.
-    This includes size and amount distinction based on a per user basis.
-    For trusted peers this feature requires peers to authenticate themselves against each other to differentiate the level of trust.
 \item[Shadow Files]
     It should be possible to avoid having to fetch unwanted files for space constrained clients.
     Dubbed shadow objects, this feature could be important for mobile devices as they run on power and bandwidth constraints.
@@ -61,7 +56,6 @@ The exact features we would like to have have been synthesized from the existing
     Therefore we will implement the library as platform agnostic as possible, relying on clients to implement the required file operations and system calls as required.
 \item[Concurrency]
     Building on one of the original goals of Golang, we plan on implementing the core library of Tinzenite in an efficient strategy by fully utilizing the language's built in concurrency.
-    This should allow Tinzenite to make full use of multi core systems and avoid locking the library up should a single process lock up.
 \item[Passive Peer]
     Since the third party client already stores all data fully encrypted, support for a passive encrypted peer could be easily added.
     This would allow the user to use storage devices as additional peers which can be activated by pointing Tinzenite at them whenever they are connected.
@@ -81,7 +75,7 @@ Another feature that would be sensible to have is data obfuscation for encrypted
 This would make it even more difficult for nefarious services to extract any information from a hosted encrypted peer.
 This would however require a more advanced and distinguished transmission mode for encrypted peers.
 Furthermore data deniability is most definitely beyond the capabilities of the proposed implementation (and since the core goal of Tinzenite is data availability, somewhat contrary).
-If a user allows full access to the directory to an untrusted party there is little that we can do to mitigate the security breach.
+If a user allows full access to the directory to an untrusted party there is little that we can do from a software design point to mitigate the security breach.
 
 Please note that many further features are not dependent on the capability of the Tinzenite system but on the implementation of peers.
 An example for this is web access to an encrypted storage: this is a feature that explicitly can be implemented in a secure way\footnote{The key for decrypting the data can be unlocked by the user in the web browser by entering the correct pass phrase. Utilizing the shadow file capability the web application would act as a temporary trusted peer until the user is done with his data access.}.
@@ -268,6 +262,14 @@ Finally as an added bonus the client peer can detect conflicts and offer help in
 Ideally the software would at least highlight conflicts for the user so that they can be resolved in a timely fashion even if the directory consists of a large amount of files.
 
 \subsection{Server Peer}
+
+%TODO some of these below are too specific, some won't be implemented.
+TODO: intergrate the following here?
+Notable features are that a single instance should handle multiple users' accounts.
+Since large data amounts are to be expected, the server client will be capable of integrating the Hadoop distributed file system to directly support that.
+Support for commercialization of a service based on this client will be provided.
+This includes size and amount distinction based on a per user basis.
+For trusted peers this feature requires peers to authenticate themselves against each other to differentiate the level of trust.
 
 The server peer will be the second software that we plan on implementing.
 Theoretically we can already rely on the stability and working functionality of the underlying core library for the basic features.
