@@ -2,15 +2,19 @@
 \label{chap:Related and Existing Work}
 
 This chapter serves two purposes.
-First we will discuss existing solutions and how our proposed implementation differentiates itself from them.
+First we will discuss existing solutions.
+The differences between these and our proposed work will serve to highlight in what ways our work expands existing solutions.
 Then we will take a look at the academic side of file synchronization and discuss related papers.
+These will serve as a foundation for how we implement the Tinzenite protocol.
 
 \section{Existing Software}
 
-For any interent technology two options exist how to structure its architecture, broadly speaking.
-Most of the internet as it is today is cleanly divided in a client server structure where a client always request information from a central server.
+For any internet technology two options exist how to structure its architecture, broadly speaking.
+Most of the internet today is cleanly divided in a client server structure where a client always request information from a central server.
 This is a strongly hierarchical structure.
+An example of this is downloading a PDF from a website.
 The opposite of this is a distributed, peer to peer model, where a client requests information from any other client and in turn will also respond to queries from other clients.
+One of the more well known candidates of this is the Bittorrent protocol~\cite{web:site:bittorrent}.
 Both options have been used in existing file synchronization solutions.
 Therefore we have divided the existing software we will shortly discuss in the following sections between these two extremes.
 
@@ -18,26 +22,29 @@ Therefore we have divided the existing software we will shortly discuss in the f
 
 For client server solutions any user must rely on the availability of the central server.
 These are often hosted by third parties in a distributed manner for reasons of performance and scaling.
+Providing a central service that is required for the file synchronization to work also allows easy monetization.
+Since a large amount of such services exist, we will highlight only the three most popular ones for this thesis.
+These are respectively: Dropbox with 300 million users, Microsoft's OneDrive with 250 million users, and Google Drive with 240 million users as of 2014~\cite{web:site:fortune}.
 
 \subsubsection{Dropbox}
 
 One of the most popular cloud storage providers currently, Dropbox~\cite{web:site:dropbox}, is known by many users looking for a solution that works across multiple operating systems.
 Positive features include web access to stored data, clients for many different platforms, easy sharing of data with outsiders, and ease of use.
-On the negative side the service relies on its back end servers, although computers can synchronize files between themselves on a local area network.
+On the negative side the service relies on its back-end servers, although computers can synchronize files between themselves on a local area network.
 Dropbox also lacks any end to end encryption, but does encrypt data while in transit and when "at rest" in their data centers~\cite{web:site:dropbox:blog}.
 Therefore it comes with little surprise that they were prominently featured in the Snowden leaks~\cite{web:site:rt:dropbox}.
 The company does have full access to any data the user uploads to their servers, as long as they do not encrypt the files beforehand themselves.
 This in turn means that they can offer up said data if required to by a government, as is the case in the United States of America.
 
 Dropbox offers a free account for a basic storage plan.
-Additional storage is available for purchase.
+Additional storage capacity is available for purchase.
 None of the core applications has been open sourced to date, meaning even if Dropbox implemented strong encryption it could not be independently verified.
 
 \subsubsection{Google Drive}
 
-Google Drive~\cite{web:site:gdrive} is similar to Dropbox from its functionality.
-It does go a step further than Dropbox by integrating tightly with their suite of online applications for creating and editing documents, the so called Google Docs.
-As can thus be quickly seen Google also has full access to all data that users upload to their servers.
+Google Drive~\cite{web:site:gdrive} is similar to Dropbox in term of its functionality.
+It does go a step further than Dropbox by integrating tightly with their suite of online applications for creating and editing documents, named Google Docs.
+Google also has full access to all data that users upload to their servers.
 This in turn means that under the PRISM program by the NSA, all such data is also retrievable by a fourth party~\cite{web:site:rt:google}.
 
 Google also offers up a basic storage amount at no charge for the user.
@@ -46,7 +53,7 @@ Apart from offering access via fewer clients than Dropbox, Google also has faile
 
 \subsubsection{Boxcryptor}
 
-Both already mentioned services are thus not to be trusted with private information.
+Both services mentioned are not to be trusted with private information that must remain secure.
 However solutions for encrypting the data sent over such services exist.
 One example of such a service is the Boxcryptor software~\cite{web:site:boxcryptor}.
 It encrypts all data before uploading it to the connected cloud storage service and decrypts it when retrieving it.
@@ -54,9 +61,11 @@ The user keys are attached to the user's account.
 Asymmetric encryption is used to upload all keys to the companies key server so that other clients can retrieve and, with a correct password, decrypt the data.
 Sharing of data is still possible even for users without an account by utilizing special keys.
 
-The downside to this approach is mainly that it has to be used on top of an existing cloud storage service, although it works on most existing services.
-However the software is again not open source and thus not independently verifiable.
-Boxcryptor also offers a free version of its service, but to access all security features a paid subscription is required.
+The downside to this approach is mainly that it has to be used on top of an existing cloud storage service.
+This effectively means that the user must run an additional program on top of the file storage service to ensure secure data.
+Boxcryptor can be used with most existing third party data storage systems.
+Boxcryptor offers a free version of its service, but to access all security features a paid subscription is required.
+The software is not open source and thus not independently verifiable.
 
 \subsubsection{Microsoft OneDrive}
 
