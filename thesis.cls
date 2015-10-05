@@ -187,7 +187,7 @@
 \hspace*{140mm}\\[2cm]
 
 \parbox{140mm}{\bfseries \huge \@headline}\\[0.5em]
-{\footnotesize \@typ at Ulm University}\\[3em]
+{\footnotesize \@typ \ at Ulm University}\\[3em]
 
 {\footnotesize \bfseries Author:}\\
 {\footnotesize \@fullname\\\@email}\\[2em]
