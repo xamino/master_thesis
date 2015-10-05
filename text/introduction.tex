@@ -11,7 +11,7 @@ Finally we briefly summarize the structure of this document.
 We propose the implementation of a file synchronization program in Golang via the Tox protocol.
 Thus we first explain our motivation for this thesis and what features we would like the implementation to fulfill.
 Then we will expand on the specification and define the scope of this work in preparation.
-Apart from the theoretical work a large part of this thesis is also the implementation of a proof of work.
+Apart from the theoretical work a large part of this thesis is also the implementation of a proof of concept.
 Therefore we will also expand on problems and solutions we encountered while working on the software aspect.
 Finally we will look back at the implementation and compare it to the theoretical ground work.
 For better comparison a brief discussion on similarities and differences to existing file synchronization services will also be included.
@@ -26,30 +26,32 @@ Many services and programs used by the majority of internet users has been shown
 This includes internet giants such as Facebook and and Google\cite{web:site:tg:internet_giants}.
 Even Microsoft, producer of the most widely used operating system for personal computers, complied\cite{web:site:tg:microsoft}.
 
-While public outrage lasted just as long as the news reported on it, the revelations had a big impact in the technical community.
+While public outrage lasted just as long as the news reported on it, the revelations had a major impact in the technical community.
 New software solutions are required to enable users to take back their privacy on the internet without sacrificing usability and ease of access.
 One example is the Open Whisper Systems group.
-Their stated goal on the website is "[...] we're working to advance the state of the art for secure communication, while simultaneously making it easy for everyone to use."~\cite{web:site:whispersystems:about}.
+Their stated goal on the website is "[...] we're working to advance the state of the art for secure communication, while simultaneously making it easy for everyone to use."~\cite{web:site:whispersystems}.
 Another example is the Tox instant messenger community that is building a free, open source, peer to peer Skype alternative~\cite{web:site:tox}.
 
-%TODO some of the following should go into the related chapter
-
-% move the motivation over to enabling privacy of data
 The main goal of this thesis is to tackle the problem of cloud data storage, often used for distributed file access across multiple computers.
 Existing examples of this include Google Drive~\cite{web:site:gdrive} and Dropbox~\cite{web:site:dropbox}.
 While the data transfered is now encrypted in transit in most cases, it is not encrypted while residing on the servers.
 This allows anyone with access to the server to fully access the data, so long as it was not already previously encrypted by the user.
 Before Snowden the third parties were entrusted with the safe keeping of the stored data under the presumption that no unauthorized access was allowed or even possible.
 However this trust has been lost now that the public has been made aware of the possibilities of state organizations to access any data without due legal process.
-% TODO maybe expand a bit on the trust things? --> why do we require a trusted 3rd party? what benefit does it give the user?
 
 One solution to this problem is encrypting everything client side before uploading the data to third parties.
 An example of a service that does this is Boxcryptor~\cite{web:site:boxcryptor}.
 However this principle requires active involvement from the user and is thus an extra hurdle in securing one's data.
 Perhaps simply forgoing a third party would be a possible solution.
 Examples of existing peer to peer solutions are BitTorrent Sync~\cite{web:site:bittorrent_sync} and Syncthing~\cite{web:site:synthing}.
-However now the main advantage of a third party is lost: namely the ability to store data in a way that it is readily accessible even if every peer is currently offline.
+However now the main advantage of a third party is lost: namely the ability to store data in a way that it is readily accessible even if every private peer is currently offline.
 Syncthing notably explicitly states that the user can enable access for trusted third parties, but as it stands now this third party would receive an unencrypted access to any data stored there.
+
+Thus our motivation is to create a proof of concept of a file synchronization software suite.
+Stated goals are peer to peer communications, bypassing the requirement of a centrally hosted third party service.
+To harden such a peer to peer network it is necessary to encrypt all communication between the peers.
+This is not only required to hinder Wifi sniffing when using unsecured wireless access: Snowden also revealed that most data passing through internet exchange points is surveiled\cite{web:site:heise:decix}.
+Instead of integrating and mixing encrypted communications with the file synchronization commands required for such software to work, we utilize an existing secure peer to peer communication infrastructure in the form of Tox, on top of which we will propose a protocol for the sole task of file synchronization.
 
 \section{Naming}
 
