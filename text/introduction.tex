@@ -17,7 +17,6 @@ Finally we will look back at the implementation and compare it to the theoretica
 For better comparison a brief discussion on similarities and differences to existing file synchronization services will also be included.
 
 \section{Motivation}
-\label{sec:Motivation}
 
 The thesis is mainly motivated by the revelations of drag net surveillance by Edward Snowden and the compliance by so called trusted service providers beyond even their legal obligations.
 Thanks to his sacrifice a global conspiracy of governmental agencies that do massive online surveillance of most internet communications was brought into the public light.
@@ -53,18 +52,12 @@ To harden such a peer to peer network it is necessary to encrypt all communicati
 This is not only required to hinder Wifi sniffing when using unsecured wireless access: Snowden also revealed that most data passing through internet exchange points is surveiled\cite{web:site:heise:decix}.
 Instead of integrating and mixing encrypted communications with the file synchronization commands required for such software to work, we utilize an existing secure peer to peer communication infrastructure in the form of Tox, on top of which we will propose a protocol for the sole task of file synchronization.
 
-\section{Naming}
-
-TODO: Introduction of name Tinzenite here.
-Notably also specify what is what: is Tinzenite the name of the library with protocol etc.?
-That would leave the clients to have their own names which could be just 2 syllables long... :D
+To differentiate our proof of concept implementation from existing solutions a unique name was required.
+We chose the rock-forming mineral tinzenite for the name.
+Specifically, Tinzenite is the name of the peer network, which in turn is compromised of two distinct software peers which are based on a common protocol and communication standard.
 
 \section{Project Context}
 
 This paper is the master thesis of Tamino P.S.M. Hartmann, written at the Faculty of Engineering, Computer Science, and Psychology~\cite{web:site:faculty} at the Institute of Databases and Information Systems~\cite{web:site:institute} at the University of Ulm~\cite{web:site:uni_ulm}, Germany.
 % TODO add "the work commissioned" but do it like "It was proposed" or something
 The supervisor was Marc Schickler and the examiners were Professor Doctor Manfred Reichert and Professor Doctor Martin Theobald.
-
-\section{Content of this Document}
-
-TODO once paper is finished.
