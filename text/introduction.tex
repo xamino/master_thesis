@@ -1,30 +1,33 @@
 \chapter{Introduction}
-\label{chap:intro}
+\label{chap:Introduction}
 
 In this chapter we first give a short overview over the thesis.
-Then we discuss the motivation for our work.
-We then introduce the name given to it.
+Then we discuss the motivation for our work and introduce the name given to it.
 Next we place the master thesis in its context.
 Finally we briefly summarize the structure of this document.
 
 \section{Overview}
 
-% TODO rewrite
-% importance of topic
-We propose the implementation of a file synchronization program that solves these problems.
-The proposed software suite should primarily utilize strong encryption to make unauthorized data access as hard as possible.
-While the core features must be independent of cloud services, encrypted data storage for offline access should still be possible and allow third party services without having to entrust clear text access.
-Finally the software should be as easy to use as possible to enable anyone to use it after a simple setup process.
-Once running the software should have a negligible footprint on the client's peers.
+We propose the implementation of a file synchronization program in Golang via the Tox protocol.
+Thus we first explain our motivation for this thesis and what features we would like the implementation to fulfill.
+Then we will expand on the specification and define the scope of this work in preparation.
+Apart from the theoretical work a large part of this thesis is also the implementation of a proof of work.
+Therefore we will also expand on problems and solutions we encountered while working on the software aspect.
+Finally we will look back at the implementation and compare it to the theoretical ground work.
+For better comparison a brief discussion on similarities and differences to existing file synchronization services will also be included.
 
 \section{Motivation}
 \label{sec:Motivation}
 
-%TODO rewrite
-The thesis is mainly motivated by the revelations of drag net surveillance by Edward Snowden and the compliance by so called trusted service providers.
-Thus new software solutions are required to enable users to take back their privacy on the internet without sacrificing usability and ease of access.
+The thesis is mainly motivated by the revelations of drag net surveillance by Edward Snowden and the compliance by so called trusted service providers beyond even their legal obligations.
+Thanks to his sacrifice a global conspiracy of governmental agencies that do massive online surveillance of most internet communications was brought into the public light.
+Since the majority of the internet is USA based this had huge implications for all manner of information exchanged.
+Many services and programs used by the majority of internet users has been shown to be either at risk of being compromised.
+This includes internet giants such as Facebook and and Google\cite{web:site:tg:internet_giants}.
+Even Microsoft, producer of the most widely used operating system for personal computers, complied\cite{web:site:tg:microsoft}.
 
-A range of software has come into the spotlight of public disclosure since the revelations that already work towards this goal.
+While public outrage lasted just as long as the news reported on it, the revelations had a big impact in the technical community.
+New software solutions are required to enable users to take back their privacy on the internet without sacrificing usability and ease of access.
 One example is the Open Whisper Systems group.
 Their stated goal on the website is "[...] we're working to advance the state of the art for secure communication, while simultaneously making it easy for everyone to use."~\cite{web:site:whispersystems:about}.
 Another example is the Tox instant messenger community that is building a free, open source, peer to peer Skype alternative~\cite{web:site:tox}.
