@@ -14,7 +14,7 @@ Most of the internet today is cleanly divided in a client server structure where
 This is a strongly hierarchical structure.
 An example of this is downloading a PDF from a website.
 The opposite of this is a distributed, peer to peer model, where a client requests information from any other client and in turn will also respond to queries from other clients.
-One of the more well known candidates of this is the Bittorrent protocol~\cite{web:site:bittorrent}.
+One of the more well known candidates of this is the Bittorrent protocol~\cite{web:site:wiki:bittorrent}.
 Both options have been used in existing file synchronization solutions.
 Therefore we have divided the existing software we will shortly discuss in the following sections between these two extremes.
 
@@ -81,22 +81,29 @@ The software is not open source and thus not independently verifiable.
 
 Peer to peer systems work without a central server.
 The trade off is that such solutions require assistance in locating other peers, which means that some form of peer discovery must be implemented.
-While this could be done via a central server, nowadays the common solution to the problem is a distributed hash table which is used to look up the required peers.
+While this could be done via a central server, nowadays the common solution to the problem is a distributed hash table~\cite{web:site:wiki:dht} which is used to look up the required peers.
 Once another peer has been found the connection can be established.
-Apart form not relying on the availability and trustworthiness of a central server, peer to peer solutions offer up a possible performance advantage as they can distribute bandwidth between every peer, even actively unchoke an over saturated peer.
+Apart from not relying on the availability and trustworthiness of a central server, peer to peer solutions offer up a possible performance advantage as they can distribute bandwidth between every peer, even actively unchoke a saturated peer.
 As an added bonus the path data takes between two peers will always be the most direct path as no data must first go towards a third party.
+This bonus can be lost if onion routing is implemented for anonymity purposes.
 
 \subsubsection{BitTorrent Sync}
 \label{subs:BitTorrent Sync}
 
 An existing solution for a peer to peer data synchronization service is Sync~\cite{web:site:bittorrent_sync} from the BitTorrent company.
-It is built on existing torrent technology and thus keeps many of the positive features associated with torrents: reducing the impact of transferring large files over a limited network.
+It is built on existing Bittorrent technology and thus keeps many of the positive features associated with torrents: reducing the impact of transferring large files over a limited network.
 Therefore it has no central point of failure and can even run without internet access by transferring files between computers on a local area network directly.
-As the client server solutions before however Sync is closed source.
-While information is encrypted in transfer, it can not be stored safely on third party machines without additional user involvement.
+However, just as the client server solutions before, Sync is closed source.
+
+Clients exist for a multitude of platforms.
+While information is encrypted in transfer, there is no differentiation for untrusted clients.
+Sync is free for basic usage, but requires a paid account for additional features that offer more fine grained control.
 
 \subsubsection{Syncthing}
 \label{subs:Syncthing}
+
+%TODO continue here
+TODO: CONTINUE HERE!
 
 Syncthing~\cite{web:site:synthing} is an open source file synchronization software on an equally free block exchange protocol.
 This protocol is a mixed data transfer and communication protocol in one, with encryption for all communication built directly in.
