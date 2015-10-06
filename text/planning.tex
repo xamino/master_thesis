@@ -130,71 +130,59 @@ These would require additional protocol extensions to support higher performance
 \label{sec:Software Scope}
 
 This section is dedicated to differentiating the possible client applications we will implement as reference implementations.
-Note that the exact feature set is to be determined by the required development time of each feature and thus might lead to some features not being done with the thesis.
-Those features can be implemented at a later time if so desired.
+Note that the exact feature set is to be determined by the required development time of each feature and thus might lead to some features or even complete clients not being done with the thesis.
+Those features can be implemented at a later time if so desired and will thus be referenced in the future work (see section~\ref{sec:Future Work}).
 
 \subsection{Tinzenite Core Library}
 
 The Tinzenite core library is the central reference implementation of the protocol.
 It builds directly on the Tox core library and wraps the complete communication of Tinzenite.
-Programs that implement the provided functionality will attach callbacks and call public methods.
+Programs that implement the provided functionality will attach callbacks and call public methods to interface with it.
+The library will also handle watching a specified directory on disk.
+If the user modifies the contents of the a directory that is watched by the library it will update its internal model and start trying to synchronize the changes to other peers.
 
 To keep development of clients as easy as possible while at the same time keeping the protocol consistent between them we will separate the core logic for Tinzenite from any user oriented code.
-The core library will not handle writing or reading data from the user's disk: these capabilities will be offloaded to the implementation of the client programs.
 This will ensure a maximum of adaptability for clients, meaning that they will not be constrained by the cross platform capabilities of the library itself.
 The only limiting factor for porting the library to other platforms is the availability of the required Tox core library beneath it.
-
-The core library will also offer helper functions in a sub package to make developing clients as easy as possible.
-These will likely include functions for handling delta updates, encryption, and even update detection.
-Note that file system watchers will be outside the scope of the core library as every platform may require an adapted file watching program.
 
 \subsection{Client Peer}
 
 The basic client peer will be developed first and serve to validate the protocol.
-The primarily targeted platform is Linux, but we hope to offer Microsoft Windows compatible executables too.
-As Golang is not operating system specific porting the peer should not be overly difficult.
-
 This software will be the target of the user's primary interaction with the Tinzenite system.
 Therefore we plan on including full coverage for required assistance in connecting peers and setting them up.
-The client peer as we will implement it will always be a trusted peer and thus store the user's data in clear text on the disk.
-That means that we will have to include file watcher functionality to trigger model updates beyond the capability to receive and apply them.
+The client peer will always be a trusted peer and thus store the user's data in clear text on the disk.
+Since the client peer will be the primary implemented peer, it will evolve directly with the core library.
 Advanced features that may be implemented include but are not limited to support for shadow files and a low system footprint so that the client software can be run continuously without negatively impacting the operating system performance.
-
 From the user's point of view the client software will provide an interface to connect to and accept new and existing peers.
-On the other hand the removal of peers must also be supported from the client software.
-It may also be possible to look into representing the state of synchronization within the file manager so that the user has visual feedback on the directory.
-Furthermore quick and easy to understand system status information should also be available to quickly see the health of the synchronization network.
-We also plan on offering the option on pausing the peer from synchronizing so that the user can retain control over bandwidth usage.
-
-Finally as an added bonus the client peer can detect conflicts and offer help in resolving them.
-Ideally the software would at least highlight conflicts for the user so that they can be resolved in a timely fashion even if the directory consists of a large amount of files.
 
 \subsection{Server Peer}
 
-%TODO some of these below are too specific, some won't be implemented.
-TODO: intergrate the following here?
-Notable features are that a single instance should handle multiple users' accounts.
-Since large data amounts are to be expected, the server client will be capable of integrating the Hadoop distributed file system to directly support that.
-Support for commercialization of a service based on this client will be provided.
-This includes size and amount distinction based on a per user basis.
-For trusted peers this feature requires peers to authenticate themselves against each other to differentiate the level of trust.
+The second dedicated software to be developed is the server peer.
+This software will implement an encrypted peer for the Tinzenite network.
+As the task of encrypting data falls to the trusted peer before uploading said data, the server peer must only offer a simple key value storage system for writing the encrypted data somewhere where it can later be retrieved.
+Thus the encrypted peer allows clients to offer a storage interface and will use that instead of writing via a self specified method.
 
-The server peer will be the second software that we plan on implementing.
-Theoretically we can already rely on the stability and working functionality of the underlying core library for the basic features.
-New here will be everything pertaining to the encryption of data.
+As a proof of concept that this works we will develop two instances of such a storage interface.
+First will be a simple store and retrieval to the local disk where the encrypted peer is running.
+The other one will utilize the Hadoop file system to offer an example of a large scale distributed storage system as it might be used on a true server for multiple users.
 
-As previously stated the server peer will be responsible for possibly many simultaneous users.
-This means we will use the Hadoop file system instead of direct disk storage for storing user data.
-The server peer will also offer us the ability to conduct optimizations into the speed and concurrency of the core library.
-As advanced features we will implement shadow files for implementing storage constraints and support for the possible web application temporary trusted peer.
-
-Unlike the client peer however we do not require user interfaces (these will be provided by the service provider for the user) and file watchers as updates can not originate from the encrypted data set.
+Unlike the client peer however we do not require user interfaces and file watchers.
+Since the encrypted peer must only be started and connected to an existing network, no further user interaction than those two operations is required.
+A file watcher like the client peer is not required because updates can not originate from the encrypted data set.
 These encrypted peers will also utilize a different subset of the communication protocol as they operate essentially as blind data dumps.
+
+\subsection{Web Interface Peer}
+
+Built on top of an encrypted server peer it should theoretically be possible to implement access to the encrypted data for the user via a web interface.
+This can be realized by allowing a user to enter their password which in turn unlocks the decryption keys required to decrypt the stored data.
+By utilizing client side code within a web browser, these operations can be done without involving the server peer beyond its use as a blind data store.
 
 \subsection{Mobile Peer}
 
-If the allotted time allows we intend to complete the Tinzenite software suite by implementing a mobile client for the Android platform~\cite{web:site:android}.
+Nowadays no software is complete without a complimenting mobile application.
+Thus Tinzenite should also offer a mobile client for the Android platform~\cite{web:site:android}.
 Apart from the specific touchscreen oriented interface this peer would prove that Tinzenite can run on mobile platforms.
+This would build on Golang's cross platform support even for Android~\cite{web:site:golang:mobile}.
 Further work may be done here to ensure that Tinzenite runs in a mobile friendly way.
 This implies low power consumption and low bandwidth capabilities.
 Therefore support for shadow files and deltas are almost strictly required to meet the needs of a mobile peer.
@@ -202,7 +190,6 @@ When first starting up the mobile peer for the first time it may even be benefic
 
 \subsection{Passive Peer}
 
-While not in itself a program, support for blind passive data dumps as passive peers is another aspect we would love to try out.
+While not in itself a program, support for blind passive data dumps as passive peers is another aspect for which Tinzenite could be expanded to work.
 This feature would require of Tinzenite to run the base encrypted peer logic on a given directory without the communication aspect via Tox.
 These passive peers would allow easy backups of directories on passive storage media that can be easily updated by connecting it to an active peer.
-Depending on the remaining time after implementing the active peers we may extend the core library to support this feature as we do not believe it to require overly complicated further development work.
