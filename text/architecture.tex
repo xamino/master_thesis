@@ -1,25 +1,29 @@
 \chapter{Architecture}
 \label{chap:architecture}
 
-%TODO continue here
-TODO: CONTINUE HERE
-
-The following section will define the data model each peer keeps of its data and specify the API for updating it between peers.
+The following section will define the data model each peer keeps of its data and specify the API for updating it between peers, both trusted and encrypted.
 First we will define and explain the model each peer keeps of the stored data.
 Next the messages used to facilitate the update of the model between clients will be discussed.
+Then we will discuss the protocol extensions required for the encrypted model.
 Finally we will take a look at the advanced features and how they will be built on top of the previous work.
+
+We chose to use JSON for all communication between peers (see section~\ref{sub:JSON}).
+Therefore generally speaking all messages will be defined as JSON messages.
+Additionally most data is written to disk as JSON files.
 
 \section{Peer Data Model}
 \label{sec:Peer Data Model}
 
-% why again json
-Since we intend to use JSON for communication via Tox, it seems prudent to define the file model of a peer's data in the same way.
-This will allow easy application of updates without having to explicitly translate between two different views of the same data.
+This section will describe our solution to how Tinzenite keeps track of objects within a directory.
+This data will be henceforth referenced as the data model or just model.
+The model is required to enable detection of newly created and removed files, since Tinzenite does not actively watch a directory.
+Having a stored representation of a directory significantly eases the difficulty of detecting file creations and removals, even if the peer software is not running.
+Any entry in the model is generally referred to as an object if the distinction between a directory or file is not required.
 
-An important feature that the model must have is that it works independent of the file types.
-Therefore there are only two assumptions we will make of the structure of the directory that a peer will work on: namely that it contains files sorted in directories.
-Out of this tree view we can immediately synthesize our two main components we will require: a file model (a leaf) and a directory model (a node).
-Since a peer is intended to have directory as the root node from which to run, the core element will always be a directory.
+An important feature that the model should have is that it should represent an arbitrarily complex object structure in the most simple way possible.
+Therefore there are only two assumptions we will make for the structure of any directory: namely that it contains files sorted in nested directories.
+Out of this tree view we can immediately synthesize our two main components that we will require: a file model (a leaf) and a directory model (a node).
+Since a peer is intended to have a directory as the root node from which to run, the core element will always be a directory.
 An example of the proposed model structure can be seen in~\ref{list:model}.
 
 \begin{figure}[htp]
@@ -43,29 +47,40 @@ An example of the proposed model structure can be seen in~\ref{list:model}.
 \label{list:model}
 \end{figure}
 
-The most important aspect is of course what information is stored within the model and its objects.
-Each file is considered a binary blob and not modified by Tinzenite in any way to preserve data integrity.
-Therefore additional information that Tinzenite requires to function will need to be part of the model.
+Since each file is considered a binary blob and must not modified by Tinzenite in any way to preserve data integrity, any additional information that Tinzenite is required to store for an object must be kept within the model itself.
+Out of this we can see which values need to be stored within the model for each object specifically.
 
-Each object in the model will for identification purposes be specified by a hash.
-This hash will be a unique randomly generated hash.
+Each object in the model will for identification purposes be specified by a unique randomly generated hash.
 This hash allows us to decouple the name of the object from its model representation, effectively serving the same function as node identification numbers when stored on a disk.
-This is required so that we can differentiate a renamed file from a removed file and update the model accordingly.
-Furthermore each model object will contain a path variable that specifies the complete path of the object in the directory tree.
-This has the purpose of allowing the placement of all files in the correct locations on disk.
-Notably, unlike on the user's disk, the names contained in the path are the identifying hashes.
+Furthermore each model object will contain a path variable that specifies the relative path of the object in the directory tree.
+This has the purpose of allowing the placement of all files in the correct locations on disk for a given root path.
 
-Apart from the above attributes Tinzenite must also track versions of files to allow detection of when files have been updated.
-We will use a vector clock~\cite{mattern1989virtual} to implement this.
-The vector of peers with the associated versions can also be used to detect collisions.
+\begin{figure}[htp]
+    \begin{lstlisting}[language=json,firstnumber=0]
+    "Version": {
+        "927325d7a930dac9": 1,
+        "19baf5873da66797": 4,
+        "ec021135799691ae": 3
+    }
+    \end{lstlisting}
+\caption[Version JSON]{An example of a version vector clock. Each hash is the identification of a trusted peer, the associated number which changes they last issued.}
+\label{json:version_model}
+\end{figure}
+
+Apart from the above attributes Tinzenite must also track versions of files to allow detection of when objects have been updated.
+We will use a vector clock~\cite{mattern1989virtual} to implement this, where entries represent peers and the associated number is the last version where that peer actively contributed to the object's history.
+The vector clock can also be used to detect collisions.
 Note that the vector clock must only store the versions for active, trusted peers as these are the only peers where versions can differ upon user interaction.
 We avoid using a simple dirty flag for reasons of complexity: determining which peer's update to take in which order is not trivially doable with a simple boolean flag.
+Utilizing vector clocks gives us greater flexibility, both for the implementation and for any visualizations in the case of tracing changes.
+An example of the vector clock as we will use it can be seen in figure~\ref{json:version_model}.
 
 It is important to note that the model will not be used to store peer reliant information.
-This includes for example where the directory is placed on the peer's file system.
+This includes for example where the directory is placed on the peer's file system, which may differ between peers.
 Such information must be stored separately by the peer and applied when working with the data model, for example when determining what the full path on the file system will be for a file that is to be written.
 Some properties are also not suited to be transferred between peers.
 This includes file system or operating system dependent properties such as usage rights, ownership, or flags.
+For Tinzenite we will generally ignore these as primary focus is just raw data synchronization without semantic information.
 
 \subsection{Directory Model}
 \label{sec:dir_model}
