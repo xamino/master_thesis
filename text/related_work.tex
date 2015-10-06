@@ -102,18 +102,20 @@ Sync is free for basic usage, but requires a paid account for additional feature
 \subsubsection{Syncthing}
 \label{subs:Syncthing}
 
-%TODO continue here
-TODO: CONTINUE HERE!
-
 Syncthing~\cite{web:site:synthing} is an open source file synchronization software on an equally free block exchange protocol.
 This protocol is a mixed data transfer and communication protocol in one, with encryption for all communication built directly in.
 Again however the user can not designate untrusted peers.
+
+Unlike the other solutions mentioned here, Syncthing is open source and can thus be independently verified to be secure.
+Like Tinzenite it is also implemented in Golang.
+A feature that BitTorrent Sync has among with most client server solutions is the capability of sharing a specified file or directory with other users not part of the storage system.
+Syncthing lacks such a feature.
 
 \section{Papers}
 \label{sec:Papers}
 
 The following discussion concerns papers that we believe have an impact on our work.
-We discuss their broad content in no particular order, with a focus on what information we extracted and how we believe we can apply it to Tinzenite.
+We discuss their general content in no particular order, with a focus on what information we extracted and how we believe we can apply it to Tinzenite.
 
 \subsection{What is a File Synchronizer?}
 \label{sub:What is a File Synchronizer?}
@@ -124,9 +126,9 @@ Update detection is defined as the recognition of where updates have been made t
 Reconciliation is defined as the combination of updates between peers to transfer all peers to a new, synchronized state.
 
 For Tinzenite we took a few things out of this paper: primarily the distinction between the update detection and the reconciliation phase.
-We will also initially ignore links and file permissions due to increased complexity, but unlike them we will never modify a file ourself\footnote{TODO: state this as a goal somewhere, maybe relate it to the UNIX way of writing software: focus on what we came to do!}.
+We will also initially ignore links and file permissions due to increased complexity, but unlike them we will never modify a file ourself.
 The paper also gave us a definition for the type of update detection strategy we wanted to try: namely the modtime inode strategy.
-Ideally we would take an on-line update detector but this seems impossible to do under Linux currently.
+Ideally we would take an on-line update detector but this seems impossible to do under Linux currently for an unlimited amount of files.
 Also of interest is the differentiation between pull and push models for propagating updates.
 Tinzenite intends to be a hybrid between the two: while the main work will be done via push, once peers have established a connection updates may also be propagated via pull for performance reasons.
 Of interest in the reconciliation section of the paper is the listing of the various possible states that two replicas of a directory can possibly reach given a set of operations.
@@ -138,13 +140,16 @@ We intend to ensure that the core protocol for Tinzenite will be capable of clea
 The paper by Ramsey and Csirmaz~\cite{ramsey2001algebraic} presents an algebra for reasoning about file system operations with the intended purpose of specifying an algorithm for file synchronization.
 Interesting for our work is the discussion of possible commands that can be executed on said file algebra.
 While from a user point of view a multitude of operations seems possible (create, remove, rename, move, derive, and edit) they distill these down to just three for the technical side: create, remove, and edit.
-Rename can be executed by removing the original named file and creating a new file with the new name while keeping the contents identical.
+Rename can be executed by removing the original named file and creating a new file with the new name while keeping the content identical.
 Move can be executed much the same but keeps the name intact, instead changing the location where the new file is created.
-Derive is argued to be indistinguishable from edit without higher level knowledge: while not impossible, beyond the scope for Tinzenite.
+Derive is argued to be indistinguishable from edit without higher level knowledge: while not impossible, this feature we consider to be beyond the scope for Tinzenite.
+Features that Tinzenite shares with the paper's prototype include that parents must be created before their children and that children must be removed before their parents.
 
-TODO: I think I can get more from this paper.
-Note for example section 6 and the algebra.
-Also take another look at the recon algo – can I use it / parts of it?
+The paper also offers up a number of improvements that Tinzenite could incorporate.
+Notably this includes support for an explicit move command.
+This would remove the need for removing and recreating a file's content when it only moved, thus making this operation more performant.% performant is written correctly
+They also suggest using fingerprints of content to avoid sending data that already exists.
+Tinzenite already utilizes content hashes, so expanding it to be more intelligent about when to request actual data to be sent should be easily implementable.
 
 \subsection{Peer-to-Peer Reconciliation Based Replication for Mobile Computers}
 \label{sub:Peer-to-Peer Reconciliation Based Replication for Mobile Computers}
