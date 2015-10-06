@@ -155,7 +155,7 @@ Tinzenite already utilizes content hashes, so expanding it to be more intelligen
 \label{sub:Peer-to-Peer Reconciliation Based Replication for Mobile Computers}
 
 In~\cite{reiher1996peer}, Reiher et al. nicely state the benefits and drawbacks of using a peer to peer system for file synchronization in regard to mobile devices.
-Benefits include not having to rely on an always on server, being able to transfer files without access to a central server, and transfering files over the shortest available network path.
+Benefits include not having to rely on an always on server, being able to transfer files without access to a central server, and transferring files over the shortest available network path.
 The authors list as drawbacks the higher required complexity of the algorithms used to control the replication.
 They conclude that peer to peer replication is well suited for mobile devices.
 
@@ -164,53 +164,18 @@ They conclude that peer to peer replication is well suited for mobile devices.
 
 The paper by Page et al.~\cite{page1998perspectives} is notable in our case for two main reasons.
 It offers up a nice set of definitions of problems that we must also solve for Tinzenite and even offers up relevant solutions.
-The authors also nicely discuss performance of their implementation.
+The authors also discuss performance of their implementation.
 Focus of the paper is the evaluation of the use of optimistic replica consistency, automatic update conflict detection and repair, the peer to peer interaction model, and the Ficus design and construction.
 
-TODO: look at cites, might be able to use some of them too!
-
-This paper discusses the insert delete ambiguity.
-See page 6 for it.
-"This resolves the insert/delete ambiguity at the cost of creating a garbage-collection problem: when is it safe to discard a logically deleted directory entry?"
-And here is where I got stuck: "Successfully eliminating insert/delete ambiguities requires that prior to discarding a logically deleted directory entry, a directory replica must not only know that all replicas are marked deleted, but further must know that all other replicas are also aware of this fact."
-And the following paragraph explains the solution: "
-The garbage-collection algorithm proceeds in two phases.
-Phase one compiles the list of replicas that know the entry is deleted.
-Phase one ends and phase two begins at a replica when its list is complete, i.e., includes all replicas of the entry.
-Phase two compiles the list of replicas that are known to have finished phase one, and concludes when this second list contains all replicas.
-When phase two completes at a node, that node knows that all replicas know that all replicas have marked the entry deleted, and therefore it is safe to garbage collect the deleted entry.
-Any other node that ever asks about the status of that entry will get the response "entry unknown" from which it can correctly conclude that garbage collection has finished at that site, and hence can finish at the inquirer as well.
-There is no ambiguity since the inquirer knows, by virtue of being in phase two, that the other site once knew about the entry and its deletion.
-Further discussion of these algorithms is available elsewhere.
-"
-TODO: look at that solution and see if I can use it (what happens when new peers are added while the algorithm is running? Can I do this for all deleted objects at once (ie for the list) instead of per object?).
-ALSO: page 7 has thoughts on remove / update conflicts.
-Basically they remove the DIR and move the orphaned file to a special dir\footnote{TODO: make this a hidden dir and also use for conflicts? The dir is handled normally by the sync apart from how files land in it. Clients can then work on conflicts everywhere and the solutions will be propagated correctly.}.
-Also note the no updates lost policy!
-FINALLY: also note the name conflicts part!
+Relevant for Tinzenite is the paper's solution to the insert delete ambiguity.
+The solution is to keep a list of deletions until all peers know of the deletion.
+Only then can the deletion actually be garbage collected.
+In Tinzenite we will use a similar approach.
 
 \section{Conclusion}
 \label{sec:Conclusion}
 
-
-TODO: list what we synthesized from all the related work here.
-
-TODO: synthesize the feature I want from Tinzenite by going through a comparison of the already existing services (Bitsync, Syncthing, GDrive, Dropbox, etc).
-Highlight what they do right and what they do wrong.
-I'll expand on these features in the implementation chapter.
-
-TODO: maybe also look at \url{http://www.symform.com/}.
-
-TODO: These things need to be worked into architecture chapter:
-Reconciliation: we'll keep conflicts and propagate as new files, leaving the user to manually sort it out.
-Ideally, we'll offer assistance however (mark them in the dir?).
-Insert/delete ambiguity!
-I might be able to synthesize rules from this, for example: if a deletion conflicts, leave it be but mark (and apply updates within it if appropriate).
-
-RUMOR --> sounds almost like mine, look at it!
-What happens for my spec when a change results in the same content?
-Theoretically nothing because version+1 and content hash is the same. :D
-
-Note the following text where they discuss the implementation view of it!
-RENAME replaced with MOVE, DERIVE can't be differentiated from EDIT, MOVE replaced with REMOVE and CREATE.
-Having a lot of creates is good for my system because it resets version numbers!
+Based on the listed existing solutions and the briefly discussed related papers we have synthesized a set of features that we wish Tinzenite to have.
+These will be discussed in the next chapter.
+More importantly our research highlights a few problems that we will need to solve or use existing solutions for.
+This starts with defining the operations we will allow on objects within a directory and continue on to how to solve ambiguities and merge conflicts when synchronizing between multiple peers.
