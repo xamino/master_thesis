@@ -122,12 +122,40 @@ This is currently unused as we only use Tox.
 \subsection{Removed Directory}
 \label{sub:Removed Directory}
 
-The \textit{"removed"} directory stores objects that are pending removal as described in section~\ref{subs:Remove}.
-Each object is stored in a sub directory in this directory that is labeled according to their unique hash to avoid name conflicts.
-Objects that are within this directory have a somewhat different model representation due to the need to acknowledge all removed objects throughout the network before being able to truly remove it permanently.
+\begin{figure}[htp]
+\begin{modellist}
+\item removed/
+\begin{modellist}
+    \item db198086d1708794/
+    \begin{modellist}
+        \item check/
+        \begin{modellist}
+            \item 927325d7a930dac9
+            \item ec021135799691ae
+        \end{modellist}
+        \item done/
+        \begin{modellist}
+            \item 927325d7a930dac9
+        \end{modellist}
+    \end{modellist}
+\end{modellist}
+\end{modellist}
+\caption[Removed Folder Structure]{Example of the removed directory with an active removal pending. Note the missing file in done which would signify the completion of the removal.}
+\label{list:removed_folder}
+\end{figure}
 
-\subsection{Temporary Directory}
-\label{sub:Temporary Directory}
+The \textit{"removed"} directory stores objects that are pending removal as described in section~\ref{subs:Remove}.
+An example of the directory with a pending removal can be seen in figure~\ref{list:removed_folder}.
+
+For each object that is removed a directory with the object's identification is created.
+Within this directory two sub directories are created in which empty files named after peer identifications are placed.
+In the \textit{"check"} directory peers write a file named after each peer which must confirm the removal.
+The \textit{"done"} directory contains a file named after every peer that has applied the removal and is now also waiting for it to complete.
+
+\subsection{Unsynchronized Directories}
+\label{sub:Unsynchronized Directories}
+
+TODO: rewrite this to handle all temp dirs, local dir, etc.
 
 The \textit{"temp"} directory is used for files that are peer local and is thus excluded from the synchronization by an entry in the \textit{.tinignore} file.
 Objects for which this is the case is temporary models that the peer has received from another peer in the case that storing it is required.
