@@ -55,6 +55,13 @@ Specifically only the \textit{"org"} directory and the \textit{"removed"} direct
 \label{sub:Organizational Directory}
 
 The \textit{"org"} directory consists of two objects: the file containing the authentication information and a sub folder which contains a file for each known peer.
+
+\subsubsection{Authentication File}
+\label{subs:Authentication File}
+
+The authentication file stores information required for the complete Tinzenite network.
+This includes information on the user, the directory the network synchronizes, and the encryption keys required to encrypt and decrypt data for encrypted peers.
+Since the authentication file is not encrypted upon upload to encrypted peers as it is meant to be used to enable user account management, all personal or otherwise critical information is stored either hashed or fully encrypted.
 Figure~\ref{json:auth_object} shows the contents of an example authentication file.
 
 \begin{figure}[htp]
@@ -63,7 +70,6 @@ Figure~\ref{json:auth_object} shows the contents of an example authentication fi
         "User": "$2a$10$E8Wlr9Jn/EYJLZ7J0yZoR.Qscp.MKD2kG8dHF7OQWYNA1mCfp.Qqe",
         "Dirname": "sync",
         "DirID": "ffff1d4cbfded232",
-        "PasswordHash": "JDJhJDEwJFN5bFAwYTFjUXJSaHl6bFhkZ2oyTHVjVEdoYm4yR2tVa3lSdnF4Y0lObHBrVFdPZ2FZamku",
         "Secure": "Kbk4+sx17VKHma1Z67OU6R7TbHPWMr4SpZhWUQqheS/CNcKKHVYjTTSv0rbF4qDAa0vwikigsm7wHhy4iGjWB84i0ErO7rNwhqrPPxudeDM=",
         "Nonce": [255,142,165,173,201,188,98,116,29,31,173,181,84,84,137,54,159,50,193,248,51,162,76,195]
     }
@@ -72,36 +78,46 @@ Figure~\ref{json:auth_object} shows the contents of an example authentication fi
 \label{json:auth_object}
 \end{figure}
 
-The value of \textit{"user"} allows the allocation of a directory to a user name.
+The key \textit{"User"} stores a bcrypt hash of the user's name~\cite{web:site:wiki:bcrypt}.
 This is important for example for the support of encrypted third party peers: they can attach accounts to the provided user name for controlling server side access.
-Therefore we also need a way to distinguish multiple synchronized directories from each other: this is the random unique hash stored in \textit{"directory\_id"}.
+The user given name of the directory is stored in \textit{"Dirname"}.
+We also need a way to distinguish multiple synchronized directories from each other: this is the random unique hash stored in \textit{"DirID"}.
 Again, this can be used by third party service providers to differentiate the amount of directories that a user can store with them.
-The user given name of the directory is stored in \textit{"directory\_name"}.
-The symmetric key for encrypting and decrypting data for encrypted peers is stored in \textit{"key"}, encrypted in turn by a to be defined scheme that decrypts it upon entry of the correct password by the user.
+The encryption keys for encrypting and decrypting file data for encrypted peers is stored in \textit{"Secure"}.
+These keys are encrypted with a password derived encryption scheme further discussed in section~\ref{sub:Encryption Scheme}.
+\textit{"Nonce"} stores the nonce value that is required additionally to the user provided password to successfully access the encryption keys.
 
-Note that changing any of the values in the authentication file is not supported initially.
-This is especially true for the encryption key as there is no simple way to update all encrypted peers to a new key.
-While cumbersome it offers the highest level of protection against possible security risks for now.
+\subsubsection{Peer Files}
+\label{subs:Peer Files}
+
+Within the \textit{"peers"} folder Tinzenite writes all data synchronization peers.
+It is in essence the contact list, filled with information required to access peers.
+This includes a peer's address, trust, and further user defined information.
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
     {
-        "name":"value",
-        "tox_id":"tox_id_value",
-        "encrypted":"true|false"
+        "Name": "box",
+        "Address": "b6ad2388839d3068f9d6562c10d1151dd87818373c88cf9aad829144c63aac36",
+        "Protocol": 1,
+        "Trusted": false,
+        "Identification": "19baf5873da66797"
     }
     \end{lstlisting}
 \caption[Peer JSON Object]{An example of a peer JSON object. Note that the encryption attribute is not to be trusted, it is only an optimization.}
 \label{json:peer_object}
 \end{figure}
 
-Within the \textit{"peer"} sub directory Tinzenite stores the information for all known peers for each directory.
-Figure~\ref{json:peer_object} shows the proposed structure of a peer file.
+Figure~\ref{json:peer_object} shows the structure of an example peer file.
 One of these exist for all known peers.
-The name of each peer is placed here along the Tox ID required for allowing connections to the directory network.
-Peers accept connections from all listed peers based on the Tox ID.
-The encryption attribute is an optimization: peers for which this value is true don't need to receive and decline a challenge.
-It is important to note that the other way around is not true: if the value is false the other peer must still respond successfully to the challenge.
+The \textit{"Name"} is the user defined name for each peer, to be used by the user to make differentiating between peers easier.
+Internally however the peer is referenced by the random assigned hash stored in \textit{"Identification"}.
+The Tox address is stored in \textit{"Address"}.
+Whenever a new peer is added and its peer file distributed to all known peers, they can use this information to automatically accept connections to the new peer.
+The \textit{"Trusted"} attribute is an optimization: peers for which this value is false don't need to receive and decline a challenge.
+It is important to note that the other way around is not true: if the value is false the other peer must still respond successfully to a challenge.
+Finally the \textit{"Protocol"} value defines via which protocol the peer can be reached.
+This is currently unused as we only use Tox.
 
 \subsection{Removed Directory}
 \label{sub:Removed Directory}
@@ -903,3 +919,8 @@ Therefore we may consider immediately removing the peer as if the user had manua
 TODO: change the auth.json file to include trusted peer list.
 Thus even peers can be sent only encrypted save for the list in auth.json which is used to determine if a peer may connect by the encrypted peer.
 It is then important the clear version of the auth.json file is NEVER pulled so that no peers can be introduced by the server peer.
+
+\subsection{Encryption Scheme}
+\label{sub:Encryption Scheme}
+
+TODO: explain how we encrypt files for encrypted peers, where and how the keys for that are stored, and expand on the algorithm to encrypt the stored keys with PRNG.
