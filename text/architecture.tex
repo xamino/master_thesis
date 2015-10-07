@@ -55,6 +55,7 @@ Specifically only the \textit{"org"} directory and the \textit{"removed"} direct
 \label{sub:Organizational Directory}
 
 The \textit{"org"} directory consists of two objects: the file containing the authentication information and a sub folder which contains a file for each known peer.
+It is first of two directories that are synchronized along with user specified files between peers, as both the authentication file and the peer list are required for all peers.
 
 \subsubsection{Authentication File}
 \label{subs:Authentication File}
@@ -140,12 +141,14 @@ This is currently unused as we only use Tox.
     \end{modellist}
 \end{modellist}
 \end{modellist}
-\caption[Removed Folder Structure]{Example of the removed directory with an active removal pending. Note the missing file in done which would signify the completion of the removal.}
+\caption[Removed Folder Structure]{Example of the removed directory with an active removal pending. Note the missing file in \textit{"done"} which would signify the completion of the removal.}
 \label{list:removed_folder}
 \end{figure}
 
 The \textit{"removed"} directory stores objects that are pending removal as described in section~\ref{subs:Remove}.
 An example of the directory with a pending removal can be seen in figure~\ref{list:removed_folder}.
+Notably this directory is synchronized among Tinzenite peers just as any data the user synchronizes.
+This is due to the fact that removals must be synchronized by all peers.
 
 For each object that is removed a directory with the object's identification is created.
 Within this directory two sub directories are created in which empty files named after peer identifications are placed.
@@ -155,14 +158,20 @@ The \textit{"done"} directory contains a file named after every peer that has ap
 \subsection{Unsynchronized Directories}
 \label{sub:Unsynchronized Directories}
 
-TODO: rewrite this to handle all temp dirs, local dir, etc.
+All other directories within the \textit{".tinzenite"} directory are not synchronized between peers as they are only used to store locally relevant data.
+The file which contains the rules for this is the \textit{".tinignore"} file (for more information on ignore rules see section~\ref{sub:Ignored Objects}).
 
-The \textit{"temp"} directory is used for files that are peer local and is thus excluded from the synchronization by an entry in the \textit{.tinignore} file.
-Objects for which this is the case is temporary models that the peer has received from another peer in the case that storing it is required.
-More importantly Tinzenite uses this directory to store temporary files that are to be sent or received.
-Receiving files are transmitted as blocks by Tox: therefore, to keep the RAM storage requirements down, these blocks are immediately written to disk within this directory.
-This will also allow Tinzenite to resume downloads even in the case that the computer is restarted while the process is still in process (meaning even if the Tinzenite peer must restart).
-Depending on the size of the file, files that are to be transmitted encrypted are also encrypted within this temporary directory.
+The \textit{"temp"}, \textit{"received"}, and \textit{"sending"} directories are used for files in transit either in preparation before being sent encrypted or upon receiving before being applied to the local directory.
+Files are transmitted by chunks by Tox.
+Therefore, to keep the RAM storage requirements down, these blocks are immediately written to disk.
+This also avoids partially overwritting user accessible files if the transfer fails for some reason, thus ensuring that Tinzenite only overwrites the user's files when it is ready to do so with a complete file.
+
+The \textit{"local"} directory is used for three purposes.
+First a copy of the peer's own peer information is written to a file alongside with a binary dump that the underlying Tox channel requires to run which contains the persistent state information.
+Second the actual model is written to disk here, although not as a fully expanded object tree as specified in section~\ref{sec:Peer Data Model}.
+Instead Tinzenite writes the internal representation of the model to disk as JSON.
+This differentiates in a few key points, but primarily serves to store both the absolute path and to keep the directory tree in a flat representation that is more efficient to actually work with.
+Finally the \textit{"rmstore"} directory keeps a record of all previously completed removals in the case that a peer tries to reintroduce a completed removal.
 
 \section{Peer Data Model}
 \label{sec:Peer Data Model}
