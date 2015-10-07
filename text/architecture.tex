@@ -2,14 +2,123 @@
 \label{chap:architecture}
 
 The following section will define the data model each peer keeps of its data and specify the API for updating it between peers, both trusted and encrypted.
-First we will define and explain the model each peer keeps of the stored data.
-Next the messages used to facilitate the update of the model between clients will be discussed.
+Therefore we start this chapter with an explanation of all meta information that a trusted peer stores, as everything else is based on top of this information.
+Then we will define and explain the model each peer keeps of the stored data.
+Built on this model we will discuss the messages used to facilitate the update of the model between clients.
 Then we will discuss the protocol extensions required for the encrypted model.
-Finally we will take a look at the advanced features and how they will be built on top of the previous work.
+Finally we will take a look at the advanced features and how they can be built on top of the previous work.
 
 We chose to use JSON for all communication between peers (see section~\ref{sub:JSON}).
 Therefore generally speaking all messages will be defined as JSON messages.
 Additionally most data is written to disk as JSON files.
+
+\section{Meta Data}
+\label{sec:Meta Data}
+
+Since a trusted peer must store the last known state of the directory it is to synchronize to detect changes, we must store this information to disk somewhere.
+For Tinzenite we took a page from Git and decided to write this information within the directory to be synchronized.
+To reduce visual clutter and to hide it from users this directory is offered by a hidden directory directly below the root directory.
+We specified it as \textit{".tinzenite"}.
+In short it contains organizational files, temporary objects, and the deletion directory for storing files until they have been fully removed by all peers, plus data private to the peer.
+Figure~\ref{list:meta_folder} gives a broad overview of the contents.
+
+\begin{figure}[htp]
+\begin{modellist}
+\item .tinzenite/
+\begin{modellist}
+    \item org/
+    \begin{modellist}
+        \item peers/
+        \item auth.json
+    \end{modellist}
+    \item removed/
+    \item temp/
+    \item receiving/
+    \item sending/
+    \item local/
+    \begin{modellist}
+        \item rmstore/
+        \item model.json
+        \item self.json
+    \end{modellist}
+    \item .tinignore
+\end{modellist}
+\end{modellist}
+\caption[Meta Folder Structure]{Overview of the special meta information directory that Tinzenite uses to store relevant information required for the managing of the directory. For brevity sub directories that contain instance data are not expanded.}
+\label{list:meta_folder}
+\end{figure}
+
+Placing the meta data within the directory has a few benefits for the complexity of the system and enables it to utilize the full feature set of the implemented synchronization capabilities to share data between peers when required.
+Specifically only the \textit{"org"} directory and the \textit{"removed"} directory are synchronized as any user data, along with the \textit{".tinignore"} file which specifies to ignore all other objects.
+
+\subsection{Organizational Directory}
+\label{sub:Organizational Directory}
+
+The \textit{"org"} directory consists of two objects: the file containing the authentication information and a sub folder which contains a file for each known peer.
+Figure~\ref{json:auth_object} shows the contents of an example authentication file.
+
+\begin{figure}[htp]
+    \begin{lstlisting}[language=json,firstnumber=0]
+    {
+        "User": "$2a$10$E8Wlr9Jn/EYJLZ7J0yZoR.Qscp.MKD2kG8dHF7OQWYNA1mCfp.Qqe",
+        "Dirname": "sync",
+        "DirID": "ffff1d4cbfded232",
+        "PasswordHash": "JDJhJDEwJFN5bFAwYTFjUXJSaHl6bFhkZ2oyTHVjVEdoYm4yR2tVa3lSdnF4Y0lObHBrVFdPZ2FZamku",
+        "Secure": "Kbk4+sx17VKHma1Z67OU6R7TbHPWMr4SpZhWUQqheS/CNcKKHVYjTTSv0rbF4qDAa0vwikigsm7wHhy4iGjWB84i0ErO7rNwhqrPPxudeDM=",
+        "Nonce": [255,142,165,173,201,188,98,116,29,31,173,181,84,84,137,54,159,50,193,248,51,162,76,195]
+    }
+    \end{lstlisting}
+\caption[Authentication JSON Object]{An example of an authentication file.}
+\label{json:auth_object}
+\end{figure}
+
+The value of \textit{"user"} allows the allocation of a directory to a user name.
+This is important for example for the support of encrypted third party peers: they can attach accounts to the provided user name for controlling server side access.
+Therefore we also need a way to distinguish multiple synchronized directories from each other: this is the random unique hash stored in \textit{"directory\_id"}.
+Again, this can be used by third party service providers to differentiate the amount of directories that a user can store with them.
+The user given name of the directory is stored in \textit{"directory\_name"}.
+The symmetric key for encrypting and decrypting data for encrypted peers is stored in \textit{"key"}, encrypted in turn by a to be defined scheme that decrypts it upon entry of the correct password by the user.
+
+Note that changing any of the values in the authentication file is not supported initially.
+This is especially true for the encryption key as there is no simple way to update all encrypted peers to a new key.
+While cumbersome it offers the highest level of protection against possible security risks for now.
+
+\begin{figure}[htp]
+    \begin{lstlisting}[language=json,firstnumber=0]
+    {
+        "name":"value",
+        "tox_id":"tox_id_value",
+        "encrypted":"true|false"
+    }
+    \end{lstlisting}
+\caption[Peer JSON Object]{An example of a peer JSON object. Note that the encryption attribute is not to be trusted, it is only an optimization.}
+\label{json:peer_object}
+\end{figure}
+
+Within the \textit{"peer"} sub directory Tinzenite stores the information for all known peers for each directory.
+Figure~\ref{json:peer_object} shows the proposed structure of a peer file.
+One of these exist for all known peers.
+The name of each peer is placed here along the Tox ID required for allowing connections to the directory network.
+Peers accept connections from all listed peers based on the Tox ID.
+The encryption attribute is an optimization: peers for which this value is true don't need to receive and decline a challenge.
+It is important to note that the other way around is not true: if the value is false the other peer must still respond successfully to the challenge.
+
+\subsection{Removed Directory}
+\label{sub:Removed Directory}
+
+The \textit{"removed"} directory stores objects that are pending removal as described in section~\ref{subs:Remove}.
+Each object is stored in a sub directory in this directory that is labeled according to their unique hash to avoid name conflicts.
+Objects that are within this directory have a somewhat different model representation due to the need to acknowledge all removed objects throughout the network before being able to truly remove it permanently.
+
+\subsection{Temporary Directory}
+\label{sub:Temporary Directory}
+
+The \textit{"temp"} directory is used for files that are peer local and is thus excluded from the synchronization by an entry in the \textit{.tinignore} file.
+Objects for which this is the case is temporary models that the peer has received from another peer in the case that storing it is required.
+More importantly Tinzenite uses this directory to store temporary files that are to be sent or received.
+Receiving files are transmitted as blocks by Tox: therefore, to keep the RAM storage requirements down, these blocks are immediately written to disk within this directory.
+This will also allow Tinzenite to resume downloads even in the case that the computer is restarted while the process is still in process (meaning even if the Tinzenite peer must restart).
+Depending on the size of the file, files that are to be transmitted encrypted are also encrypted within this temporary directory.
 
 \section{Peer Data Model}
 \label{sec:Peer Data Model}
@@ -88,36 +197,28 @@ For Tinzenite we will generally ignore these as primary focus is just raw data s
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
     {
-        "identification":"subdir_random_hash",
-        "path":"root_hash",
-        "name":"subdir",
-        "shadow":"true|false",
-        "version":{
-            "peer_name", "version",
-            "peer_name", "version",
-            ...
-        },
-        "objects":[
-            ...
-        ]
+        "Directory":true,
+        "Identification":"db198086d1708794",
+        "Name":"test",
+        "Path":"test/test",
+        "Shadow":false,
+        "Version":{},
+        "Objects":[]
     }
     \end{lstlisting}
-\caption[Directory JSON Model]{An example of a directory JSON object. Note that for brevity no files or sub directories are shown in the \textit{"objects"} array.}
+\caption[Directory JSON Model]{An example of a directory JSON object. Note that for brevity no files or sub directories are shown in the \textit{"objects"} array. The version object is also left empty here.}
 \label{json:directory_model}
 \end{figure}
 
 Figure~\ref{json:directory_model} shows an example of the proposed JSON structure for representing a directory.
 A directory is somewhat special as it does not require the synchronization of an attached binary file.
-This is the case for Tinzenite because directories are viewed independent from their content in most cases.
+This is the case for Tinzenite because directories are viewed independent from their content.
 
 The \textit{"identification"} attribute is a random generated hash that uniquely identifies the directory.
-The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory to where the directory lies, notably replacing the real names of the directories with the corresponding identification attribute values.
+The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory to where the directory lies.
 The clear text \textit{"name"} is also stored here as an attribute.
 The \textit{"shadow"} flag is used to signal whether the contents of the directory are to be fetched or not.
-Note that this flag is not indicative of whether any nested objects are also shadow objects\footnote{This means that the flag is only read on receiving update messages: if no different policy for the updated object has been set the directory flag is used to determine whether to fetch the actual file or not. Directories are always created on the file system though.}.
 To differentiate between updates we require a \textit{"version"} attribute which represents a vector clock of peers and their last known version.
-
-% TODO: later maybe add an example model.json somewhere and link to it once Tinzenite runs?
 
 Finally an \textit{"objects"} array is where the corresponding sub directories or files are recursively placed.
 To model a directory as shown for example in figure~\ref{list:model} Tinzenite begins the model with directory model for the root directory.
@@ -130,16 +231,16 @@ Each directory object in turn also stores sub objects in its object array, thus 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
     {
-        "identification":"file_random_hash",
-        "path":"root_hash/subdir_random_hash",
-        "name":"file",
-        "version":{
-            "peer_name", "version",
-            "peer_name", "version",
-            ...
+        "Directory":false,
+        "Identification":"b83cf06d4e056e1a",
+        "Name":"else.txt",
+        "Path":"test/else.txt",
+        "Shadow":false,
+        "Version":
+        {
+            "927325d7a930dac9":1
         },
-        "content":"content_hash",
-        "shadow":"true|false"
+        "Content":"e4abda92f30700d751ac82f7454787d5"
     }
     \end{lstlisting}
 \caption[File JSON Model]{An example of a file JSON object.}
@@ -148,12 +249,11 @@ Each directory object in turn also stores sub objects in its object array, thus 
 
 Figure~\ref{json:file_model} shows an example of the proposed JSON structure for representing a file object.
 The \textit{"identification"} attribute is a random generated hash that uniquely identifies the file.
-The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory, notably replacing the real names of the directories with the corresponding identification hashes.
+The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory.
 The clear text \textit{"name"} is also stored here as an attribute.
 To differentiate between updates we require a \textit{"version"} attribute which represents a vector clock of peers and their last known version of this file.
 Important for detecting file changes is the \textit{"content"} attribute which stores a hash of the file's binary blob.
 Finally the \textit{"shadow"} flag is used to notify a peer whether the file is locally accessible or must first be fetched from other peers.
-On sending updates it is also indicative to the receiving peer whether the file can be fetched from the sending peer: if the value is true than the peer does not have a copy of the file, only its object model (see also section~\ref{sub:Shadow Files}).
 
 \section{Core Update API}
 \label{sec:Core Update API}
@@ -164,7 +264,7 @@ To understand how this works, it is important to understand how Tinzenite is str
 Every peer views all connected peers as separate connections.
 A swarm behavior only comes to pass because of the independent actions of every peer, not through a combined communication between multiple peers.
 This primarily makes it relatively easy to implement a Tinzenite peer, as the communication state is never between multiple peers.
-Therefore a single peer has a base state of no connected other peers.
+Therefore a single peer has a base state of no other connected peers.
 
 \subsection{Connection Management}
 \label{sec:conn_management}
@@ -172,34 +272,30 @@ Therefore a single peer has a base state of no connected other peers.
 In this section we will discuss how Tinzenite connects to other peers.
 As we distinguish between trusted and encrypted peers we must determine how the data we will send is to be modified accordingly.
 Note that encrypted peers by default will not initiate connections, only trusted peers as they are the only peers capable of working on the user's data.
+Encrypted peers in general have a very passive role in the Tinzenite network.
 
-Once the connection type has been determined it will be applied to all following communication.
-In general this means that compared to a trusted communication all communication to an encrypted peer is used to command it operations.
-Since the encrypted peer has no access to either model or actual objects, all operations must be performed by the trusted peer and relied once encrypted back to the other peer.
-Essentially a trusted peer must first unpack an encrypted peer, apply updates as necessary, send them back, and then repack it.
-This ensures that encrypted peers never have a chance of accessing or modifying any of the data.
-
-Initially the trusted peer queries each connected peer in turn.
-Since we can not trust the other peer to give an honest answer this query must be cryptographically secure.
-Attackers that illegitimately wants to connect to a trusted peer thus can not establish a clear connection without the required keys, which they should not be in possession of\footnote{Tinzenite is designed to avoid revealing keys to outsiders. However outside attacks are beyond its control such as for example key loggers.}.
-Only if the challenge is successfully replied to is the other peer considered trusted and the following communication not anonymous.
-If the challenge is ignored the other peer is considered as an encrypted peer and the following communication adapted to fit.
-Should the challenge be incorrectly answered we can consider possibly warning the user or even blacklisting the peer.
-The next and final step to a ready and idle connection state is the exchange of models.
-Once this is done both peers can compare the received models with their local ones and determine which files they need to update from the other peer.
-These messages will then be sent asynchronously over the now established and typified communication channel accordingly.
+Since each trusted peer has access to a list of all connected peers (see section~\ref{sub:Organizational Directory}) this list is used for the initial presumption what connected peer is trusted and which is encrypted.
+Therefore peers marked as encrypted are not even issued the challenge.
+To vet trusted peers however the challenge must be met.
+Therefore the trusted peer queries each trusted connected peer in turn.
+Since we should not trust a peer just because it has been marked as trusted, this query must be cryptographically secure.
+An attacker that wants to connect to a trusted peer illegitimately thus can not establish a clear connection without the required keys, which they should not be in possession of\footnote{Tinzenite is designed to avoid revealing keys to outsiders. However attacks such as key loggers are beyond its control.}.
+We define this as the authentication challenge.
+Only if the challenge is successfully answered is the other peer considered trusted and the following communication not anonymous.
+If the challenge is answered incorrectly or not at all we can not be assured that the other peer is either trusted nor encrypted, thus we simply ignore it for all further operations\footnote{Ideally we would warn the user of this as it may result in peers being orphaned within the network. As this requires either the user having tried to connect to an insecure peer or a peer having become corrupted, the chance that this behaviour is undesired is comparatively slim.}.
+This concludes opening a communication channel with a connected peer.
 
 \begin{figure}[htp]
 \centering
-    \includegraphics[width=12cm]{graph/sm_peer_communications}
+    \includegraphics[width=6cm]{graph/sm_peer_communications}
 \caption[Connection State Diagram]{This diagram shows how peers handle the establishment of a connection to a known peer.}
 \label{graph:connection_states}
 \end{figure}
 
-Figure~\ref{graph:connection_states} shows an informal state diagram of how a peer reaches the idle state where the connection is ready and set up.
+Figure~\ref{graph:connection_states} shows an informal state diagram of how a peer reaches the idle state where the connection is ready and set up, both for trusted and encrypted peers.
 The switch from the disconnected state to the connected state is signaled by the underlying Tox connection, meaning it happens when the other peer is online and visible via the Tox channel.
-Once connected and if the peer itself is a trusted peer, a challenge is sent which contains a general identifier and an encrypted nonce.
-The encrypted nonce is important to check whether the other peer is encrypted or trusted.
+Once connected and if the peer itself is a trusted peer, a challenge is sent which contains an encrypted nonce.
+For a more in depth look at the challenge response mechanism see section~\ref{}.
 
 Note that a few points must be considered that can not be shown in the diagram.
 Since Tinzenite is designed as a peer to peer network, no client server structure exists.
@@ -632,114 +728,6 @@ Now they synchronize and detect the conflict.
 Since by definition the deletion can not already have fully propagated as the other peer still could modify the object the file is still present in the meta data directory (see section~\ref{sec:Meta Data}).
 Therefore both peers can access the other's version of the object and reintroduce it in the user viewable directory as normal conflicting updates.
 The deletion update will be overwritten by the higher version update of moving the file to its conflicting state, thus ensuring that it will not remain valid for long.
-
-\section{Meta Data}
-\label{sec:Meta Data}
-
-Special files and temporary storage space is offered by a hidden directory directly below the root directory.
-It will be specified as \textit{".tinzenite"} in a comparable manner to the \textit{.git} directory for Git.
-In short it contains organizational files, temporary objects, and the deletion directory for storing files until they have been fully removed by all peers.
-Figure~\ref{list:meta_folder} gives a broad overview of the proposed contents.
-
-\begin{figure}[htp]
-\begin{modellist}
-\item .tinzenite
-\begin{modellist}
-    \item .tinignore
-    \item org
-    \begin{modellist}
-        \item auth.json
-        \item peers
-        \begin{modellist}
-            \item peer.json
-            \item ...
-        \end{modellist}
-    \end{modellist}
-    \item removed
-    \begin{modellist}
-        \item ...
-    \end{modellist}
-    \item temp
-    \begin{modellist}
-        \item ...
-    \end{modellist}
-\end{modellist}
-\end{modellist}
-\caption[Meta Folder Structure]{Overview of the special meta information directory that Tinzenite uses to store relevant information required for the managing of the directory.}
-\label{list:meta_folder}
-\end{figure}
-
-Placing the meta data within the directory has a few benefits for the complexity of the system and enables it to utilize the full feature set of the implemented synchronization capabilities.
-The directory is only special in how conflicts are handled as the user should never have to resolve conflicts of meta data manually.
-We will therefore shortly note in each of the following sections how Tinzenite will handle the special cases if applicable.
-
-\subsection{Organizational Directory}
-\label{sub:Organizational Directory}
-
-The \textit{"org"} directory consists of two objects: the file containing the authentication information and a sub folder which contains a file for each known peer.
-Every file will be a simple text file with JSON contents.
-Figure~\ref{json:auth_object} shows the contents of the authentication file.
-
-\begin{figure}[htp]
-    \begin{lstlisting}[language=json,firstnumber=0]
-    {
-        "user":"hash_of_username.salt",
-        "directory_id":"random_hash",
-        "directory_name":"value",
-        "key":"encrypted_data.salt"
-    }
-    \end{lstlisting}
-\caption[Authentication JSON Object]{An example of the proposed contents of the authentication file.}
-\label{json:auth_object}
-\end{figure}
-
-The value of \textit{"user"} allows the allocation of a directory to a user name.
-This is important for example for the support of encrypted third party peers: they can attach accounts to the provided user name for controlling server side access.
-Therefore we also need a way to distinguish multiple synchronized directories from each other: this is the random unique hash stored in \textit{"directory\_id"}.
-Again, this can be used by third party service providers to differentiate the amount of directories that a user can store with them.
-The user given name of the directory is stored in \textit{"directory\_name"}.
-The symmetric key for encrypting and decrypting data for encrypted peers is stored in \textit{"key"}, encrypted in turn by a to be defined scheme that decrypts it upon entry of the correct password by the user.
-
-Note that changing any of the values in the authentication file is not supported initially.
-This is especially true for the encryption key as there is no simple way to update all encrypted peers to a new key.
-While cumbersome it offers the highest level of protection against possible security risks for now.
-
-\begin{figure}[htp]
-    \begin{lstlisting}[language=json,firstnumber=0]
-    {
-        "name":"value",
-        "tox_id":"tox_id_value",
-        "encrypted":"true|false"
-    }
-    \end{lstlisting}
-\caption[Peer JSON Object]{An example of a peer JSON object. Note that the encryption attribute is not to be trusted, it is only an optimization.}
-\label{json:peer_object}
-\end{figure}
-
-Within the \textit{"peer"} sub directory Tinzenite stores the information for all known peers for each directory.
-Figure~\ref{json:peer_object} shows the proposed structure of a peer file.
-One of these exist for all known peers.
-The name of each peer is placed here along the Tox ID required for allowing connections to the directory network.
-Peers accept connections from all listed peers based on the Tox ID.
-The encryption attribute is an optimization: peers for which this value is true don't need to receive and decline a challenge.
-It is important to note that the other way around is not true: if the value is false the other peer must still respond successfully to the challenge.
-
-\subsection{Removed Directory}
-\label{sub:Removed Directory}
-
-The \textit{"removed"} directory stores objects that are pending removal as described in section~\ref{subs:Remove}.
-Each object is stored in a sub directory in this directory that is labeled according to their unique hash to avoid name conflicts.
-Objects that are within this directory have a somewhat different model representation due to the need to acknowledge all removed objects throughout the network before being able to truly remove it permanently.
-
-\subsection{Temporary Directory}
-\label{sub:Temporary Directory}
-
-The \textit{"temp"} directory is used for files that are peer local and is thus excluded from the synchronization by an entry in the \textit{.tinignore} file.
-Objects for which this is the case is temporary models that the peer has received from another peer in the case that storing it is required.
-More importantly Tinzenite uses this directory to store temporary files that are to be sent or received.
-Receiving files are transmitted as blocks by Tox: therefore, to keep the RAM storage requirements down, these blocks are immediately written to disk within this directory.
-This will also allow Tinzenite to resume downloads even in the case that the computer is restarted while the process is still in process (meaning even if the Tinzenite peer must restart).
-Depending on the size of the file, files that are to be transmitted encrypted are also encrypted within this temporary directory.
 
 \section{Advanced Features}
 \label{sec:Advanced Features}
