@@ -5,6 +5,6 @@ digraph statemachine {
     a [label="OBJECT"];
     // define
     start -> a [label=" CREATE "];
-    a -> a [label=" MODIFY \nor\n MOVE "];
+    a -> a [label=" MODIFY "];
     a -> end [label=" REMOVE "];
 }
