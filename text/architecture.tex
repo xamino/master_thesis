@@ -527,27 +527,34 @@ This time out resets after every received interaction from the trusted peer so t
 If the trusted peer tries an operation while locked out, the encrypted peer will respond with a denial message every time.
 Once the trusted peer is done with its operations it should remove the lock by sending a release message.
 
-\subsubsection{Apply Operation}
-\label{subs:Apply Operation}
+\subsubsection{Push Message}
+\label{subs:Push Message}
+
+Since the encrypted peer is a passive peer, it requires a message to initiate a file transfer when files need to be uploaded to it.
+We solve this by using a push message.
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
     {
-        "operation":"apply",
-        "subject":"model|object|remove",
-        "object":"object_unique_hash"
+        "Type":"push",
+        "Identification":"b83cf06d4e056e1a",
+        "ObjType":"object"
     }
     \end{lstlisting}
-\caption[Apply Message]{Message used to apply operations on an encrypted peer. Note that the object attribute isn't including if the subject is the model.}
-\label{json:apply_message}
+\caption[Push Message]{Message that is used to initiate a file upload to an encrypted peer.}
+\label{json:push_message}
 \end{figure}
 
-Since files must also be uploaded to the encrypted peer we further require an apply operation message as seen in figure~\ref{json:apply_message}.
-Notably the encrypted peer will overwrite any already existing encrypted object if the receiving object matches the unique identification.
-This means the apply message can be used to both overwrite files with updates and create new files as needed.
-To upload the new model to match the encrypted peer's files the subject is stated as model, resulting in the encrypted peer receiving a new encrypted model and replacing any old version with it.
-To permanently delete files from the encrypted peer in the object removal case the subject is set to remove, with the object identification given.
-On the topic of removing objects from encrypted peers and how it plays together with remvoing objects from trusted peers in a safe manner see also section~\ref{subs:Remove}.
+Figure~\ref{json:push_message} shows the format of such a push message.
+Both \textit{"Identification"} and \textit{"ObjType"} contain the same possible values as in similar messages.
+
+When an encrypted peer is locked to a trusted peer and receives a push message it will respond with a corresponding request message.
+This request message will trigger the trusted peer to encrypt the file and send it to the encrypted peer.
+The encrypted peer will accept the file transfer because it now expects it.
+
+For the peers and authentication file the different value of \textit{"ObjType"} will allows the encrypted peer to place these unencrypted files in a different location than the normal data.
+This is required so that it can access them and work with the contained data as required.
+Since trusted peers store the model internally and the model is privacy sensitive as it contains clear text paths and names, the model is also stored as a special file on the encrypted peer.
 
 \subsection{Message Timing}
 \label{sub:Message Timing}
