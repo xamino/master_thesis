@@ -178,6 +178,8 @@ Finally the \textit{"rmstore"} directory keeps a record of all previously comple
 
 This section will describe our solution to how Tinzenite keeps track of objects within a directory.
 This data will be henceforth referenced as the data model or just model.
+Based on this we will highlight how Tinzentie applies object operations on the model in a further section.
+
 The model is required to enable detection of newly created and removed files, since Tinzenite does not actively watch a directory.
 Having a stored representation of a directory significantly eases the difficulty of detecting file creations and removals, even if the peer software is not running.
 Any entry in the model is generally referred to as an object if the distinction between a directory or file is not required.
@@ -304,6 +306,120 @@ The clear text \textit{"name"} is also stored here as an attribute.
 To differentiate between updates we require a \textit{"version"} attribute which represents a vector clock of peers and their last known version of this file.
 Important for detecting file changes is the \textit{"content"} attribute which stores a hash of the file's binary blob.
 Finally the \textit{"shadow"} flag is used to notify a peer whether the file is locally accessible or must first be fetched from other peers.
+
+\subsection{Object Operations}
+\label{sub:Object Operations}
+
+Based on the defined model we will now discuss which file or directory operations are applied in what way to the model.
+Tinzenite relies only on the most basic file operations for manipulating both the model and the actual file directory.
+Therefore we require only the following four operations for the basic case to work:
+
+\begin{description}[leftmargin=5em,style=nextline,noitemsep,nolistsep]
+    \item[Create]
+        Files that have been created will be added to the model at the correct location and their attributes calculated, if not given.
+        Tinzenite then checks whether it needs to fetch the file if it wasn't created in its own directory.
+        Created files are detected by simply noticing files that do not exist in the model yet and are not listed as deleted.
+    \item[Remove]
+        File removing is one of the most complex cases in Tinzenite due to the insert delete ambiguity.
+        We solve this by storing the models of deleted files until the delete update has propagated to all currently known peers.
+        Only then is the model discarded also.
+        For this to work Tinzenite must always ensure that files that exist but are listed as deleted are not added back to the model as a new file by continuously checking the deletion list.
+    \item[Modify]
+        Modification is either when the model does not match the file anymore, in which case a new file must be fetched, or the content on the local file has changed.
+        This is detected via the content hash.
+        In that case the model is updated to match the file again.
+\end{description}
+
+These four operations are not the only operations that a user can do on directories or files.
+However they are all the operations that Tinzenite requires so that it can offer full functionality.
+Strictly speaking Tinzenite would actually only require three to work completely: the move operation can be replaced by remove and create (as discussed in section~\ref{sub:An Algebraic Approach to File Synchronization}).
+
+\begin{figure}[htp]
+\centering
+    \includegraphics[width=4cm]{graph/sm_object_lifecycle}
+\caption[Object State Diagram]{The life cycle of every object, file and directory, in Tinzenite with the allowed operations.}
+\label{diagram:object_operations}
+\end{figure}
+
+Therefore the life cycle of an object is very simple, as can be seen in figure~\ref{diagram:object_operations}.
+Objects can only come into existence via the create operation.
+Objects can either be changed by changing their content, which is a modify operation, or by changing their location, which is a move operation.
+Finally objects can also be removed.
+If an object has been removed it will stay removed unless the user creates a new clone of it.
+
+\subsection{Specifications}
+\label{sub:Specifications}
+
+In this section we show the actual definition of the specification and expand on how Tinzenite peers react to them in detail.
+This specification makes up the core functionality of how the data synchronization happens within Tinzenite.
+Note that these operations are only for trusted peers: since encrypted peers can not work on the stored data they have no need for the file operations.
+
+\subsubsection{Create}
+\label{subs:Create}
+
+The creation of an object can be trivially detected in Tinzenite.
+Basically there are two cases where an object must be created: the first is local manual creation which implies that the peer is the origin of the file; the second is creation via receiving an creation message from another peer.
+
+For the first case, if the object does not have a representation within the model and is not listed as deleted, it triggers the creation case.
+Tinzenite creates the correct object representation and inserts it into the correct place in the model.
+In the second case the peer will queue a fetch operation for the required file\footnote{Note that in the case that it receives an update with a set \textit{"shadow"} flag it will not try fetching the file from said peer as it doesn't have a copy of the file. As a special case files within shadowed directories will also never be fetched.}.
+Only when the file has been received completely is it placed at the correct location and the model updated.
+Finally the update is propagated as specified in section~\ref{sub:Update Propagation}.
+
+\subsubsection{Modify or Move}
+\label{subs:Modify or Move}
+
+The modification of an object is not as trivially detected as an object creation – for the specifics of update detection see the following section~\ref{sec:Update Detection and Reconciliation}.
+Here we will only concern ourself with what happens once a modification has been detected.
+Again we have two cases for triggering this case: a local file has been modified or the peer has received an update message.
+
+If the modification is detected locally first we update the model to match and then initiate an update message.
+The message is of the format as shown in figure~\ref{json:update_object} with the operation now reading \textit{"modify"} or \textit{"move"} instead accordingly.
+If, on the other hand, we receive such a message, we queue the fetching of the updated file in the modify case.
+Upon receiving the changes we apply them and finally propagate the update to the other connected trusted peers.
+If the operation is a simpler move operation the change must not be fetched as it can be executed locally immediately.
+
+\subsubsection{Remove}
+\label{subs:Remove}
+
+Finally the deletion of an object is the hardest case within Tinzenite because of the insert delete ambiguity as discussed in section~\ref{sub:Perspectives on Optimistically Replicated, Peer-to-Peer Filing}.
+It is non trivial to ensure that an object deletion has been received by all required peers so that it truly and finally can be removed from the system.
+A simple solution would be a list of all ever deleted objects, but unlike removed peers this list promises to grow quickly on often used synchronized directories.
+Therefore we require a sort of garbage collection so that we can trim the list from deleted files that have been applied to all known peers.
+
+For the base case we will look at how Tinzenite deletes an object that has been removed locally first, then discuss how the update propagates and what the other peers are required to do to ensure a safe and complete deletion.
+If a deletion happens the object and object model are moved to a special directory outside of the user viewable directory (see also section~\ref{sec:Meta Data}).
+Then the peer copies the list of currently known trusted peers\footnote{Note that encrypted peers must not be considered because they basically mirror only active peers, meaning they are guaranteed to correctly apply deletions once the active peers have reconciled it.} and places it with the object model.
+Finally it creates a second list of peers in which it places itself.
+This second list contains all the trusted peers that have acknowledged receiving the deletion update.
+
+This deletion update is then propagated to the other peers.
+Each peer receives the update, moves the object and updates the object model, enters itself into the second list, and propagates the update.
+Once the last peer enters itself into the acknowledgement list, thus making it equal to the first list of peers, it propagates the update one final time and can then delete the object model from the deletion space and the actual object.
+The completed deletion update then traverses the peers backwards, each in turn deleting the update from its list and propagating it a last time.
+Thus when the last peer to receive the full deletion update removes the model, we can be assured that all relevant peers have removed the object.
+
+It is not immediately obvious why this works even should new peers be created while the deletion update is in progress.
+In fact this is only possible by adding a small modification to the outlined process.
+To show that the solution can work with the small modification we need to look at the two cases that can happen for a newly created peer, differentiated by where it first connects to.
+If it connects to a peer that has already received the deletion update the solution would work by default without any modification.
+This is the case since the new peer would receive the object model where the object has already been deleted.
+It must thus not be notified of the deletion.
+If, however, it connects to a peer that has yet to receive the deletion update even though it has already happened, we have a problem.
+The new peer is not listed among the peers that must acknowledge the update even though it has the object.
+Without the modification, this could result in the file being reintroduced by the new peer, undoing the deletion in effect.
+
+Therefore peers must expand the first list of known peers if a single criteria is met.
+This criteria is relatively straightforward: when receiving a deletion update each peer first checks the list against its own known peer list and in the case that they differ add all missing entries to the deletion update.
+If a newly created peer has connected it will already be within the list and thus be ensured to have the deletion update hang around until it has received it.
+
+Now a final note on what happens should a peer receive a deletion update for an object that it doesn't know.
+In this case the message can not simply be silently discarded as there is no other representation of the update in the object model.
+This could lead to orphaned updates if the peer acts as a bridge between two peers that were previously directly connected.
+Therefore unknown deletion updates should be propagated if possible.
+However, since orphaned updates can only happen as long as the peer list has not been fully updated between all peers, this is a sufficiently unlikely case that we can live with it.
+By adding a time stamp we can even detect orphaned deletion updates and warn the user to help in solving the issue.
+Alternatively we can also warn if we have too many possibly orphaned updates, although this would signify a larger issue.
 
 \section{Communication Specification}
 \label{sec:Communication Specification}
@@ -583,151 +699,6 @@ The encrypted peer will accept the file transfer because it now expects it.
 For the peers and authentication file the different value of \textit{"ObjType"} will allow the encrypted peer to place these unencrypted files in a different location than the normal data.
 This is required so that it can access them and work with the contained data as required.
 Since trusted peers store the model internally and the model is privacy sensitive as it contains clear text paths and names, the model is also stored as a special file on the encrypted peer.
-
-\section{Object Operations}
-\label{sec:Object Operations}
-
-%TODO
-TODO: should this come directly after Object Model?
-Maybe even within?
-Since the communication specification directly builds on this.
-
-In this section we will discuss the object operations that Tinzenite requires to work.
-Then we will specify the actual architecture of the messages we require for them.
-Finally we discuss how updates propagate through the network, especially concerning the differences between trusted and encrypted peers.
-
-\subsection{Operations}
-\label{sub:Operations}
-
-Tinzenite relies only on the most basic file operations for manipulating both the model and the actual file directory.
-Therefore we require only the following four operations for the basic case to work:
-
-\begin{description}[leftmargin=5em,style=nextline,noitemsep,nolistsep]
-    \item[Create]
-        Files that have been created will be added to the model at the correct location and their attributes calculated, if not given.
-        Tinzenite then checks whether it needs to fetch the file if it wasn't created in its own directory.
-        Created files are detected by simply noticing files that do not exist in the model yet and are not listed as deleted.
-    \item[Remove]
-        File removing is one of the most complex cases in Tinzenite due to the insert delete ambiguity (see section~\ref{sub:Perspectives on Optimistically Replicated, Peer-to-Peer Filing}).
-        We solve this by storing the models of deleted files until the delete update has propagated to all currently known peers.
-        Only then is the model discarded also.
-        For this to work Tinzenite must always ensure that files that exist but are listed as deleted are not added back to the model as a new file by continuously checking the deletion list.
-    \item[Move]
-        Moving a file could be represented as a remove followed by a create at the new location.
-        For sake of complexity however we include a move command so that we can better represent both renaming operations and move operations.
-        A move is detected if a file is removed and added somewhere else but retains its content hash.
-        This allows detection of both move and renaming operations.
-    \item[Modify]
-        Modification is either when the model does not match the file anymore, in which case a new file must be fetched, or the content on the local file has changed.
-        This is detected via the content hash.
-        In that case the model is updated to match the file again.
-\end{description}
-
-These four operations are not the only operations that a user can do on directories or files.
-However they are all the operations that Tinzenite requires so that it can offer full functionality.
-Strictly speaking Tinzenite would actually only require three to work completely: the move operation can be replaced by remove and create (as discussed in section~\ref{sub:An Algebraic Approach to File Synchronization}).
-
-\begin{figure}[htp]
-\centering
-    \includegraphics[width=4cm]{graph/sm_object_lifecycle}
-\caption[Object State Diagram]{The life cycle of every object, file and directory, in Tinzenite with the allowed operations.}
-\label{diagram:object_operations}
-\end{figure}
-
-Therefore the life cycle of an object is very simple, as can be seen in figure~\ref{diagram:object_operations}.
-Objects can only come into existence via the create operation.
-Objects can either be changed by changing their content, which is a modify operation, or by changing their location, which is a move operation.
-Finally objects can also be removed.
-If an object has been removed it will stay removed unless the user creates a new clone of it.
-
-\subsection{Specifications}
-\label{sub:Specifications}
-
-In this section we show the actual definition of the specification and expand on how Tinzenite peers react to them in detail.
-This specification makes up the core functionality of how the data synchronization happens within Tinzenite.
-Note that these operations are only for trusted peers: since encrypted peers can not work on the stored data they have no need for the file operations.
-
-\subsubsection{Create}
-\label{subs:Create}
-
-The creation of an object can be trivially detected in Tinzenite.
-Basically there are two cases where an object must be created: the first is local manual creation which implies that the peer is the origin of the file; the second is creation via receiving an creation message from another peer.
-
-For the first case, if the object does not have a representation within the model and is not listed as deleted, it triggers the creation case.
-Tinzenite creates the correct object representation and inserts it into the correct place in the model.
-In the second case the peer will queue a fetch operation for the required file\footnote{Note that in the case that it receives an update with a set \textit{"shadow"} flag it will not try fetching the file from said peer as it doesn't have a copy of the file. As a special case files within shadowed directories will also never be fetched.}.
-Only when the file has been received completely is it placed at the correct location and the model updated.
-Finally the update is propagated as specified in section~\ref{sub:Update Propagation}.
-
-\subsubsection{Modify or Move}
-\label{subs:Modify or Move}
-
-The modification of an object is not as trivially detected as an object creation – for the specifics of update detection see the following section~\ref{sec:Update Detection and Reconciliation}.
-Here we will only concern ourself with what happens once a modification has been detected.
-Again we have two cases for triggering this case: a local file has been modified or the peer has received an update message.
-
-If the modification is detected locally first we update the model to match and then initiate an update message.
-The message is of the format as shown in figure~\ref{json:update_object} with the operation now reading \textit{"modify"} or \textit{"move"} instead accordingly.
-If, on the other hand, we receive such a message, we queue the fetching of the updated file in the modify case.
-Upon receiving the changes we apply them and finally propagate the update to the other connected trusted peers.
-If the operation is a simpler move operation the change must not be fetched as it can be executed locally immediately.
-
-\subsubsection{Remove}
-\label{subs:Remove}
-
-Finally the deletion of an object is the hardest case within Tinzenite because of the insert delete ambiguity as discussed in section~\ref{sub:Perspectives on Optimistically Replicated, Peer-to-Peer Filing}.
-It is non trivial to ensure that an object deletion has been received by all required peers so that it truly and finally can be removed from the system.
-A simple solution would be a list of all ever deleted objects, but unlike removed peers this list promises to grow quickly on often used synchronized directories.
-Therefore we require a sort of garbage collection so that we can trim the list from deleted files that have been applied to all known peers.
-
-For the base case we will look at how Tinzenite deletes an object that has been removed locally first, then discuss how the update propagates and what the other peers are required to do to ensure a safe and complete deletion.
-If a deletion happens the object and object model are moved to a special directory outside of the user viewable directory (see also section~\ref{sec:Meta Data}).
-Then the peer copies the list of currently known trusted peers\footnote{Note that encrypted peers must not be considered because they basically mirror only active peers, meaning they are guaranteed to correctly apply deletions once the active peers have reconciled it.} and places it with the object model.
-Finally it creates a second list of peers in which it places itself.
-This second list contains all the trusted peers that have acknowledged receiving the deletion update.
-
-This deletion update is then propagated to the other peers.
-Each peer receives the update, moves the object and updates the object model, enters itself into the second list, and propagates the update.
-Once the last peer enters itself into the acknowledgement list, thus making it equal to the first list of peers, it propagates the update one final time and can then delete the object model from the deletion space and the actual object.
-The completed deletion update then traverses the peers backwards, each in turn deleting the update from its list and propagating it a last time.
-Thus when the last peer to receive the full deletion update removes the model, we can be assured that all relevant peers have removed the object.
-
-It is not immediately obvious why this works even should new peers be created while the deletion update is in progress.
-In fact this is only possible by adding a small modification to the outlined process.
-To show that the solution can work with the small modification we need to look at the two cases that can happen for a newly created peer, differentiated by where it first connects to.
-If it connects to a peer that has already received the deletion update the solution would work by default without any modification.
-This is the case since the new peer would receive the object model where the object has already been deleted.
-It must thus not be notified of the deletion.
-If, however, it connects to a peer that has yet to receive the deletion update even though it has already happened, we have a problem.
-The new peer is not listed among the peers that must acknowledge the update even though it has the object.
-Without the modification, this could result in the file being reintroduced by the new peer, undoing the deletion in effect.
-
-Therefore peers must expand the first list of known peers if a single criteria is met.
-This criteria is relatively straightforward: when receiving a deletion update each peer first checks the list against its own known peer list and in the case that they differ add all missing entries to the deletion update.
-If a newly created peer has connected it will already be within the list and thus be ensured to have the deletion update hang around until it has received it.
-
-Now a final note on what happens should a peer receive a deletion update for an object that it doesn't know.
-In this case the message can not simply be silently discarded as there is no other representation of the update in the object model.
-This could lead to orphaned updates if the peer acts as a bridge between two peers that were previously directly connected.
-Therefore unknown deletion updates should be propagated if possible.
-However, since orphaned updates can only happen as long as the peer list has not been fully updated between all peers, this is a sufficiently unlikely case that we can live with it.
-By adding a time stamp we can even detect orphaned deletion updates and warn the user to help in solving the issue.
-Alternatively we can also warn if we have too many possibly orphaned updates, although this would signify a larger issue.
-
-\subsection{Update Propagation}
-\label{sub:Update Propagation}
-
-There are two modes for propagating updates throughout the Tinzenite network.
-The first case is when sending the updates to trusted peers; the other is updating encrypted peers.
-For trusted peers the peer may send an update message.
-Figure~\ref{json:update_object} shows how such a message might look.
-At the latest the update propagates when peers exchange models as discussed in section~\ref{sub:Message Timing}.
-It is then up to all receiving peers to update their models and fetch the file, then propagate the update recursively.
-
-Encrypted peers serve only as storage space for trusted peers and it is thus up to the trusted peers to keep the encrypted peers updated to their own state, merging locally if required.
-Encrypted peers are updated manually by the trusted peer and do not propagate update messages since they are passive communication partners\footnote{Actually encrypted peers are not allowed to send update messages as they can not be trusted to truthfully convey them. See section~\ref{sec:Security Considerations}.}.
-Trusted peers thus update encrypted peers by updating them to match their own models.
-If the model received from an encrypted peer has been updated by another trusted peer, it is up to the local peer to fetch all changes, apply them locally, update its model, then update the encrypted peer to match the merged state of all known changes.
 
 \section{Update Detection and Reconciliation}
 \label{sec:Update Detection and Reconciliation}
