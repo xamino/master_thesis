@@ -332,7 +332,7 @@ Since we should not trust a peer just because it has been marked as trusted, thi
 An attacker that wants to connect to a trusted peer illegitimately thus can not establish a clear connection without the required keys, which they should not be in possession of\footnote{Tinzenite is designed to avoid revealing keys to outsiders. However attacks such as key loggers are beyond its control.}.
 We define this as the authentication challenge.
 Only if the challenge is successfully answered is the other peer considered trusted and the following communication not anonymous.
-If the challenge is answered incorrectly or not at all we can not be assured that the other peer is either trusted nor encrypted, thus we simply ignore it for all further operations\footnote{Ideally we would warn the user of this as it may result in peers being orphaned within the network. As this requires either the user having tried to connect to an insecure peer or a peer having become corrupted, the chance that this behaviour is undesired is comparatively slim.}.
+If the challenge is answered incorrectly or not at all we can not be assured that the other peer is either trusted nor encrypted, thus we simply ignore it for all further operations\footnote{Ideally we would warn the user of this as it may result in peers being orphaned within the network. As this requires either the user having tried to connect to an insecure peer or a peer having become corrupted, the chance that this behavior is undesired is comparatively slim.}.
 This concludes opening a communication channel with a connected peer.
 
 \begin{figure}[htp]
@@ -345,7 +345,7 @@ This concludes opening a communication channel with a connected peer.
 Figure~\ref{graph:connection_states} shows an informal state diagram of how a peer reaches the idle state where the connection is ready and set up, both for trusted and encrypted peers.
 The switch from the disconnected state to the connected state is signaled by the underlying Tox connection, meaning it happens when the other peer is online and visible via the Tox channel.
 Once connected and if the peer itself is a trusted peer, a challenge is sent which contains an encrypted nonce.
-For a more in depth look at the challenge response mechanism see section~\ref{}.
+For a more in depth look at the challenge response mechanism see section~\ref{subs:Challenge Response}.
 
 Note that a few points must be considered that can not be shown in the diagram.
 Since Tinzenite is designed as a peer to peer network, no client server structure exists.
@@ -415,60 +415,79 @@ This ensures that a peer can be excluded even if it was lost.
 \subsection{Model Management}
 \label{sub:Model Management}
 
-This section will describe how a trusted peer receives and sends messages via the Tox channel.
+Now that we have discussed how a peer is structured and how its connections are handled, we can turn to how a trusted peer receives and sends messages via the Tox channel.
 Once the setup has been completed, as seen in section~\ref{sec:conn_management}, the models must be updated if they do not match.
-This happens normally when files and directories have changed through user or system interaction.
+This happens normally when files and directories have changed through user interaction.
 
 \subsubsection{Request Operation}
 \label{subs:Request Operation}
 
+In general each peer does not rely on other peers to update.
+Therefore we propose the creation of request operation which serves to request resources required for synchronization with another peer.
+This request can be used both for the complete directory model as for each specific file.
+It is important to note here that directories should never be requested as they do not require attached binary data to be either created, modified, or removed.
+Thus a request operation is only ever for operations that require data to be transferred.
+Upon receiving the message the other peer starts a Tox file transfer which the initiating peer knows to accept as it just requested it.
+
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
     {
-        "operation":"request",
-        "request":"model|object",
-        "object":"object_unique_hash",
-        "delta":"true|false",
-        "TODO":"ADD LIBRSYNC STUFF HERE"
+        "Type":"request",
+        "ObjType":"object",
+        "Identification":"b83cf06d4e056e1a"
     }
     \end{lstlisting}
-\caption[Request Message]{Message used to request objects from another peer. Note that if requesting the model the object attribute can be omitted.}
+\caption[Request Message]{Example of a JSON request message.}
 \label{json:request_message}
 \end{figure}
 
 Figure~\ref{json:request_message} shows how a message to initiate a file transfer is structured.
-Note that apart from the identification we require no further information – the model has been independently updated.
-Now the peers need only actually get the binary files.
-Upon receiving the message the other peer starts a Tox file transfer which the initiating peer knows to accept as it just requested it.
+\textit{"ObjType"} can have the values object, peer, model, or auth.
+The peer and auth values are used by the encrypted peer to differentiate these special meta data from normal encrypted files.
+\textit{"Identification"} is the unique hash that each object is referenced by.
 
-By switching the request attribute from object to model the other peer, whether encrypted or trusted, can be commanded to resend its current model.
-In that case no further attributes are required and can be left out, although it may be possible to utilize the delta capability on large models.
-This is required for example in the case that the other peer does not send singular object update messages for the reason of conserving power or bandwidth.
+By switching the \textit{"ObjType"} attribute from object to model the other peer, whether encrypted or trusted, can be commanded to send its current model.
+After comparing the received model to its own model, the peer knows for which files it must request data.
 Thus periodically actively requesting a full model update will still allow updates to propagate independent of individual update messages at some point in time.
 
 This message is also explicitly used to get an encrypted peer to initiate a file transfer of the requested file or the encrypted model.
-The encrypted peer will most likely respond with a file transfer of the requested object if the trusted peer has successfully locked it.
+The encrypted peer will respond with a file transfer of the requested object if the trusted peer has successfully locked it.
 If not, the trusted peer will receive lock denial messages until it has successfully locked the connection.
 
 \subsubsection{Update Object Message}
 \label{subs:Update Object Message}
 
+Continuously requesting and receiving the model is not ideal however.
+For large directories just the transfer of the model may require significant bandwidth.
+Therefore we have included the option of sending current updates to all currently connected trusted peers so that they can apply the update without first having to request the complete model.
+
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
     {
-        "operation":"create|remove|move|modify",
-        "object":{
-            ...
+        "Type":"update",
+        "Operation":"modify",
+        "Object":
+        {
+            "Directory":false,
+            "Identification":"b83cf06d4e056e1a",
+            "Name":"else.txt",
+            "Path":"else.txt",
+            "Shadow":false,
+            "Version":
+            {
+                "927325d7a930dac9":3
+            },
+            "Content":"cecef410a6ef0d3c3e101ab726af2776"
         }
     }
     \end{lstlisting}
-\caption[Update Object Message]{The message broadcast by a peer to connected peers to notify that an update has happened. Operation can be any value of either create, remove, move, or modify.}
+\caption[Update Object Message]{The message broadcast by a peer to connected peers to notify that an update has happened. Operation can be any value of either create, remove, or modify.}
 \label{json:update_object}
 \end{figure}
 
-Figure~\ref{json:update_object} is a message for broadcasting a model update to other connected peers.
+Figure~\ref{json:update_object} is a message for broadcasting a model update to other connected trusted peers.
 The update message serves to keep both models in sync even after the initial synchronization at connection establishment.
-Upon receiving an update message the peer will most likely immediately respond with a fetch message to retrieve the updated file.
+Upon receiving an update message the peer should immediately respond with a fetch message to retrieve the updated file.
 If a peer receives a message for an operation that it has already applied, the message is silently discarded.
 This does not disturb the propagation of updates since the peer will have already sent the update to the other connected peers if it has the update already.
 In this way we ensure that every message propagates as far as possible without consuming unnecessary bandwidth\footnote{Peers are of course free to implement message sending in any way since the update messages are not critical for Tinzenite to work. Peers can simply only send update messages to a limited number of peers, down to none if bandwidth is scarce for example in the case of a mobile device.}.
@@ -966,3 +985,8 @@ It is then important the clear version of the auth.json file is NEVER pulled so 
 \label{sub:Encryption Scheme}
 
 TODO: explain how we encrypt files for encrypted peers, where and how the keys for that are stored, and expand on the algorithm to encrypt the stored keys with PRNG.
+
+\subsubsection{Challenge Response}
+\label{subs:Challenge Response}
+
+TODO: subsection on challenge and response?
