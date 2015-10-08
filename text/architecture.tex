@@ -379,23 +379,29 @@ This bootstrapping process allows a user friendly setup of peers.
 \end{figure}
 
 Figure~\ref{diagram:new_connection} shows how a user interacts with a Tinzenite peer and the Tinzenite network (consisting of 1 to n other existing peers) to connect a new peer to the network for the first time.
-As prose: the users simply start the new peer client for the first time.
-Then they can point it at the directory location, change settings, and check that another peer is visible.
+As prose: the users simply start the new peer client for the first time, whether encrypted or trusted.
+Then they can point it at the directory location, change settings, and check that a trusted peer is available.
 To establish an initial connection a Tox ID of an available Tinzenite peer is required.
 The users can then command the new peer to connect to this available peer by entering the Tox ID.
 To ensure that no man in the middle attack can happen the users will now have to confirm the connection on the available peer.
 This means allowing the connection there and ideally ensuring that the seen Tox ID is identical with the new peer's Tox ID.
-Once the connection has been confirmed on the other peer a channel is opened.
+Furthermore Tinzenite reports to the user whether the newly connected peer requested to be registered as a trusted peer or not.
+Once the connection has been confirmed for the given trust level on the other peer the channel is opened and ready.
 
-The peer then receives the authentication block to set up the basic information it requires as part of the bootstrapping process.
-Notably this also allows the user to define the new peer as a trusted peer by entering the password that unlocks the encryption key used for the stored data.
-Access to the key also allows the peer to respond to other peers as a trusted peer.
-The new peer address and its information will now be synchronized throughout the already connected peers once they are available, removing the need to add the new peer manually to each and every one.
+Depending on whether the new peer is an encrypted or a trusted peer what happens next differs somewhat.
+Since encrypted peers are passive peers the bootstrapping process is finished once the peer has established a connection to a trusted peer.
+However the encrypted peer at this state still lacks any encrypted files or more importantly the list of other peers and the authentication file.
+It falls upon the connected trusted peer to initiate the first data upload, after which the new encrypted peer will have all the required information.
 
-Now the channel has been established and the peers can begin communicating as shown in figure~\ref{graph:connection_states}.
-Notably though the starting state is the \textit{"Connected"} state as the connection has already been established on the Tox layer.
-Depending on whether the user has specified the new peer as a trusted peer by entering the password or as an encrypted peer by skipping that step the peer will be defined accordingly.
-The directories will begin synchronization once the challenge and model exchange have happened.
+If the new peer is a trusted peer it must autonomously complete the bootstrapping by fetching all the files from the existing peer.
+This works even without an authentication file because the existing peer has received user confirmation of the trust status of the bootstrapping peer.
+This allows it to fetch all files unencrypted.
+Once all files have been fetched the new trusted peer is ready to run.
+This includes immediately connecting to other existing peers since the peer list is now also available to it.
+
+Even if the new peer goes offline immediately after completing the bootstrap process, the new peer information will be synchronized throughout the already connected peers once they synchronize with the peer which accepted the new peer.
+This is enabled because the connection request by a new peer includes its own peer information, and when the connection is accepted this peer information is immediately added to the \textit{"peers"} directory.
+Thus it will be synchronized to all other peers which will automatically accept any connections of peers listed in the peer list.
 
 Removing peers will work much in the same way from a system perspective.
 A user can note a peer to be removed, resulting in it being removed immediately from the peer where the action was initiated.
@@ -403,8 +409,11 @@ It will then transit through online peers and result in a complete removal once 
 An interesting aspect to how to handle removal from the perspective of the to be removed peer is what to do with the data on the peer.
 For a trusted peer we might offer a choice whether to remove the data or simply disconnect it from the Tinzenite network.
 On the other hand encrypted peers can simply remove the data immediately as they can't access it anyway.
+Notably removing a peer requires no action on the to be removed peer's side.
+This ensures that a peer can be excluded even if it was lost.
 
 \subsection{Model Management}
+\label{sub:Model Management}
 
 This section will describe how a trusted peer receives and sends messages via the Tox channel.
 Once the setup has been completed, as seen in section~\ref{sec:conn_management}, the models must be updated if they do not match.
