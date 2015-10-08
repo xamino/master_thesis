@@ -168,13 +168,13 @@ This also avoids partially overwritting user accessible files if the transfer fa
 
 The \textit{"local"} directory is used for three purposes.
 First a copy of the peer's own peer information is written to a file alongside with a binary dump that the underlying Tox channel requires to run which contains the persistent state information.
-Second the actual model is written to disk here, although not as a fully expanded object tree as specified in section~\ref{sec:Peer Data Model}.
+Second the actual model is written to disk here, although not as a fully expanded object tree as specified in section~\ref{sec:Object Model}.
 Instead Tinzenite writes the internal representation of the model to disk as JSON.
 This differentiates in a few key points, but primarily serves to store both the absolute path and to keep the directory tree in a flat representation that is more efficient to actually work with.
 Finally the \textit{"rmstore"} directory keeps a record of all previously completed removals in the case that a peer tries to reintroduce a completed removal.
 
-\section{Peer Data Model}
-\label{sec:Peer Data Model}
+\section{Object Model}
+\label{sec:Object Model}
 
 This section will describe our solution to how Tinzenite keeps track of objects within a directory.
 This data will be henceforth referenced as the data model or just model.
@@ -305,11 +305,14 @@ To differentiate between updates we require a \textit{"version"} attribute which
 Important for detecting file changes is the \textit{"content"} attribute which stores a hash of the file's binary blob.
 Finally the \textit{"shadow"} flag is used to notify a peer whether the file is locally accessible or must first be fetched from other peers.
 
-\section{Core Update API}
-\label{sec:Core Update API}
+\section{Communication Specification}
+\label{sec:Communication Specification}
 
-This section describes the application interface that will be used to synchronize two models on separate peers where the models might diverge.
-To understand how this works, it is important to understand how Tinzenite is structured.
+This section describes the specifications for the messages that will be used to synchronize two models on separate peers.
+Thus we start with defining how connections are managed, then build on this to explain how new peers are added to an existing network.
+Then we will specify the messages used for model synchronizations between trusted and between trusted and encrypted peers.
+% TODO rework this sentence once Message Timing / Order is rewritten.
+Finally we will briefly expand on the ordering of messages and the expected emerging behavior.
 
 Every peer views all connected peers as separate connections.
 A swarm behavior only comes to pass because of the independent actions of every peer, not through a combined communication between multiple peers.
@@ -412,8 +415,8 @@ On the other hand encrypted peers can simply remove the data immediately as they
 Notably removing a peer requires no action on the to be removed peer's side.
 This ensures that a peer can be excluded even if it was lost.
 
-\subsection{Model Management}
-\label{sub:Model Management}
+\subsection{Trusted Synchronization}
+\label{sub:Trusted Synchronization}
 
 Now that we have discussed how a peer is structured and how its connections are handled, we can turn to how a trusted peer receives and sends messages via the Tox channel.
 Once the setup has been completed, as seen in section~\ref{sec:conn_management}, the models must be updated if they do not match.
@@ -487,7 +490,7 @@ Therefore we have included the option of sending current updates to all currentl
 
 Figure~\ref{json:update_object} is a message for broadcasting a model update to other connected trusted peers.
 \textit{"Operation"} can be any value of either create, remove, or modify.
-The key \textit{"Object"} contains the object representation for the updated object as seen in section~\ref{sec:Peer Data Model}.
+The key \textit{"Object"} contains the object representation for the updated object as seen in section~\ref{sec:Object Model}.
 
 The update message serves to keep both models in sync even after the initial synchronization at connection establishment.
 Upon receiving an update message the peer should immediately respond with a fetch message to retrieve the updated file.
@@ -495,8 +498,8 @@ If a peer receives a message for an operation that it has already applied, the m
 This does not disturb the propagation of updates since the peer will have already sent the update to the other connected peers if it has the update already.
 In this way we ensure that every message propagates as far as possible without consuming unnecessary bandwidth\footnote{Peers are of course free to implement message sending in any way since the update messages are not critical for Tinzenite to work. Peers can simply only send update messages to a limited number of peers, down to none if bandwidth is scarce for example in the case of a mobile device.}.
 
-\subsection{Encrypted Management}
-\label{sub:Encrypted Management}
+\subsection{Encrypted Synchronization}
+\label{sub:Encrypted Synchronization}
 
 Communication with the encrypted peer is a special case as all operations on the encrypted files must happen on the trusted peer.
 Since the encrypted peers can not resolve conflicts we must ensure that no conflicts ever happen specifically on the encrypted data.
@@ -552,12 +555,18 @@ When an encrypted peer is locked to a trusted peer and receives a push message i
 This request message will trigger the trusted peer to encrypt the file and send it to the encrypted peer.
 The encrypted peer will accept the file transfer because it now expects it.
 
-For the peers and authentication file the different value of \textit{"ObjType"} will allows the encrypted peer to place these unencrypted files in a different location than the normal data.
+For the peers and authentication file the different value of \textit{"ObjType"} will allow the encrypted peer to place these unencrypted files in a different location than the normal data.
 This is required so that it can access them and work with the contained data as required.
 Since trusted peers store the model internally and the model is privacy sensitive as it contains clear text paths and names, the model is also stored as a special file on the encrypted peer.
 
 \subsection{Message Timing}
 \label{sub:Message Timing}
+%TODO: mabye Message Order instead?
+
+%TODO continue here
+TODO: Continue here.
+Can we make all the messages fit into a state diagram?
+That would be nice I think...
 
 Now we must define when which messages are sent.
 For the initial creation of a connection the order of messages can be seen in figure~\ref{diagram:new_connection}.
