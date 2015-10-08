@@ -481,11 +481,14 @@ Therefore we have included the option of sending current updates to all currentl
         }
     }
     \end{lstlisting}
-\caption[Update Object Message]{The message broadcast by a peer to connected peers to notify that an update has happened. Operation can be any value of either create, remove, or modify.}
+\caption[Update Object Message]{The message broadcast by a peer to connected peers to notify that an update has happened.}
 \label{json:update_object}
 \end{figure}
 
 Figure~\ref{json:update_object} is a message for broadcasting a model update to other connected trusted peers.
+\textit{"Operation"} can be any value of either create, remove, or modify.
+The key \textit{"Object"} contains the object representation for the updated object as seen in section~\ref{sec:Peer Data Model}.
+
 The update message serves to keep both models in sync even after the initial synchronization at connection establishment.
 Upon receiving an update message the peer should immediately respond with a fetch message to retrieve the updated file.
 If a peer receives a message for an operation that it has already applied, the message is silently discarded.
@@ -505,9 +508,8 @@ We do this by ensuring that only ever one trusted peer may synchronize with an e
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
     {
-        "operation":"lock",
-        "lock":"request|accept|deny|remove",
-        "nonce":"random_number"
+        "Type":"lock",
+        "Action":"request"
     }
     \end{lstlisting}
 \caption[Lock Peer Message]{Message for negotiating a lock for a peer.}
@@ -515,12 +517,15 @@ We do this by ensuring that only ever one trusted peer may synchronize with an e
 \end{figure}
 
 Figure~\ref{json:lock_peer} shows the format of the message used to negotiate a lock for an encrypted peer.
-The trusted peer first sends a request to which the encrypted peer can either answer with accept if no lock is currently active or deny if there is.
+The key \textit{"Action"} can have a value of request, release, or accept.
+The trusted peer first sends such a request to which the encrypted peer can answer.
+If it answers with release or fails to answer the trusted peer considers the encrypted peer already locked and will retry at a later time.
+If however the encrypted peer responds with accept, the lock is active.
+
 Once locked we must ensure that the encrypted peer will not become stuck in a locked state: we do this by having it implement a time out.
-This time out resets after every received interaction from the trusted peer (so that we do not accidentally time out on long file transfers for example).
+This time out resets after every received interaction from the trusted peer so that we do not accidentally time out on long file transfers.
 If the trusted peer tries an operation while locked out, the encrypted peer will respond with a denial message every time.
-Once the trusted peer is done with its operations it should remove the lock by sending a remove message.
-To make associating locks easier on both sides we include a random nonce for identification purposes within the message.
+Once the trusted peer is done with its operations it should remove the lock by sending a release message.
 
 \subsubsection{Apply Operation}
 \label{subs:Apply Operation}
