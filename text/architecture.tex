@@ -418,28 +418,27 @@ This ensures that a peer can be excluded even if it was lost.
 \subsection{Message Order}
 \label{sub:Message Order}
 
-%TODO
-TODO: can we make all the messages fit into a state diagram?
-TODO: reference all messages forward.
-
 Now we must define when which messages are required to be sent to keep two models between peers synchronized.
 Once the connection is established we must differentiate between trusted peers and encrypted peers.
 
 For trusted peers we propose the following message timing to enable rapid propagation of updates throughout the network.
 Upon connection both peers will first exchange models, providing essentially a snapshot of differences since the last synchronization.
-Peers will thus immediately begin updating each other so that the directory returns to the same state on both instances.
+This requires a message to request the model from the other peer.
+Since we will also need to request files we use a generalized request message that can trigger a file transfer as specified in the following section~\ref{subs:Request Message}.
+Upon reception of the model, both peers will merge the models and request any changed files.
+At the end of a model request both peers should share a common model state and associated directory state.
+
 If local changes happen during or after the model has been exchanged the update messages are used to notify the other model of the update without having to retransmit the entire model again.
+These will be specified in section~\ref{subs:Update Message}.
 However to ensure that all updates do propagate at some point, ideally rather faster than longer, we propose that each peer resend the model every few units.
 The exact spacing of when the complete model is resent is again up to the peer itself and can be adjusted per instance.
 This allows mobile peers to work more energy efficient by synchronizing less often in comparison to desktop peers where power and bandwidth usage don't play a prominent role.
 
 Since encrypted peers work passively it is again up to the trusted peers to ensure that they are queried regularly.
-Once a lock has been established it is important that the trusted peer completes the exchange of models and files rapidly so that the encrypted peer can be unlocked again for other trusted peers.
-This is enforced with a lock time out if no further messages are received from the trusted peer or it disconnects while locked.
-
-From the user perspective we hope to offer easy to use and clearly labeled settings that allow great flexibility in how fast directory synchronization happens within Tinzenite for all relevant peers.
-Therefore the client peer and the mobile peer will offer sane default values that can be modified if the user so wishes.
-We will make sure to highlight the effects of setting the timing values to extremes of course as too great or too little time between messages will result in deficiencies for the user experience.
+To avoid creating merge conflicts on encrypted peers which these could not independently resolve as all data is encrypted, encrypted peers can only be accessed by a single trusted peer at the same time.
+This will be negotiated via lock messages as specified in section~\ref{subs:Lock Message}.
+Once successfully locked request messages can be used to fetch data from the encrypted peer.
+To place data on the encrypted peer we thus require a push message as specified in section~\ref{subs:Push Message}.
 
 \subsection{Trusted Synchronization}
 \label{sub:Trusted Synchronization}
@@ -448,8 +447,8 @@ Now that we have discussed how a peer is structured and how its connections are 
 Once the setup has been completed, as seen in section~\ref{sec:conn_management}, the models must be updated if they do not match.
 This happens normally when files and directories have changed through user interaction.
 
-\subsubsection{Request Operation}
-\label{subs:Request Operation}
+\subsubsection{Request Message}
+\label{subs:Request Message}
 
 In general each peer does not rely on other peers to update.
 Therefore we propose the creation of request operation which serves to request resources required for synchronization with another peer.
@@ -483,8 +482,8 @@ This message is also explicitly used to get an encrypted peer to initiate a file
 The encrypted peer will respond with a file transfer of the requested object if the trusted peer has successfully locked it.
 If not, the trusted peer will receive lock denial messages until it has successfully locked the connection.
 
-\subsubsection{Update Object Message}
-\label{subs:Update Object Message}
+\subsubsection{Update Message}
+\label{subs:Update Message}
 
 Continuously requesting and receiving the model is not ideal however.
 For large directories just the transfer of the model may require significant bandwidth.
@@ -531,8 +530,8 @@ Communication with the encrypted peer is a special case as all operations on the
 Since the encrypted peers can not resolve conflicts we must ensure that no conflicts ever happen specifically on the encrypted data.
 We do this by ensuring that only ever one trusted peer may synchronize with an encrypted peer by utilizing a locking mechanism.
 
-\subsubsection{Locking Operation}
-\label{subs:Locking Operation}
+\subsubsection{Lock Message}
+\label{subs:Lock Message}
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
