@@ -363,17 +363,13 @@ Establishing a connection is done every time a peer reconnects.
 
 \subsection{New Connection Establishment}
 
-%TODO continue here
-TODO continue here
-
 The previous section described how Tinzenite connects to known peers.
 This section therefore discusses how Tinzenite connects to new peers, meaning peers that the user adds to the network.
 Notably this is a manual process where the user is used as a secondary channel to prevent man in the middle attacks.
 Since a typical Tinzenite network might have many peers, it is not desirable to have to authenticate a new peer manually with every other peer.
-We therefore propose that the user only need authenticate the new peer with one existing peer.
+We therefore propose that the user only need authenticate the new peer with one existing trusted peer.
 From there the authentication is synchronized to the other existing peers much like any other file or property update.
 This bootstrapping process allows a user friendly setup of peers.
-Should the same peer have been added multiple times at different existing peers Tinzenite will detect this and merge the authentication together.
 
 \begin{figure}[htp]
 \centering
