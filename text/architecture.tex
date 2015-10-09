@@ -638,6 +638,31 @@ In this way we ensure that every message propagates as far as possible without c
 \subsubsection{Notify Message}
 \label{subs:Notify Message}
 
+The notify message is used to notify special states to peers.
+For trusted peers it can be used to signal that a removal has been fully applied to avoid reintroduction of removals.
+Encrypted peers use it to signal trusted peers that a request can not be answered if a file for a given unique hash identification can not be retrieved and transfered.
+
+\begin{figure}[htp]
+    \begin{lstlisting}[language=json,firstnumber=0]
+    {
+        "Type":"notify",
+        "Notify":"missing",
+        "Identification":"b83cf06d4e056e1a"
+    }
+    \end{lstlisting}
+\caption[Notify Message]{Example notification message.}
+\label{json:notify_message}
+\end{figure}
+
+Figure~\ref{json:notify_message} shows an example message for a missing object from an encrypted peer.
+The value \textit{"Notify"} can be either missing or removed.
+The \textit{"Identification"} is the unique hash for the object which the notificatino message references.
+
+\subsubsection{Authentication Message}
+\label{subs:Authentication Message}
+
+%TODO add missing stuff
+
 %TODO add
 TODO: add and check if that is all.
 Specifically make sure that all different notifies have been mentioned since some are important for both trusted and encrypted peers AND for removals.
