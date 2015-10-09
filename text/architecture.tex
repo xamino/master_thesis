@@ -661,15 +661,29 @@ The \textit{"Identification"} is the unique hash for the object which the notifi
 \subsubsection{Authentication Message}
 \label{subs:Authentication Message}
 
-%TODO add missing stuff
+The authentication message is used to verify trusted peers against each other to ensure that clear text data is only sent between themselves.
+The same method is used for both challenge and response.
+For a more in depth look into how the mechanism works see section~\ref{subs:Challenge Response}.
 
-%TODO add
-TODO: add and check if that is all.
-Specifically make sure that all different notifies have been mentioned since some are important for both trusted and encrypted peers AND for removals.
+\begin{figure}[htp]
+    \begin{lstlisting}[language=json,firstnumber=0]
+    {
+        "Type":"challenge",
+        "Encrypted":"5HFXCQBMwe6ohx9fKeLsNxaBsOK7+9pxWFiXX4aE4cRtdt8oUOHQBJ6XrowiwwgLunM="
+    }
+    \end{lstlisting}
+\caption[Authentication Message]{An example of a valid authentication message containing a challenge.}
+\label{json:authentication_message}
+\end{figure}
+
+Figure~\ref{json:authentication_message} shows an example of a challenging authentication message.
+The \textit{"Encrypted"} value contains the challenge value or the response value encrypted with the data encryption keys.
 
 %TODO CONTINUE HERE
 TODO: CONTINUE HERE.
 The stuff below has already been done up to Update Detection and Reconciliation.
+Except: update encrypted stuff to reference notify message.
+Authentication message may also need references to it.
 
 \subsection{Encrypted Synchronization}
 \label{sub:Encrypted Synchronization}
