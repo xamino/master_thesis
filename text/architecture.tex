@@ -749,23 +749,18 @@ Since trusted peers store the model internally and the model is privacy sensitiv
 \section{Update Detection and Reconciliation}
 \label{sec:Update Detection and Reconciliation}
 
-This section describes the theoretical side of the update detection: how we detect updates on file systems in a way that does not consume too much resources of the hosting computer.
+This section describes the theoretical side of the update detection: how we detect updates on file systems in a way that does not consume too much resources from the hosting computer.
 Then we will discuss the interesting case of update reconciliation and how Tinzenite reacts to conflicts.
 
 \subsection{Update Detection}
 \label{sub:Update Detection}
 
-Tinzenite continuously checks the directory against the model of the same (see also TODO).
+When a Tinzenite directory is created the initial model of the directory is created and stored as described in section~\ref{TODO}.
+To detect changes within the directory Tinzenite thus regularly compares the current state of all objects within the directory against the previous model.
+If creations, modifications, or removals are detected they are applied to the model and any further required operations completed.
 
-TODO.
-I'm not sure how I can implement this yet and whether I will use an external library for a file watcher.
-I'll get back to this at a later point in time.
-
-%TODO
-TODO write.
-Directories MUST always check sub directories for changes before you can delete or modify them (at creation time they are empty by default).
-Can directories only be removed if all sub files are removed first?
-This could be a sensible way to implement this...
+TODO: go into a bit more detail?
+Hash and modtime stuff?
 
 \subsection{Update Reconciliation}
 \label{sub:Update Reconciliation}
