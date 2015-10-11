@@ -855,18 +855,18 @@ Both cases will be propagated through the network as normal file operations.
 
 As stated in the motivation for this thesis in section~\ref{sec:Motivation} security and privacy are a primary concern for this thesis.
 As such we will give a brief overview of conceptual thoughts on the security of the proposed work.
-Please note however that a full security review is not the goal of this work or within its scope.
-Nonetheless we hope to offer something secure enough for practical usage.
+Please note however that a full security review is not the goal of this work nor within its scope.
+Nonetheless we hope that the implementation will be secure enough for practical usage.
 
 First we will concern ourselves with a network of only trusted peers.
-In this case Tinzenite should be very secure as long as the user ensures that no man in the middle attack happens on setting up initial connections between new peers.
+In this case Tinzenite should be very secure as long as the user ensures that no man in the middle attack happens on setting up initial connections between new trusted peers.
 All further communications are encrypted and authorized by Tox.
 This in turn means that Tinzenite remains as secure as the software it is built on.
 As with any software all security is for naught should the user make an error or allow the stored data to leak outside of Tinzenite.
-This is especially true as Tinzenite does not offer protection from other programs reading out the stored data in a clear text directory as this would make intended changes increasingly difficult.
+This is especially true as Tinzenite does not offer protection from other programs reading out the stored data in a clear text directory as this would make intended changes very difficult.
 
-So what changes when the server peer or other similarly encrypted third party peers are given access to the network?
-Not a lot for the communication: Tox still theoretically guarantees a fully encrypted and authorized data channel.
+So what changes when encrypted peers are given access to the network?
+Not a lot for the communication between peers itself: Tox still theoretically guarantees a fully encrypted and authorized data channel.
 Since the to be stored data is encrypted on trusted peers before being sent, direct access to the user's data should also prove difficult, pending that the encryption algorithm is secure enough.
 
 Since encrypted peers receive the model and all associated files only fully encrypted, this should not provide to be a problem from a security standpoint.
@@ -878,30 +878,8 @@ Since we encrypt on a per file basis it is theoretically possible to analyze fil
 This is only made easier by the fact that file sizes are roughly the same whether encrypted or not, with an accuracy down to the block size of the encryption scheme.
 The information leak could be mitigated by implementing the core protocol with encrypted oblivious storage~\cite{goldreich1987towards}: however this may well be worthy of its own thesis and thus not further considered here.
 
-% TODO possible future work!
-
-Possibly even more problematic is the clear text storage of the peer list even on encrypted peers as it can be used to determine the size of the user's Tinzenite peer network.
+Possibly even more problematic is the clear text storage of the peer list even on encrypted peers as it can be used to determine the size of the user's Tinzenite network.
 However to allow encrypted peers to facilitate file transfer between two mutually exclusively online peers, it must know this information.
 This is mitigated by the fact that Tox IDs are hard to guess and not shared beyond the Tinzenite peer network.
-They however can be used to monitor the user's devices by utilizing the Tox distributed hash table to get current internet protocol addresses\footnote{TODO: IIRC Tox actually mitigates this via a form of onion routing. Take a look if the sentence is correct!}.
-
-A further note on the challenge response part when establishing a known connection between two peers, as seen in section~\ref{sec:conn_management}.
-We have defined that the connection is not established if the response is invalid.
-As a bonus feature a client may well even actively warn the user of the invalid response, allowing the user to decide how to react correctly.
-The user could either remove the peer from the directory network or initiate it anew so that everything returns to working order.
-It should never happen that an encrypted peer answers invalidly even once if the system is not compromised and running as specified.
-Therefore we may consider immediately removing the peer as if the user had manually removed it to ensure tighter security – of course the fact that a peer had been removed should still be immediately communicated to the user.
-
-TODO: change the auth.json file to include trusted peer list.
-Thus even peers can be sent only encrypted save for the list in auth.json which is used to determine if a peer may connect by the encrypted peer.
-It is then important the clear version of the auth.json file is NEVER pulled so that no peers can be introduced by the server peer.
-
-\subsection{Encryption Scheme}
-\label{sub:Encryption Scheme}
-
-TODO: explain how we encrypt files for encrypted peers, where and how the keys for that are stored, and expand on the algorithm to encrypt the stored keys with PRNG.
-
-\subsubsection{Challenge Response}
-\label{subs:Challenge Response}
-
-TODO: subsection on challenge and response?
+They however can be used to monitor the user's devices by utilizing the Tox network.
+Recovering a user's IP addresses should not be possible however as Tox employs onion routing to mitigate this risk~\cite{web:site:tox:wiki:onion}.

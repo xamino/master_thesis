@@ -115,18 +115,40 @@ Thus the quick switching between multiple directories can allow the single libra
 In the case of the server n libraries can thus be mapped to m directories.
 Should make sure that we can support encrypted and trusted peers side by side too (depending on whether the directory is clear or not).
 
-\section{Client Peer}
+\section{Trusted Peer}
 
 TODO
 
-\section{Server Peer}
+\section{Encrypted Peer}
 
 TODO
-Features: data obfuscation how?
-Still required?
 
-Also note that encrypted peer may want to have capability of detecting when data is infused via third channel but is valid (meaning for example someone manually moves a large file over to save time: peer should detect on model update that it already has file and doesn't request this).
+\section{Encryption}
+\label{sec:Encryption}
 
-\section{Mobile Peer}
+This section will discuss the scheme used to encrypt and decrypt files within Tinzenite and how the keys are stored and shared.
+Generally speaking Tinzenite uses to layers to ensure security.
+The encryption scheme we used in Tinzenite is the NaCl library~\cite{bernstein2012security} through its interoperable Golang package~\cite{web:site:golang:box}.% interoperable is spelled correctly
+From this package we utilize just three methods: \textit{"GenerateKey"}, \textit{"Open"}, and \textit{"Seal"}.
+Respectively they are used to generate encryption keys, decrypt data, and encrypt data.
 
-TODO
+\subsection{File Encryption}
+\label{sub:File Encryption}
+
+Every Tinzenite network generates a single permanent key pair which is used to encrypt and decrypt data.
+Each peer upon creation generates these keys but will overwrite them with the network's keys if connected to an existing network during bootstrapping.
+File data is encrypted before sending it and decrypted after receiving it when exchanging data with encrypted peers.
+
+To encrypt and decrypt data via NaCl we require an associated nonce which must be atomic but unique to every encryption decryption cycle.
+Thus we require a way to store and retrieve the nonce for each encrypted data blob.
+
+\subsection{Key Encryption}
+\label{sub:Key Encryption}
+
+TODO: describe seeding PRNG and how the keys are retrieved.
+Also note that password can be changed without having to re-encrypt all encrypted data!
+
+\subsection{Challenge Response}
+\label{sub:Challenge Response}
+
+TODO: subsection on challenge and response?
