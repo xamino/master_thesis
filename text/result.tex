@@ -32,3 +32,131 @@ TODO: encrypted peer data obfuscation
 TODO: all advanced features that we did not get around to. :P
 
 TODO: additional peers (reference concept chapter)
+
+TODO: rework the stuff below as future work and how we think it could be implemented on top of the existing work.
+
+In this section we will describe the features that we consider to be advanced features.
+These will for the most part be implemented at a later stage and are not relevant for the core functionality of the Tinzenite system.
+
+\subsection{Space Management}
+\label{sub:Space Management}
+
+One feature that should be implemented is that peers can have a limited amount of available space without breaking the protocol.
+This feature can be used to control how much data a mobile device has to synchronize at any given time or for the server peer, thus allowing control over how large directories maximally are.
+
+Each peer is required to enforce the size restriction given by itself.
+If the size limit has been reached it should only allow further updates as shadow files.
+The interesting case is of course what happens to files that are modified above the limit: we propose either making the file a shadow file as soon as it crosses the limit or allowing modifications to push the size above the limit.
+Since shadow files are already part of the Tinzenite protocol no further protocol support for this feature must be considered.
+
+\begin{figure}[htp]
+    \begin{lstlisting}[language=json,firstnumber=0]
+    {
+        "operation":"info",
+        "size_limit":"bytes_value",
+        "size_current":"bytes_value",
+        "message":"message_text"
+    }
+    \end{lstlisting}
+\caption[Information Message]{Message used by encrypted peers to send the user messages.}
+\label{json:info_message}
+\end{figure}
+
+For encrypted peers the enforcement of size restrictions must be handled by the active peers.
+This in turn means however that encrypted peers must be capable of denying additional updates.
+The message for this is defined as in figure~\ref{json:info_message}.
+It is sent upon an apply message that exceeds the size limit after the file transfer is denied.
+The trusted peer can then notify the user and possibly even immediately mark the file as a shadow file in the encrypted peers model.
+
+\subsection{Ignored Objects}
+\label{sub:Ignored Objects}
+
+To allow a user to only synchronize objects that they consider important another advanced feature we would like to implement is the ability to specify files and directories to be ignored.
+An example for how we propose to implement this feature is the Git source control management software~\cite{web:site:git}.
+By specifying the paths to directories and files within a so called \textit{.gitignore} visibility of these can be finely controlled.
+
+In Tinzenite we plan to implement this functionality in a similar manner.
+The file containing these rules can be synchronized just as any other file at any level within a directory.
+Any new objects detected by Tinzenite that are listed in this file will not be created within the model, effectively keeping it out of the system.
+Since it may well happen that such a file is created at a later point and thus introduce an uncertainty in handling the to be ignored files we propose a simple solution: the file is only ever applied for object creations.
+Once a file has been created within the model it will be modified and deleted as any other file within the system, independent on the ignore file.
+
+This in turn however means that renaming or moving a file in Tinzenite will remove it from the model, deleting it everywhere.
+Since we believe this to be a feature for more advanced users we will not make this feature a core aspect of the system.
+Normal users should have little need for only synchronizing a selected subset of files.
+
+\subsection{Shadow Files}
+\label{sub:Shadow Files}
+
+Depending on the location of a client a user may with to only access specific files without having to get an entire set or updates.
+This is a nice feature to have in the case of space and bandwidth restricted devices such as mobile devices.
+By selecting specific files the client will then only update or retrieve the corresponding files or directories, ignoring the rest.
+This works by fully synchronizing the model and creating placeholder empty files for every shadowed file.
+By selecting a shadowed file it can be unshaded, resulting in Tinzenite trying to fetch the binary blob normally with all updates until it is again shadowed.
+
+Functionality for the shadow file feature is available via the shadow attribute.
+It affects only files directly as the creation of directories is not significant from a size point of view.
+The attribute only serves as a shortcut to set all files of a directory implicitly to being shadowed.
+If files are marked as shadow files they are not updated on the disk, only their model.
+By setting the shadow flag to true the client will then immediately try to fetch the binary file from connected and available peers.
+
+Of interest are then a few edge cases.
+First and most trivial: what happens to an already synchronized file when the shadow attribute is set?
+We propose that the file is immediately removed although this could be expensive in terms of bandwidth if the users quickly change their mind again as the file must then be fetched all anew.
+A more sophisticated approach would integrate the size restriction capability of the client as proposed in section~\ref{sub:Space Management}.
+By setting the space limit to a number below the full size of the directory files will only be immediately removed if near the space limit.
+If the user changes their mind the file may thus still be immediately available.
+
+So what do peers do if they receive a model update where the shadow flag is set?
+It is important to note here that the shadow flag is considered to be transient when synchronizing models, meaning its value is considered to be local only.
+However it is still sent as it is used to determine for the receiving peer whether it can fetch an update if applicable from the other peer.
+Again it is up to the peer what happens upon receiving a shadow file update: trivially a peer that has a non shadow copy of the file will ignore shadow updates as it can not fetch the binary file update successfully from it.
+It will then have to wait for another peer to offer the update where the attribute is not set.
+
+The better solution would be to introduce a third value for the shadow attribute: temp.
+This value is to be set when the peer knows of an update and has applied it to its model but has not fetched the binary file update yet.
+Note that this is a local value only and should not be sent to other peers: in that case all instances of temp should be removed with true.
+When connecting to other peers the peer can then request all available files marked as temp and fully update them as required.
+This approach has the added advantage of allowing a peer to notify the user that the file has been updated but not fetched yet.
+We may also use this functionality to signal slow network transfer speeds: the user could at a glance see that the update is pending, possibly avoiding unnecessary conflicts.
+
+The final edge case is an unpleasant one: what Tinzenite does not provide is a way to ensure that one full copy of the shadowed file is kept.
+If the user marks a file as shadowed on all peers it may well happen that Tinzenite loses the file.
+For now we propose to avoid this by explicitly warning the user of this possibility.
+One way to mitigate this risk is by allowing user defined shadowed files only for specific clients: we can probably assume that any full desktop peer should always retain a full copy of the directory anyway.
+
+%TODO: Is this a future work todo?
+
+\subsection{Encrypted Peers}
+\label{sub:Encrypted Peers}
+
+The final advanced feature that is vital for the encrypted peer for third party support is how encryption is handled within the protocol.
+Trigger for detecting that a peer is encrypted is when the challenge is not correctly responded or denied (if it outright fails Tinzenite probably should warn the user as it would mean that someone is trying to guess the response).
+If the peer is already marked as a non trusted peer the challenge must never even be offered in the first case of course.
+Once the other peer has been identified as an encrypted peer it is up to the local peer to enforce the correct encryption on files.
+
+Explicitly this means that encrypted peers only receive encrypted blobs of files, not knowing what is in them and where to store them in relation to each other.
+This is all right however: encrypted peers only store the list of all encrypted files with the encrypted directory model alongside.
+Notable exception is the \textit{org} directory as previously discussed.
+Encrypted peers must only be able to send and receive objects as requested by a trusted peer.
+For this each binary encrypted file is stored with the name of its unique identification hash, allowing the encrypted peer to know which files to send and which to overwrite as required.
+
+\subsection{File Versioning}
+\label{sub:File Versioning}
+
+Another advanced feature that would be very nice to have and close the gap of feature parity between Tinzenite and other existing services would be the capability to offer file versions built directly into the protocol.
+Indeed the core protocol would not even have to be changed to support this: all that is required is the capability to keep old files for a specific time somewhere where the peer can reinstate them if the user wishes it.
+
+Therefore all that is needed is a definition of space where these old files can be stored.
+We propose placing these files in a further directory labeled \textit{"versions"} within the \textit{.tinzenite} directory.
+For each file object a directory with the name of the file identification is created as required where old versions can be stored.
+To differentiate the multiple copies each file must be uniquely named: we propose a simple number for each version that increments.
+
+It is important to be able to limit the amount of versions stored to keep the size of the directory manageable.
+We believe that this could simple be done by telling any single client how many different copies of files are to be stored, for example the last six.
+If a new version is added and it exceeds this self imposed limit the peer can simply trigger a normal removal, thus deleting the version from all peers once the removal has propagated.
+
+Further work could then be done to decrease the size of the versions by only keeping one base copy and storing only binary deltas.
+Again this would require somewhat extensive work on peer logic but no change in the core protocol.
+To differentiate full copies and delta files we propose an identifying name change would suffice: by appending a special marker behind the version number we could differentiate the type.
+The actual synchronization of deltas or full binaries is again already fully implemented in the core protocol and would work as any other file.
