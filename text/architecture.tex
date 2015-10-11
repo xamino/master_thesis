@@ -423,7 +423,6 @@ Alternatively we can also warn if we have too many possibly orphaned updates, al
 This section describes the specifications for the messages that will be used to synchronize two models on separate peers.
 Thus we start with defining how connections are managed, then build on this to explain how new peers are added to an existing network.
 Then we will specify the messages used for model synchronizations between trusted and between trusted and encrypted peers.
-% TODO rework this sentence once Message Timing / Order is rewritten.
 Finally we will briefly expand on the ordering of messages and the expected emerging behavior.
 
 Every peer views all connected peers as separate connections.
@@ -753,15 +752,9 @@ When a Tinzenite directory is created the initial model of the directory is crea
 To detect changes within the directory Tinzenite thus regularly compares the current state of all objects within the directory against the previous model.
 If creations, modifications, or removals are detected they are applied to the model and any further required operations completed.
 
-The initial version of the Tinzenite trusted peer only used file hashes to check for modifications.
-For large files or a large amount of files this proved to be a very slow operation.
-Thus we also locally store the modification time as written to the file system upon creation and modification of a file.
-As long as this modtime did not change we do not need to recalculate the hash as nothing has changed since the last check.
-Thus Tinzenite only needs to recalculate the hash when the file was in some way modified.
-This greatly speeds up the update detection phase.
-
-%TODO
-TODO: also note how creation and removal are handled.
+Creations are simply detected when objects exist on disk that are not tracked in the model.
+The reverse is used to detect removals: tracked objects that do not exist on disk.
+Modifications must be checked for every tracked existing object.
 
 \subsection{Update Reconciliation}
 \label{sub:Update Reconciliation}

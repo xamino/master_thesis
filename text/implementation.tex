@@ -118,6 +118,13 @@ Thus the quick switching between multiple directories can allow the single libra
 In the case of the server n libraries can thus be mapped to m directories.
 Should make sure that we can support encrypted and trusted peers side by side too (depending on whether the directory is clear or not).
 
+TODO: The initial version of the Tinzenite trusted peer only used file hashes to check for modifications.
+For large files or a large amount of files this proved to be a very slow operation.
+Thus we also locally store the modification time as written to the file system upon creation and modification of a file.
+As long as this modtime did not change we do not need to recalculate the hash as nothing has changed since the last check.
+Thus Tinzenite only needs to recalculate the hash when the file was in some way modified.
+This greatly speeds up the update detection phase.
+
 \section{Trusted Peer}
 
 TODO
