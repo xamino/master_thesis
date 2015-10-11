@@ -141,6 +141,12 @@ File data is encrypted before sending it and decrypted after receiving it when e
 
 To encrypt and decrypt data via NaCl we require an associated nonce which must be atomic but unique to every encryption decryption cycle.
 Thus we require a way to store and retrieve the nonce for each encrypted data blob.
+Instead of writing the nonce somewhere else we opted to prepend the nonce to the encrypted data. % prepend is spelled correctly
+Thus the first 24 bytes of every encrypted file contain the nonce required to decrypt it again.
+It is important to note that the nonce is not part of the encrypted data and must be trimmed away before trying to decrypt.
+
+%TODO: add example diagramm: hello world * [nonce] * keys ==> nonce + encrypted ==> nonce:encrypted ==> nonce + encrypted ==> encrypted * [nonce] * keys ==> hello world
+TODO: add diagram / image of this because I can :D
 
 \subsection{Key Encryption}
 \label{sub:Key Encryption}
@@ -151,4 +157,12 @@ Also note that password can be changed without having to re-encrypt all encrypte
 \subsection{Challenge Response}
 \label{sub:Challenge Response}
 
-TODO: subsection on challenge and response?
+The challenge response we use in Tinzenite is built on a very simple challenge.
+For each challenge we generate a random number and locally store it, then encrypt it with the data encryption keys and send it to the other peer.
+This responding peer decrypts the message and retrieves the number.
+It then increments it by one, encrypts its answer, and sends it back.
+If the received number is one value higher than the stored number, the challenge response is valid.
+
+The challenging peer can thus be satisfied that the other peer is valid because it proved that it could validly decrypt and encrypt the correct values.
+The responding peer knows the challenging peer is authenticated because it could issue a valid challenge for the network data encryption keys.
+In all the challenge response mechanism for Tinzenite requires only two messages and a single random number to validate both sides of the exchange.

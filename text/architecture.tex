@@ -85,7 +85,7 @@ The user given name of the directory is stored in \textit{"Dirname"}.
 We also need a way to distinguish multiple synchronized directories from each other: this is the random unique hash stored in \textit{"DirID"}.
 Again, this can be used by third party service providers to differentiate the amount of directories that a user can store with them.
 The encryption keys for encrypting and decrypting file data for encrypted peers is stored in \textit{"Secure"}.
-These keys are encrypted with a password derived encryption scheme further discussed in section~\ref{sub:Encryption Scheme}.
+These keys are encrypted with a password derived encryption scheme further discussed in section~\ref{sec:Encryption}.
 \textit{"Nonce"} stores the nonce value that is required additionally to the user provided password to successfully access the encryption keys.
 
 \subsubsection{Peer Files}
@@ -460,7 +460,7 @@ This concludes opening a communication channel with a connected peer.
 Figure~\ref{graph:connection_states} shows an informal state diagram of how a peer reaches the idle state where the connection is ready and set up, both for trusted and encrypted peers.
 The switch from the disconnected state to the connected state is signaled by the underlying Tox connection, meaning it happens when the other peer is online and visible via the Tox channel.
 Once connected and if the peer itself is a trusted peer, a challenge is sent which contains an encrypted nonce.
-For a more in depth look at the challenge response mechanism see section~\ref{subs:Challenge Response}.
+For a more in depth look at the challenge response mechanism see section~\ref{sub:Challenge Response}.
 
 Note that a few points must be considered that can not be shown in the diagram.
 Since Tinzenite is designed as a peer to peer network, no client server structure exists.
@@ -564,7 +564,7 @@ This happens normally when files and directories have changed through user inter
 
 The authentication message is used to verify trusted peers against each other to ensure that clear text data is only sent between themselves.
 The same method is used for both challenge and response.
-For a more in depth look into how the mechanism works see section~\ref{subs:Challenge Response}.
+For a more in depth look into how the mechanism works see section~\ref{sub:Challenge Response}.
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
