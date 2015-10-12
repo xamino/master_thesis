@@ -79,7 +79,7 @@ Figure~\ref{json:auth_object} shows the contents of an example authentication fi
 \label{json:auth_object}
 \end{figure}
 
-The key \textit{"User"} stores a bcrypt hash of the user's name~\cite{web:site:wiki:bcrypt}.
+The key \textit{"User"} stores a bcrypt hash of the user's name~\cite{provos1999future}.
 This is important for example for the support of encrypted third party peers: they can attach accounts to the provided user name for controlling server side access.
 The user given name of the directory is stored in \textit{"Dirname"}.
 We also need a way to distinguish multiple synchronized directories from each other: this is the random unique hash stored in \textit{"DirID"}.

@@ -91,7 +91,7 @@ The software is not open source and thus not independently verifiable.
 
 Peer to peer systems work without a central server.
 The trade off is that such solutions require assistance in locating other peers, which means that some form of peer discovery must be implemented.
-While this could be done via a central server, nowadays the common solution to the problem is a distributed hash table~\cite{web:site:wiki:dht} which is used to look up the required peers.
+While this could be done via a central server, nowadays the common solution to the problem is a distributed hash table~\cite{ratnasamy2001scalable} which is used to look up the required peers.
 Once another peer has been found the connection can be established.
 Apart from not relying on the availability and trustworthiness of a central server, peer to peer solutions offer up a possible performance advantage as they can distribute bandwidth between every peer, even actively unchoke a saturated peer.
 As an added bonus the path data takes between two peers will always be the most direct path as no data must first go towards a third party.
