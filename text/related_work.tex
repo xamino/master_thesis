@@ -129,27 +129,34 @@ We chose to compare the features that we believe to be most important to this th
 See table~\ref{table:software_comparison}.
 
 \begin{table}[htp]
+\begin{threeparttable}
 \centering
-\begin{tabulary}{\textwidth}{R || C | C | C | C }
-      & Peer to Peer & Server to Client & Open Source & Secure Storage \\
+\begin{tabulary}{\textwidth}{ p{2.8cm} || c | C | C | C | C }
+    \textbf{Name} & \textbf{Architecture} & \textbf{Free Storage} & \textbf{Client-side Encryption} & \textbf{Open Source} & \textbf{Account Required} \\
     \hline \hline
-    Dropbox &  & \checkmark &  &  \\
+    Dropbox & Centralized & 2 GB & & & \checkmark \\
     \hline
-    OneDrive &  & \checkmark & & \\
+    OneDrive & Centralized & 15 GB & & & \checkmark \\
     \hline
-    Google Drive &  & \checkmark & & \\
+    Google Drive & Centralized & 15 GB & & & \checkmark \\
     \hline
-    Boxcryptor &  & \checkmark & & \checkmark \\
+    Boxcryptor & --\tnote{a} & --\tnote{b} & \checkmark & & \checkmark \\
     \hline
-    BitTorrent Sync & \checkmark &  &  &  \\
+    BitTorrent Sync & Distributed & $\infty$ & & & \checkmark \\
     \hline
-    Syncthing & \checkmark &  & \checkmark &  \\
+    Syncthing & Distributed & $\infty$ & & \checkmark & \\
 \end{tabulary}
-\caption[TODO]{TODO}
+\scriptsize{
+\begin{tablenotes}
+    \item[a] Boxcryptor is used on top of an existing cloud storage provider.
+        The encryption infrastructure itself is centralized.
+    \item[b] Boxcryptor is free to use but many features are only available for a paid account.
+\end{tablenotes}
+}
+\end{threeparttable}
+\caption[Existing Software Comparison]{This table serves to highlight the differences between the existing software previously discussed.}
 \label{table:software_comparison}
 \end{table}
-
-TODO: the table has to be reworked, made more expansive.
 
 \section{Papers}
 \label{sec:Papers}
