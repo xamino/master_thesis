@@ -9,12 +9,12 @@ Therefore we will also expand on problems and solutions we encountered while wor
 Finally we will look back at the implementation and compare it to the theoretical ground work.
 For better comparison a brief discussion on similarities and differences to existing file synchronization services will also be included.
 
-\label{sec:Motivation}
+\label{sec:Motivation} %leaving this in here because it is linked specifically
 
 The thesis is mainly motivated by the revelations of drag net surveillance by Edward Snowden and the compliance by so called trusted service providers beyond even their legal obligations.
-Thanks to his sacrifice a global conspiracy of governmental agencies that do massive online surveillance of most internet communications was brought into the public light.
-Since the majority of the global internet players is based in the United States of America, this had huge implications for all manner of information exchanged.
-Many services and programs used by the majority of internet users has been shown to be either at risk of being compromised.
+Thanks to Snowden's sacrifice a global conspiracy of governmental agencies that do massive online surveillance of most internet communications was brought into the public light.
+Since the majority of the global internet players is based in the United States of America, this had huge implications for all information exchanged via the internet.
+Many services and programs used by the majority of internet users have been shown to be either at risk of being compromised or even known to explicitly include capabilities for compromising data security.
 This includes internet giants such as Facebook and and Google~\cite{web:site:tg:internet_giants}.
 Even Microsoft, producer of the most widely used operating system for personal computers, complied~\cite{web:site:tg:microsoft}.
 
@@ -30,11 +30,11 @@ Another example is the Tox instant messenger community that is building a free, 
 The main goal of this thesis is to tackle the problem of cloud data storage, often used for distributed file access across multiple computers.
 Existing examples of this include Google Drive~\cite{web:site:gdrive} and Dropbox~\cite{web:site:dropbox}.
 While the data transfered is now encrypted in transit in most cases, it is not encrypted while residing on the servers.
-This allows anyone with access to the server to fully access the data, so long as it was not already previously encrypted by the user.
-Before Snowden the third parties were entrusted with the safe keeping of the stored data under the presumption that no unauthorized access was allowed or even possible.
+This enables anyone with access to the server to fully access the data stored on it, at least if it has not been encrypted by the user before upload.
+Before Snowden's revelations these service providers were entrusted with the safe keeping of the data under the presumption that no unauthorized access was allowed or even possible.
 However this trust has been lost now that the public has been made aware of the possibilities of state organizations to access any data without due legal process.
 
-One solution to this problem is encrypting everything client side before uploading the data to third parties.
+One solution to this problem is encrypting everything client-side before uploading the data to the service providers.
 An example of a service that does this is Boxcryptor~\cite{web:site:boxcryptor}.
 However this principle requires active involvement from the user and is thus an extra hurdle in securing one's data.
 Perhaps simply forgoing a third party would be a possible solution.
@@ -45,12 +45,12 @@ Syncthing notably explicitly states that the user can enable access for trusted 
 Thus our motivation is to create a proof of concept of a file synchronization software suite.
 Stated goals are peer to peer communications, bypassing the requirement of a centrally hosted third party service.
 To harden such a peer to peer network it is necessary to encrypt all communication between the peers.
-This is not only required to hinder Wifi sniffing when using unsecured wireless access: Snowden also revealed that most data passing through internet exchange points is surveiled~\cite{web:site:heise:decix}.
+This is not only required to hinder Wifi sniffing when using unsecured wireless access: Snowden also revealed that most data passing through internet exchange points is surveilled~\cite{web:site:heise:decix}.
 Instead of integrating and mixing encrypted communications with the file synchronization commands required for such software to work, we utilize an existing secure peer to peer communication infrastructure in the form of Tox, on top of which we will propose a protocol for the sole task of file synchronization.
 
 To differentiate our proof of concept implementation from existing solutions a unique name was required.
 We chose the rock-forming mineral tinzenite for the name.
-Specifically, Tinzenite is the name of the peer network, which in turn is compromised of two distinct software peers which are based on a common protocol and communication standard.
+Specifically, Tinzenite is the name of the peer network which in turn is compromised of two distinct software peers which are based on a common protocol and communication standard.
 
 \section{Structure}
 \label{sec:Structure}
