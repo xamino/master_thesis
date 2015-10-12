@@ -1,76 +1,24 @@
 \chapter{Implementation}
-\label{chap:implementation}
+\label{chap:Implementation}
 
 %TODO continue here
 TODO: continue here (maybe start with the encryption stuff way down there...)
 
-%TODO a whole lot
-TODO: a whole lot.
-
 \section{Tools and Environment}
+\label{sec:Tools and Environment}
 
-TODO
+In this section we will discuss the tools we used to build the software proof of concept.
+This includes libraries we utilized and the software used to write the programs.
 
-\subsection{Tox}
-\label{sub:Tox}
+\subsection{Tox Binding}
+\label{sub:Tox Binding}
 
 I think I will be using this binding for Tox: \url{https://github.com/codedust/go-tox}.
 Note: not sure if he has implemented file transfers yet, which I definitely require!
 Although I can get started without them for validating the protocol.
 
-\section{Dependencies}
-\label{sec:Dependencies}
-
-This section briefly highlights the technologies we chose to support our work.
-These range from software solutions to data organization standards.
-Here we will concentrate on the broad features we require for Tinzenite and how they may impact our work.
-For our experiences and how exactly we used them see chapter~\ref{chap:implementation} where we go into the specifics of the implementation of Tinzenite.
-
-\subsection{Tox}
-
-A core aspect of this thesis is implementing the system using the peer to peer encrypted communication channel provided by the Tox communication suite~\cite{web:site:tox}.
-Initially developed as a Skype replacement the underlying transport layer was also intended to be usable for alternative services.
-We will make use of this and let Tox handle most of the communication aspects.
-
-Unlike many other communication applications, Tox does not require the creation of an account online.
-A user can create as many Tox identities as desired.
-Each identity consists of a public and private key where the public key is the identity of the user~\cite{web:site:tox:crypto}.
-Tox identities are dynamically mapped to the user's current internet address whenever the users are online via a distributed hash table.
-Once two users are online at the same time (off line messaging is still being implemented at this time) and have added each other as friends (which stores the other's Tox identity for future usage) they can establish a communication channel.
-The Tox messaging clients use the channel to facilitate text, audio, and video chats, with support for file transfers.
-All data is encrypted with perfect forward secrecy and sent directly from one client to the other\footnote{Although TCP relay tunneling is sometimes used to punch through obstructions.}.
-
-Tinzenite will build on the peer to peer, distributed, and encrypted communication channel provided.
-In our case each directory on each peer will be its own Tox identity.
-Every directory that is synchronized between multiple devices has its own network of friends which consists of the group of authorized peers.
-For the setup Tinzenite will require the user to allow the initial connection to any single other peer.
-The friend list is then synchronized by Tinzenite between all peers automatically.
-
 Since Tox itself is written in C and we intend to use Golang we require a binding for the Tox core.
 We intend to use an existing binding - specifically this one \cite{web:site:tox:golang} - to allow us to concentrate on the core aspects of our thesis.
-
-\subsection{Golang}
-
-Our implementation language of choice is Golang, usually referred to by the shorthand Go~\cite{web:site:golang}.
-The language is new to the author of this thesis but will hopefully provide to be an interesting intellectual challenge.
-Since the main language at Ulm University is mostly Java for student work, this thesis will hopefully also offer some insight into the differences between the two.
-
-Golang was created at Google in 2007, announced and open sourced in 2009.
-The reason for yet another language is given in the language's frequently asked questions page as: "Go is an attempt to combine the ease of programming of an interpreted, dynamically typed language with the efficiency and safety of a statically typed, compiled language. It also aims to be modern, with support for networked and multicore computing. Finally, it is intended to be fast: it should take at most a few seconds to build a large executable on a single computer."~\cite{web:site:golang:faq}.
-Since Tinzenite is a networked system and offers many possible applications for using concurrent operations it was deemed a good match for this thesis.
-
-Golang, much like Java, comes with a wide range of available default packages to use directly within a program.
-Beyond the basics we will make use of the provided cypher package to implement all encryption related tasks where required.
-
-\subsection{Hadoop}
-
-As the encrypted server peer is intended to run as a service for multiple parallel different Tinzenite peers of multiple users it will require some extra work into how to store the expected large size of the data.
-We will therefore look into using Hadoop~\cite{web:site:hadoop} for data storage.
-This will allow third parties to run a single instance of the server peer even for many users at once while being able to reliably service all data.
-
-%TODO
-TODO: Need to rewrite / add to this once I've actually used Hadoop.
-Currently I'm somewhat uninformed on the exact consequences of using this for the server peer.
 
 \subsection{JSON}
 \label{sub:JSON}
@@ -80,6 +28,8 @@ We will therefore utilize Javascript object notation, short JSON, as a machine r
 As an added bonus Golang has high level support for converting language structures into and from JSON.
 
 \subsection{Librsync}
+
+TODO: this is future work
 
 The feature of delta updates is again not a trivial matter and we thus turn to existing solutions to shorten our work load in this regard.
 We intend to utilize librsync~\cite{web:site:librsync} for the implementation of the specifics.

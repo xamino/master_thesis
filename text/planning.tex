@@ -10,14 +10,15 @@ Based on the concept and the proposed features we will explain the software comp
 \section{Basic Goals}
 \label{sec:Basic Goals}
 
-The stated goal of Tinzenite is to offer a peer to peer solution for file synchronization that builds on the strengths of Tox.
+The stated goal of Tinzenite is to offer a peer to peer solution for file synchronization that builds on the strengths of Tox (see section~\ref{sub:Tox}).
 It is important to us to build the system in a way that it is secure from unauthorized access by third parties, even if they retain a copy of the data.
 In fact we propose an explicit client for third party support so that third parties can offer a storage peer as a service.
 
 Therefore we will need to develop a protocol for a decentralized and distributed system that relies on the underlying secure channel.
 Based on this we hope to implement a proof of concept peer client for normal computers and a third party client that securely stores the user's data off site.
+This encrypted peer should allow the storage of data using the Hadoop file system (see section~\ref{sub:Hadoop File System}).
 
-As proof of the protocol we will implement both programs in Golang.
+As proof of the protocol we will implement both programs in Golang (see section~\ref{sub:Golang}).
 These should cover the basic requirements for file synchronization and work correctly for the base cases.
 Thus we will have an actual implementation against which we can compare our proposal against existing solutions and highlight derived problems, solutions, and differences.
 
@@ -28,35 +29,35 @@ This section will define the features we would like Tinzenite to have, including
 Therefore we will classify the features by scope.
 The exact features we would like to have have been synthesized from the existing and related work from the previous chapter.
 
-\begin{description}[leftmargin=2em,style=nextline,noitemsep,nolistsep]
-\item[File Synchronization Protocol]
+\begin{enumerate}
+\item \textbf{File Synchronization Protocol}
     Design of an extensible protocol on which all communication between peers will be based.
     The open specification will allow the development of compatible peers by others, important for the extensibility of the system.
-\item[Peer to Peer Architecture]
+\item \textbf{Peer to Peer Architecture}
     The complete software suite should run in a direct peer to peer mode to remove the requirement of third parties to facilitate data exchange and to remove the associated security risk.
     We also hope that this feature will allow clients to synchronize independently of the internet: peers should be capable of utilizing local connections directly.
-\item[Secure Transport]
+\item \textbf{Secure Transport}
     All communication between all clients should always be fully end to end encrypted.
-\item[Third Party Client]
+\item \textbf{Third Party Client}
     A dedicated client for untrusted third party servers that holds only an encrypted copy of the data.
-\item[Shadow Files]
+\item \textbf{Shadow Files}
     It should be possible to avoid having to fetch unwanted files for space constrained clients.
     Dubbed shadow objects, this feature could be important for mobile devices as they run on power and bandwidth constraints.
-\item[Delta Updates]
+\item \textbf{Delta Updates}
     Since it is wasteful to transfer redundant data when only small parts of files are changed, we would like to add the capability to only send the delta difference between two files.
-\item[Object Atomicity]
+\item \textbf{Object Atomicity}
     We will not touch the content of files, instead treating them as singular objects.
     This should help to guarantee that files are never modified by the system beyond the required operations for synchronization.
     In particular this forbids automatically merging changes in files.
     All conflicts must be resolved by the user: we do not intend to guess the correct resolution strategy for any file type.
-\item[Passive Peer]
+\item \textbf{Passive Peer}
     Since the third party client already stores all data fully encrypted, support for a passive encrypted peer could be easily added.
     This would allow the user to use storage devices as additional peers which can be activated by pointing Tinzenite at them whenever they are connected.
     Much like using mobile active peers as data bridges this feature would allow passive peers to also serve as data bridges while keeping the data fully secure.
-\item[Performance]
+\item \textbf{Performance}
     The proposed protocol should allow for clients to run as unobtrusively as possible.
     This includes requiring only the bare necessity of performance for all operations and avoiding redundant work.
-\end{description}
+\end{enumerate}
 
 Please note that many further features are not dependent on the capability of the Tinzenite system but on the implementation of peers.
 An example for this is web access to an encrypted storage: this is a feature that explicitly can be implemented in a secure way\footnote{The key for decrypting the data can be unlocked by the user in the web browser by entering the correct pass phrase. Utilizing the shadow file capability the web application would act as a temporary trusted peer until a user is done with their data access.}.
@@ -125,6 +126,57 @@ These would require additional protocol extensions to support higher performance
 \item[Passive Peer]
     Built on top of the functionality required for the third party client we could also implement the capability that Tinzenite can use passive storage as passive encrypted peers.
 \end{description}
+
+\section{Dependencies}
+\label{sec:Dependencies}
+
+This section will introduce the software and programming language we will be basing this thesis.
+
+\subsection{Golang}
+\label{sub:Golang}
+
+Our implementation language of choice is Golang, usually referred to by the shorthand Go~\cite{web:site:golang}.
+The language is new to the author of this thesis but will hopefully provide to be an interesting intellectual challenge.
+Since the main language at Ulm University is mostly Java for student work, this thesis will hopefully also offer some insight into the differences between the two.
+
+Golang was first created at Google in 2007, but announced and open sourced in 2009.
+The reason for yet another language is given in the language's frequently asked questions page as: "Go is an attempt to combine the ease of programming of an interpreted, dynamically typed language with the efficiency and safety of a statically typed, compiled language. It also aims to be modern, with support for networked and multicore computing. Finally, it is intended to be fast: it should take at most a few seconds to build a large executable on a single computer."~\cite{web:site:golang:faq}.
+Since Tinzenite is a networked system and offers many possible applications for using concurrent operations it was deemed a good match for this thesis.
+
+Golang, much like Java, comes with a wide range of available default packages to use directly within a program.
+Beyond the basics we will make use of the provided cypher package to implement all encryption related tasks where required.
+
+\subsection{Tox}
+\label{sub:Tox}
+
+A core aspect of this thesis is implementing the system using the peer to peer encrypted communication channel provided by the Tox communication suite~\cite{web:site:tox}.
+Initially developed as a Skype replacement the underlying transport layer was also intended to be usable for alternative services.
+We will make use of this and let Tox handle most of the communication aspects.
+
+Unlike many other communication applications, Tox does not require a user to register an account somewhere.
+Instead a user can create as many Tox identities as desired locally.
+Each identity consists of a public and private key where the public key is the identity of the user~\cite{web:site:tox:crypto}.
+Tox identities are dynamically mapped to the user's current internet address whenever the users are online via a distributed hash table.
+Once two users are online at the same time\footnote{Tox is currently not capable of off line messaging. However the feature is planned to be implemented some time in the future.} and have added each other as friends they can establish a communication channel.
+The Tox messaging clients use the channel to facilitate text, audio, and video chats, with support for file transfers.
+All data is encrypted with perfect forward secrecy and sent directly from one client to the other\footnote{Although TCP relay tunneling is sometimes used to punch through obstructions.}.
+
+Tinzenite will build on the peer to peer, distributed, and encrypted communication channel provided.
+In our case each directory on each peer will be its own Tox identity.
+Every directory that is synchronized between multiple devices has its own network of friends which consists of the group of authorized peers.
+For the setup Tinzenite will require the user to allow the initial connection to any single other peer.
+The friend list is then synchronized by Tinzenite between all peers automatically.
+
+\subsection{Hadoop File System}
+\label{sub:Hadoop File System}
+
+As the encrypted server peer is intended to run as a service for multiple parallel different Tinzenite peers of multiple users it will require some extra work into how to store the large amount of data.
+Since storing large amounts of data requires significant management work we will provide an implementation of the encrypted peer that can write its encrypted data to the Hadoop Distributed File System~\cite{borthakur2007hadoop}.
+This file system is part of Apache Hadoop software library for scalable distributed software~\cite{web:site:hadoop}.
+
+Utilizing the Hadoop file system brings us a few sought after advantages.
+It will allow the encrypted peer to be implemented without having to give much thought to the actual storage and retrieval of data.
+We can thus build on the Hadoop file system's high fault tolerance which in turn allows the encrypted peer to be run on inexpensive hardware with low risk of data loss.
 
 \section{Software Scope}
 \label{sec:Software Scope}
