@@ -23,28 +23,15 @@ At the start of the Tinzenite implementation this wrapper still lacked one signi
 However a feature request~\cite{web:site:github:file_issue} was submitted and promptly implemented by the maintainer.
 The maintainer was also forthcoming in helping us solve bugs and problems with our usage of the wrapper for which we are grateful.
 
+%TODO continue here
+TODO: all else... :P
+
 \subsection{JSON}
 \label{sub:JSON}
 
 Since the underlying Tox channel is initially text based we propose to implement all peer to peer communication as a human readable messaging format.
 We will therefore utilize Javascript object notation, short JSON, as a machine readable message format while retaining easy readability for developers.
 As an added bonus Golang has high level support for converting language structures into and from JSON.
-
-\subsection{Librsync}
-
-TODO: this is future work
-
-The feature of delta updates is again not a trivial matter and we thus turn to existing solutions to shorten our work load in this regard.
-We intend to utilize librsync~\cite{web:site:librsync} for the implementation of the specifics.
-
-The librsync library is similar to the rsync and xdelta programs.
-Unlike the two however librsync does not require the file in both before and after state to create a delta.
-Requiring both versions of the file would immediately remove any benefit of using file deltas in our case as we would be required to send the file completely anyway.
-Librsync avoids this by only sending a signature of the original version of the file which consists of block-wise hashes of the contents.
-By comparing the new version block for block it can then determine which blocks have been changed and send only the corresponding data.
-
-The library is again written in C, therefore requiring a binding for us to be able to directly use its functionality.
-We found and plan to use the binding offered at \cite{web:site:librsync:golang}.
 
 \section{Tinzenite Library}
 
