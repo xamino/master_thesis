@@ -1,13 +1,6 @@
 \chapter{Introduction}
 \label{chap:Introduction}
 
-In this chapter we first give a short overview over the thesis.
-Then we discuss the motivation for our work and introduce the name given to it.
-Next we place the master thesis in its context.
-Finally we briefly summarize the structure of this document.
-
-\section{Overview}
-
 We propose the implementation of a file synchronization program in Golang via the Tox protocol.
 Thus we first explain our motivation for this thesis and what features we would like the implementation to fulfill.
 Then we will expand on the specification and define the scope of this work in preparation.
@@ -16,7 +9,6 @@ Therefore we will also expand on problems and solutions we encountered while wor
 Finally we will look back at the implementation and compare it to the theoretical ground work.
 For better comparison a brief discussion on similarities and differences to existing file synchronization services will also be included.
 
-\section{Motivation}
 \label{sec:Motivation}
 
 The thesis is mainly motivated by the revelations of drag net surveillance by Edward Snowden and the compliance by so called trusted service providers beyond even their legal obligations.
@@ -31,6 +23,9 @@ New software solutions are required to enable users to take back their privacy o
 One example is the Open Whisper Systems group.
 Their stated goal on the website is "[...] we're working to advance the state of the art for secure communication, while simultaneously making it easy for everyone to use."~\cite{web:site:whispersystems}.
 Another example is the Tox instant messenger community that is building a free, open source, peer to peer Skype alternative~\cite{web:site:tox}.
+
+\section{Goal}
+\label{sec:Goal}
 
 The main goal of this thesis is to tackle the problem of cloud data storage, often used for distributed file access across multiple computers.
 Existing examples of this include Google Drive~\cite{web:site:gdrive} and Dropbox~\cite{web:site:dropbox}.
@@ -57,10 +52,5 @@ To differentiate our proof of concept implementation from existing solutions a u
 We chose the rock-forming mineral tinzenite for the name.
 Specifically, Tinzenite is the name of the peer network, which in turn is compromised of two distinct software peers which are based on a common protocol and communication standard.
 
-\section{Project Context}
-
-This paper is the master thesis of Tamino P.S.M. Hartmann, written at the Faculty of Engineering, Computer Science, and Psychology~\cite{web:site:faculty} at the Institute of Databases and Information Systems~\cite{web:site:institute} at the University of Ulm~\cite{web:site:uni_ulm}, Germany.
-The supervisor was Marc Schickler and the examiners were Professor Doctor Manfred Reichert and Professor Doctor Martin Theobald.
-The proposed work is to create and implement a proof of concept for a fully encrypted peer to peer file synchronization software.
-Stated goals are the study of the feasibility of such a work and the exploration of associated technologies.
-These specifically include Tox, Golang, and Hadoop.
+\section{Structure}
+\label{sec:Structure}

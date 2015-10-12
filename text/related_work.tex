@@ -9,13 +9,23 @@ These will serve as a foundation for how we implement the Tinzenite protocol.
 
 \section{Existing Software}
 
+\begin{figure}[htp]
+\centering
+    \includegraphics[width=0.3\linewidth]{diagram/topo_s2c}
+    \hspace{2em}
+    \includegraphics[width=0.3\linewidth]{diagram/topo_p2p}
+\caption[Example Network Structures]{Example diagrams of a server client architecture (left) and a peer to peer architecture (right). Note that the peer to peer architecture does not exclude servers as peers.}
+\label{fig:example_netarch}
+\end{figure}
+
 For any internet technology two options exist how to structure its architecture, broadly speaking.
 Most of the internet today is cleanly divided in a client server structure where a client always request information from a central server.
 This is a strongly hierarchical structure.
 An example of this is downloading a PDF from a website.
 The opposite of this is a distributed, peer to peer model, where a client requests information from any other client and in turn will also respond to queries from other clients.
-One of the more well known candidates of this is the Bittorrent protocol~\cite{web:site:wiki:bittorrent}.
+One of the more well known candidates of this is the Bittorrent protocol~\cite{web:site:bittorrent}.
 Both options have been used in existing file synchronization solutions.
+See figure~\ref{fig:example_netarch} for an example diagram of the two architectures.
 Therefore we have divided the existing software we will shortly discuss in the following sections between these two extremes.
 
 \subsection{Client Server Solutions}
@@ -110,6 +120,36 @@ Unlike the other solutions mentioned here, Syncthing is open source and can thus
 Like Tinzenite it is also implemented in Golang.
 A feature that BitTorrent Sync has among with most client server solutions is the capability of sharing a specified file or directory with other users not part of the storage system.
 Syncthing lacks such a feature.
+
+\subsection{Comparison}
+\label{sub:Comparison}
+
+In this section we will briefly highlight the capabilities and differences between the discussed existing solutions.
+We chose to compare the features that we believe to be most important to this thesis.
+See table~\ref{table:software_comparison}.
+
+\begin{table}[htp]
+\centering
+\begin{tabulary}{\textwidth}{R || C | C | C | C }
+      & Peer to Peer & Server to Client & Open Source & Secure Storage \\
+    \hline \hline
+    Dropbox &  & \checkmark &  &  \\
+    \hline
+    OneDrive &  & \checkmark & & \\
+    \hline
+    Google Drive &  & \checkmark & & \\
+    \hline
+    Boxcryptor &  & \checkmark & & \checkmark \\
+    \hline
+    BitTorrent Sync & \checkmark &  &  &  \\
+    \hline
+    Syncthing & \checkmark &  & \checkmark &  \\
+\end{tabulary}
+\caption[TODO]{TODO}
+\label{table:software_comparison}
+\end{table}
+
+TODO: the table has to be reworked, made more expansive.
 
 \section{Papers}
 \label{sec:Papers}
