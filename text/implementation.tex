@@ -1,8 +1,9 @@
 \chapter{Implementation}
 \label{chap:Implementation}
 
-%TODO continue here
-TODO: continue here (maybe start with the encryption stuff way down there...)
+In this chapter we will expand on the process of implementing our proof of concept.
+Before we can discuss the actual work of implementing the architecture we need to define the developing environment.
+This will include an introduction of the software libraries we will base some functionality of Tinzenite on.
 
 \section{Tools and Environment}
 \label{sec:Tools and Environment}
@@ -13,12 +14,14 @@ This includes libraries we utilized and the software used to write the programs.
 \subsection{Tox Binding}
 \label{sub:Tox Binding}
 
-I think I will be using this binding for Tox: \url{https://github.com/codedust/go-tox}.
-Note: not sure if he has implemented file transfers yet, which I definitely require!
-Although I can get started without them for validating the protocol.
+As stated in various instances before we will be building all peer to peer communication on the Tox core library~\cite{web:site:github:toxcore}.
+Since the library is implemented with the C programming language we require a Golang wrapper for it.
+Instead of implementing one ourselves which would have cost us a large amount of development time we chose to use an existing one.
+With some research we chose the wrapper written and provided by codedust via Github~\cite{web:site:github:gotox}.
 
-Since Tox itself is written in C and we intend to use Golang we require a binding for the Tox core.
-We intend to use an existing binding - specifically this one \cite{web:site:tox:golang} - to allow us to concentrate on the core aspects of our thesis.
+At the start of the Tinzenite implementation this wrapper still lacked one significant feature that Tinzenite required, namely the capability of sending and receiving files.
+However a feature request~\cite{web:site:github:file_issue} was submitted and promptly implemented by the maintainer.
+The maintainer was also forthcoming in helping us solve bugs and problems with our usage of the wrapper for which we are grateful.
 
 \subsection{JSON}
 \label{sub:JSON}
