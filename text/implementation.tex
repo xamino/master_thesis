@@ -101,10 +101,110 @@ This library is not a wrapper but an implementation of a HDFS client written in 
 
 Tinzenite was implemented on the Arch Linux distribution Antergos~\cite{web:site:antergos}, specifically the amd64 flavor.
 The Golang environment was set up using the corresponding Arch package~\cite{web:site:arch_go}.
-We used the package provided Golang tools to compile our work.
+We used the Golang tools provided by the package to compile our work.
 The code itself was written using the Atom text editor~\cite{web:site:atom} with a variety of extensions, most notably the support extensions for Golang.
-Git was used for the version control system, with a hosted repository on Github here~\cite{web:site:github:tinzenite}.
+Git~\cite{web:site:git} was used for the version control system, with a hosted repository on Github here~\cite{web:site:github:tinzenite}.
 
+\section{Software Structure}
+\label{sec:Software Structure}
+
+Tinzenite was developed not as a single package but as a package collection that each covers some parts of the complete scope.
+In this section we will discuss the general layout of the packages and how they depend on one another.
+All packages have their own repository on Github~\cite{web:site:github:tinzenite}.
+
+\begin{description}[leftmargin=6em,style=nextline,noitemsep,nolistsep]
+    \item[bootstrap]
+        Contains the library for bootstrapping both encrypted and trusted peers to an existing Tinzenite network.
+    \item[channel]
+        Building on the Tox wrapper implements an abstract object for all Tox related communication code.
+    \item[core]
+        Implements the functionality for a trusted peer.
+    \item[encrypted]
+        Implements the functionality for an encrypted peer.
+    \item[model]
+        Contains the directory tracking code which manages a Tinzenite directory.
+    \item[server]
+        Built on the \emph{encrypted} package implements an example server program for an encrypted peer.
+    \item[shared]
+        Contains various shared objects used by multiple packages.
+    \item[tin]
+        Built on the \emph{core} package implements an example user program for a trusted peer.
+\end{description}
+
+The implementation started with the implementation of the \emph{model} and the \emph{channel} packages, then built the \emph{core} package on these.
+At one point we began putting shared code into the \emph{shared} package, thus allowing it to grow as the implementation grew.
+The \emph{tin} package was quickly added for testing and debugging purposes and grew alongside the trusted peer development.
+Once the basic functions worked we implemented the \emph{bootstrap} package since we required multiple peers to continue working.
+Finally we built the \emph{encrypted} and \emph{server} packages to implement the encrypted peer.
+This in turn required some modifications to the \emph{bootstrap} package to enable it to bootstrap both trusted and encrypted peers.
+
+\section{Highlights}
+\label{sec:Highlights}
+
+The following section will serve to discuss highlights of the implementation.
+We will also expand on some aspects of the implemented functionality where we believe an expanded discussion is stimulating.
+
+\subsection{Model}
+\label{sub:Model}
+
+The \emph{model} package contains the model object used by the trusted peer to manage a tracked directory.
+Instances of the model can be created either by loading it from a JSON store or creating a new one.
+The model itself does not actively update itself if the underlying directory changes: instead an update must be triggered by the utilizing code.
+This allows the model to avoid having to employ file watchers.
+It thus falls to the utilizing code to call the update method in regular intervals to ensure that the model remains up to date.
+
+The initial version of the model object only used file hashes to check for modifications, according to the Tinzenite specifications.
+For large files or a large amount of files this proved to be a very slow operation.
+Thus we also store the modification time as written to the file system upon creation and modification of a file to the model.
+This attribute is private to the model.
+As long as the modification time did not change we do not need to recalculate the hash as nothing has changed since the last check.
+Thus the model only needs to recalculate the hash when the file was actually modified.
+This greatly speeds up the update detection phase.
+
+Apart from reacting to direct directory changes the model object also allows remote updates to be applied.
+Before a remote update can be applied a number of parameters must be checked however -- therefore the model object offers a \texttt{CheckMessage} method that returns whether the update must be truly applied.
+The update may be ignored for example if it has already been applied, or when it concerns an already completed removal as stated in section~\ref{subs:Remove}.
+Any call to \texttt{ApplyUpdateMessage} should be preceded by applying this message check.
+Note that we have moved most of the removal logic code to its own code file for easier comprehension.
+
+Any application of an update may trigger a merge conflict.
+This is signaled by the model via an error.
+It is up to the caller to then handle the merge in a valid fashion, likely calling the model to apply resulting updates to the directory.
+Tinzenite handles merge conflicts as part of the \emph{core} package.
+
+The \emph{model} package also implements the matcher object.
+This object checks each directory for a \textit{".tinignore"} file and if it exists applies it to any model work on the directory.
+
+\subsection{Channel}
+\label{sub:Channel}
+
+The \emph{channel} package wraps the Tox wrapper into the channel object which all communication is sent via.
+The channel object makes use of callbacks to allow callers to react to incoming messages, file transfers, and other events.
+
+Since the underlying Tox instance must be called in regular intervals, the channel object implements a background go routine that keeps Tox ticking.
+To avoid locking up the Tox instance on callbacks, each callback is called asynchronously.
+If a callback can result in a direct response that must be passed to the Tox instance another method is available.
+
+Unlike both the Tox instance and the Golang wrapper for it, the channel object wraps the file transmission nicely.
+If a file transfer request is received it asks the utilizing code via a callback whether to accept the transfer or not.
+If accepted it will again notify when the file has been successfully received or the transfer failed.
+Tox itself handles file transfers in data blocks.
+For our purposes the abstraction of this process greatly simplifies quite a lot of code that builds on file transfers.
+
+The channel object furthermore offers a wide range of helpful methods that are not directly available from a Tox instance.
+This includes handling all addresses as hexadecimal encoded strings versus byte arrays and a number of status functions.
+
+\subsection{Tin Program}
+\label{sub:Tin Program}
+
+The \emph{tin} package is an example implementation of a trusted peer built on the \emph{core} package.
+
+TODO: model, channel, tin, bootstrap, server, security
+
+%TODO continue here
+TODO: Continue here
+
+%TODO this stuff below should be worked into the text
 \section{Tinzenite Library}
 
 TODO: on the topic of salted hashes: note where the salt is stored etc.
@@ -129,21 +229,6 @@ TODO: the library should accept a path as a context.
 Thus the quick switching between multiple directories can allow the single library to serve multiple directories.
 In the case of the server n libraries can thus be mapped to m directories.
 Should make sure that we can support encrypted and trusted peers side by side too (depending on whether the directory is clear or not).
-
-TODO: The initial version of the Tinzenite trusted peer only used file hashes to check for modifications.
-For large files or a large amount of files this proved to be a very slow operation.
-Thus we also locally store the modification time as written to the file system upon creation and modification of a file.
-As long as this modtime did not change we do not need to recalculate the hash as nothing has changed since the last check.
-Thus Tinzenite only needs to recalculate the hash when the file was in some way modified.
-This greatly speeds up the update detection phase.
-
-\section{Trusted Peer}
-
-TODO
-
-\section{Encrypted Peer}
-
-TODO
 
 \section{Encryption}
 \label{sec:Encryption}
