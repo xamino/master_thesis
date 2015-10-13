@@ -185,6 +185,12 @@ Since the underlying Tox instance must be called in regular intervals, the chann
 To avoid locking up the Tox instance on callbacks, each callback is called asynchronously.
 If a callback can result in a direct response that must be passed to the Tox instance another method is available.
 
+Tox requires bootstrapping to known nodes to connect to the Tox network.
+This bootstrapping is different from the bootstrapping of peers we will discuss later.
+The channel object makes sure that the Tox instance is bootstrapped to the Tox network if it is not connected as long as the channel is kept running.
+We dynamically retrieve a list of available Tox nodes using a specially written package~\cite{web:site:github:tox-dynboot}.
+This list is used to try to connect a given channel to the Tox network.
+
 Unlike both the Tox instance and the Golang wrapper for it, the channel object wraps the file transmission nicely.
 If a file transfer request is received it asks the utilizing code via a callback whether to accept the transfer or not.
 If accepted it will again notify when the file has been successfully received or the transfer failed.
