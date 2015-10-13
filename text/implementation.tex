@@ -234,8 +234,29 @@ TODO: missing highlights
 \subsection{Server}
 \label{sub:Server}
 
+\begin{figure}[htp]
+    \begin{lstlisting}[language=golang,firstnumber=0]
+        package encrypted
+
+        /*
+        Storage is the interface a struct must satisfy to allow encrypted to use
+        it as a storage backend.
+        */
+        type Storage interface {
+        	/*Store writes the given data to the key.*/
+        	Store(key string, data []byte) error
+        	/*Retrieve fetches the data for a key.*/
+        	Retrieve(key string) ([]byte, error)
+        	/*Remove is called to remove a key and associated data from storage.*/
+        	Remove(key string) error
+        }
+    \end{lstlisting}
+\caption[Golang Storage Interface]{The storage interface that the encrypted peer must implement to use the \emph{encrypted} package.}
+\label{golang:storage_interface}
+\end{figure}
+
 TODO: expand on encryption and server package.
-Specifically mention and show store interface!
+Specifically mention and show store interface!~\ref{golang:storage_interface}
 
 %TODO continue here
 TODO: Continue here (also recheck all above, this seems to be a bit on the brisk side...)
