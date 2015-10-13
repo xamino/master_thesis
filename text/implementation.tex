@@ -203,41 +203,46 @@ This includes handling all addresses as hexadecimal encoded strings versus byte 
 \subsection{Tin Program}
 \label{sub:Tin Program}
 
-The \emph{tin} package is an example implementation of a trusted peer built on the \emph{core} package.
-
-TODO: model, channel, tin, bootstrap, server, security
-
-%TODO continue here
-TODO: Continue here
-
-%TODO this stuff below should be worked into the text
-\section{Tinzenite Library}
-
-TODO: on the topic of salted hashes: note where the salt is stored etc.
-
 %TODO
-TODO: on receiving an update: queue in connection specific command queue (one per connection because only one OP per connection) (update / redo existing fetch if applicable != FIFO); fetch first file in queue.
-Then wait a bit (?) before propagating update yourself (decouple receive and send time frames?). <-- Isn't this implementation details?
+TODO: need to mention core package here too
 
-TODO: add capability for delta updates... if possible. :P
-Delta is difficult because we must effectively track parts of files instead of complete files... how to do this?
-use librsync! <-- Really good and easy to use, will save a ton of work!
+The \emph{tin} package is an example implementation of a trusted peer built on the \emph{core} package.
+While a true client built on a stable Tinzenite version should interface with the user via a graphical user interface, we forewent this because of the increased development time.
+Thus the Tin program is a simple command line interface based program.
 
-TODO: Also remember that multiple file transfers might be a problem.
-Do we limit the connection to one transfer at a time or can we fetch everything at once?
+It offers up a range of flags to make managing a Tinzenite directory easier.
+Each instance of Tin should run for a single trusted Tinzenite peer.
+Additionally the program can also be used to create new peers and bootstrap them to the Tinzenite network.
+In the case of bootstrapping an encrypted peer the program will exit on successful completion.
+For trusted peers it will immediately go over into running the directory.
 
-TODO: I need to put some thought into avoiding a conflict between the disk watcher and when Tinzenite updates the objects... :P
-
+%TODO: build this in here, maybe specifically
 TODO: Another feature that might be viable to implemented as an advanced feature is the capability of easily comparing peer IDs via pretty hashes or so.
 Since these would be required to be the same on both ends these should probably also be supported by the core library.
 
-TODO: the library should accept a path as a context.
-Thus the quick switching between multiple directories can allow the single library to serve multiple directories.
-In the case of the server n libraries can thus be mapped to m directories.
-Should make sure that we can support encrypted and trusted peers side by side too (depending on whether the directory is clear or not).
+\subsection{Bootstrap}
+\label{sub:Bootstrap}
 
-\section{Encryption}
-\label{sec:Encryption}
+Initially we planned to include the bootstrapping code directly within the tin and core packages.
+However the differences in how a peer must react to incoming messages and transfers would have greatly increased the already substantial code complexity of these packages.
+Therefore we moved all bootstrapping related code into its own package.
+This has the large advantage that programs can easily implement just bootstrapping if required without requiring any further package imports.
+
+%TODO not done, mention highlights!
+TODO: missing highlights
+
+\subsection{Server}
+\label{sub:Server}
+
+TODO: expand on encryption and server package.
+Specifically mention and show store interface!
+
+%TODO continue here
+TODO: Continue here (also recheck all above, this seems to be a bit on the brisk side...)
+Security stuff should probably be partially rewritten to tie into the rest of the implementation chapter.
+
+\section{Security}
+\label{sec:Security}
 
 This section will discuss the scheme used to encrypt and decrypt files within Tinzenite and how the keys are stored and shared.
 Generally speaking Tinzenite uses to layers to ensure security.
