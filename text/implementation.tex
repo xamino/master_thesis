@@ -19,7 +19,7 @@ We will make full use of a range of features which we will briefly highlight in 
 
 A Golang program will compile into a single native executable file.
 Cross compilation is available to all major operating systems and processor architectures.
-Unlike for example Java Golang does not depend on a virtual machine to run.
+Unlike for example Java Golang does not depend on a virtual machine to run resulting in performance that is near to natively compiled C code.
 Golang is statically typed and garbage collected.
 This gives us type safety and removes the need to manage the memory ourselves\footnote{Mostly. Care has to be taken to avoid needlessly creating some objects as discussed in section~\ref{TODO}}.
 For a developer coming from Java a large standard library helps to ease the transition: Golang offers such a standard library.
@@ -28,17 +28,18 @@ We found writing Golang code to be less verbose than Java code for the same task
 Different is the way errors are handled.
 While in Java error handling is done via exceptions, Golang uses return values to signal errors.
 This poses less of a problem than it may initially seem to as Golang functions can return multiple values.
+Furthermore Golang exposes and allows working with object pointers.
 Concurrency is also directly built into the language via so called \textit{"go routines"} and channels.
 Unlike Java which builds objects with class inheritance, Golang uses composition and interfaces to build objects.
 Building on this Golang does not even require the declaration of which interfaces an object implements -- having the method of an interface means that that object implements the interface.
 
 Golang also lacks a few features, notably generics and function overloading.
 We found these to be relatively trivial to work around, although the lack of generics leads to an increase in redundant boilerplate code.
-A possibly higher hurdle is the lack of fine granular permissions: unlike Java Golang knows only private and public variables and functions, indicated by their name beginning with respectively a lowercase or a uppercase letter.
+A possibly higher hurdle is the lack of fine granular permissions: unlike Java Golang knows only private and public variables and functions, indicated by their names beginning with respectively a lowercase or uppercase letter.
 
 As to the development environment surrounding Golang only a few specifics should be noted.
 A very nice feature is that packaging is directly built on top of version control systems.
-This means for example that \href{https://github.com/xamino/tox-dynboot}{github.com/xamino/tox-dynboot} is both the package path and the URL where the package can be retrieved from.
+This means for example that \textit{"\href{https://github.com/xamino/tox-dynboot}{github.com/xamino/tox-dynboot}"} is both the package path and the URL where the package can be retrieved from.
 Within the code the package would be referenced by the name, commonly the last part of the package path.
 Golang also requires all code to be formatted according to its specifications which results in improved readability across different packages.
 A variety of tools are directly built into the development suite, including a tool to fetch packages from their path and a tool for vetting and formatting Golang code.
@@ -58,9 +59,34 @@ The maintainer was also forthcoming in helping us solve bugs and problems with o
 \subsection{JSON}
 \label{sub:JSON}
 
-Since the underlying Tox channel is initially text based we propose to implement all peer to peer communication as a human readable messaging format.
+\begin{figure}[htp]
+    \begin{lstlisting}[language=golang,firstnumber=0]
+    type Message struct {
+        Address string
+        Subject string `json:"omitempty"`
+        Content string `json:"Message"`
+        read    bool
+    }
+    \end{lstlisting}
+    \begin{lstlisting}[language=json,firstnumber=0]
+    {
+        "Address":"192.168.178.100",
+        "Message":"Log in successful!"
+    }
+    \end{lstlisting}
+\caption[Golang JSON Example]{
+    An example Golang struct with tags and its corresponding JSON representation.
+    Note that \textit{"Subject"} is missing from the JSON due to the \textit{"omitempty"} tag and \textit{"read"} due to it being private.
+    Also note that \textit{"Content"} has been renamed to \textit{"Message"}.
+}
+\label{golang:json_example}
+\end{figure}
+
+Since the underlying Tox channel is built for text based messaging we propose to implement all peer to peer communication as a human readable messaging format.
 We will therefore utilize Javascript object notation, short JSON, as a machine readable message format while retaining easy readability for developers.
-As an added bonus Golang has high level support for converting language structures into and from JSON.
+As an added bonus Golang has support for converting objects by default thanks to the standard libraries.
+The generation of JSON can be fine tuned by utilizing in-language tagging.
+Figure~\ref{golang:json_example} shows a very simple example.
 
 \section{Tinzenite Library}
 
