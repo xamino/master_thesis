@@ -11,6 +11,38 @@ This will include an introduction of the software libraries we will base some fu
 In this section we will discuss the tools we used to build the software proof of concept.
 This includes libraries we utilized and the software used to write the programs.
 
+\subsection{Golang}
+\label{sub:Golang}
+
+As previously stated the proof of concept implementation will be developed using the programming language Golang.
+We will make full use of a range of features which we will briefly highlight in the following.
+
+A Golang program will compile into a single native executable file.
+Cross compilation is available to all major operating systems and processor architectures.
+Unlike for example Java Golang does not depend on a virtual machine to run.
+Golang is statically typed and garbage collected.
+This gives us type safety and removes the need to manage the memory ourselves\footnote{Mostly. Care has to be taken to avoid needlessly creating some objects as discussed in section~\ref{TODO}}.
+For a developer coming from Java a large standard library helps to ease the transition: Golang offers such a standard library.
+We found writing Golang code to be less verbose than Java code for the same task while not being any harder to comprehend.
+
+Different is the way errors are handled.
+While in Java error handling is done via exceptions, Golang uses return values to signal errors.
+This poses less of a problem than it may initially seem to as Golang functions can return multiple values.
+Concurrency is also directly built into the language via so called \textit{"go routines"} and channels.
+Unlike Java which builds objects with class inheritance, Golang uses composition and interfaces to build objects.
+Building on this Golang does not even require the declaration of which interfaces an object implements -- having the method of an interface means that that object implements the interface.
+
+Golang also lacks a few features, notably generics and function overloading.
+We found these to be relatively trivial to work around, although the lack of generics leads to an increase in redundant boilerplate code.
+A possibly higher hurdle is the lack of fine granular permissions: unlike Java Golang knows only private and public variables and functions, indicated by their name beginning with respectively a lowercase or a uppercase letter.
+
+As to the development environment surrounding Golang only a few specifics should be noted.
+A very nice feature is that packaging is directly built on top of version control systems.
+This means for example that \href{https://github.com/xamino/tox-dynboot}{github.com/xamino/tox-dynboot} is both the package path and the URL where the package can be retrieved from.
+Within the code the package would be referenced by the name, commonly the last part of the package path.
+Golang also requires all code to be formatted according to its specifications which results in improved readability across different packages.
+A variety of tools are directly built into the development suite, including a tool to fetch packages from their path and a tool for vetting and formatting Golang code.
+
 \subsection{Tox Binding}
 \label{sub:Tox Binding}
 
@@ -22,9 +54,6 @@ With some research we chose the wrapper written and provided by codedust via Git
 At the start of the Tinzenite implementation this wrapper still lacked one significant feature that Tinzenite required, namely the capability of sending and receiving files.
 However a feature request~\cite{web:site:github:file_issue} was submitted and promptly implemented by the maintainer.
 The maintainer was also forthcoming in helping us solve bugs and problems with our usage of the wrapper for which we are grateful.
-
-%TODO continue here
-TODO: all else... :P
 
 \subsection{JSON}
 \label{sub:JSON}
