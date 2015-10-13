@@ -44,18 +44,6 @@ Within the code the package would be referenced by the name, commonly the last p
 Golang also requires all code to be formatted according to its specifications which results in improved readability across different packages.
 A variety of tools are directly built into the development suite, including a tool to fetch packages from their path and a tool for vetting and formatting Golang code.
 
-\subsection{Tox Binding}
-\label{sub:Tox Binding}
-
-As stated in various instances before we will be building all peer to peer communication on the Tox core library~\cite{web:site:github:toxcore}.
-Since the library is implemented with the C programming language we require a Golang wrapper for it.
-Instead of implementing one ourselves which would have cost us a large amount of development time we chose to use an existing one.
-With some research we chose the wrapper written and provided by codedust via Github~\cite{web:site:github:gotox}.
-
-At the start of the Tinzenite implementation this wrapper still lacked one significant feature that Tinzenite required, namely the capability of sending and receiving files.
-However a feature request~\cite{web:site:github:file_issue} was submitted and promptly implemented by the maintainer.
-The maintainer was also forthcoming in helping us solve bugs and problems with our usage of the wrapper for which we are grateful.
-
 \subsection{JSON}
 \label{sub:JSON}
 
@@ -87,6 +75,35 @@ We will therefore utilize Javascript object notation, short JSON, as a machine r
 As an added bonus Golang has support for converting objects by default thanks to the standard libraries.
 The generation of JSON can be fine tuned by utilizing in-language tagging.
 Figure~\ref{golang:json_example} shows a very simple example.
+
+\subsection{Tox Binding}
+\label{sub:Tox Binding}
+
+As stated in various instances before we will be building all peer to peer communication on the Tox core library~\cite{web:site:github:toxcore}.
+Since the library is implemented with the C programming language we require a Golang wrapper for it.
+Instead of implementing one ourselves which would have cost us a large amount of development time we chose to use an existing one.
+With some research we chose the wrapper written and provided by codedust via Github~\cite{web:site:github:gotox}.
+
+At the start of the Tinzenite implementation this wrapper still lacked one significant feature that Tinzenite required, namely the capability of sending and receiving files.
+However a feature request~\cite{web:site:github:file_issue} was submitted and promptly implemented by the maintainer.
+The maintainer was also forthcoming in helping us solve bugs and problems with our usage of the wrapper for which we are grateful.
+
+\subsection{Hadoop Client Binding}
+\label{sub:Hadoop Client Binding}
+
+For the encrypted peer we required an implementation for a client for the Hadoop distributed file system.
+We chose the implementation by the Github user colinmarc.
+Notably we used the branch that adds write support~\cite{web:site:github:hdfs}.
+This library is not a wrapper but an implementation of a HDFS client written in Golang.
+
+\subsection{Environment}
+\label{sub:Environment}
+
+Tinzenite was implemented on the Arch Linux distribution Antergos~\cite{web:site:antergos}, specifically the amd64 flavor.
+The Golang environment was set up using the corresponding Arch package~\cite{web:site:arch_go}.
+We used the package provided Golang tools to compile our work.
+The code itself was written using the Atom text editor~\cite{web:site:atom} with a variety of extensions, most notably the support extensions for Golang.
+Git was used for the version control system, with a hosted repository on Github here~\cite{web:site:github:tinzenite}.
 
 \section{Tinzenite Library}
 
