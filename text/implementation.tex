@@ -215,6 +215,13 @@ In the case of bootstrapping an encrypted peer the program will exit on successf
 For trusted peers it will immediately go over into running the directory.
 If a trusted peer receives a bootstrapping request it asks the user to validate the given peer address and requested trust level.
 
+The program also automatically updates the local directory, requests remote updates, and synchronizes with available encrypted peers at certain intervals.
+This servers to prove that Tinzenite can run completely without user input.
+In fact apart from setting up a peer the synchronization runs fully without user input, even if merge conflicts arise.
+Care was furthermore taken to ensure that the entire program could run using as little resources as possible.
+Currently the program runs with negligible CPU and RAM usage even though synchronizing regularly.
+The only truly expensive operation where the program requires more performance is for hash generation and encryption when handling files.
+
 The \emph{core} package itself wraps the complete trusted peer code.
 Basically it uses the model object and the channel object to offer all trusted peer functionality.
 Notably it also implements how Tinzenite handles merge conflicts.
@@ -234,8 +241,11 @@ Once the friend request has been accepted and the trusted peer has been connecte
 For a new trusted peer that includes fetching the complete current state of the directory.
 Once the transfers are complete the bootstrapping code finishes and the directory can now be started as a normal trusted peer.
 
-\subsection{Server}
-\label{sub:Server}
+The bootstrap package was mainly implemented in one sitting and serves as a proof of concept that the previously implemented code for the trusted peer program could be reused easily.
+Apart from bug fixes we only had to update it once we implemented the encrypted peer functionality.
+
+\subsection{Server Program}
+\label{sub:Server Program}
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=golang,firstnumber=0]
@@ -264,6 +274,62 @@ Specifically mention and show store interface!~\ref{golang:storage_interface}
 %TODO continue here
 TODO: Continue here (also recheck all above, this seems to be a bit on the brisk side...)
 Security stuff should probably be partially rewritten to tie into the rest of the implementation chapter.
+
+\subsection{Golang Issues}
+\label{sub:Golang Issues}
+
+We encountered a small amount of gotchas due to our unfamiliarity with the Golang language.
+In the interest of full disclosure we will use this section to briefly touch on these matters.
+
+Tinzenite builds heavily on the standard libraries included with the language.
+Since Golang is still a relatively new language we expected to encounter bugs and issues as we implemented Tinzenite.
+However we only ever encountered a single bug.
+It effected the generation of a random integer for issuing a challenge.
+After creating a valid random \texttt{int64} value for the challenge we required a byte slice representation of the variable to encrypt it.
+However we had to determine how large to make the byte slice so that the variable could be stored in it.
+Research lead to us believe that utilizing the \texttt{byte.Size} method would allows us to make the byte slice just large enough to contain the random number.
+But the method always returned incorrect values.
+Our workaround is to simply create the slice large enough for all possible values at a small memory cost.
+
+The good performance of Tinzenite was initially not the case.
+First versions of the trusted peer had a slow memory and processing leak resulting in steadily rising CPU and RAM usage until the host computer killed the process after a few minutes.
+We tracked this down to our usage of an endlessly running go routine utilizing time.Tick to run in intervals.
+As stated in the method documentation the underlying Ticker can not be closed, thus resulting in a leak~\cite{web:site:golang:time:tick}.
+We worked around this issue by simply reusing the timing objects instead of recreating new ones every interval.
+
+Another issue we found ourselves with was that we had no way to determine the type of \texttt{struct} we required to parse incoming JSON messages.
+Thus we implemented a \textit{"Type"} attribute for all messages which we use to determine the correct type of the message.
+Golang's composition was not a viable way of solving this to our satisfaction as all message objects did not have any differing methods.
+The correct way to do this is to parse the incoming messages to an empty interface which is valid for all types.
+The type can then be checked against and the message cast.
+
+\begin{figure}[htp]
+    \begin{lstlisting}[language=golang,firstnumber=0]
+type MsgType int
+
+const (
+	MsgNone MsgType = iota
+	MsgUpdate
+	MsgRequest
+	MsgNotify
+	MsgLock
+	MsgPush
+	MsgChallenge
+)
+    \end{lstlisting}
+\caption[Golang Enum Example]{One of the enumerations we defined for Tinzenite. Note that for brevity we removed the comments.}
+\label{golang:enum_example}
+\end{figure}
+
+For the defined messages that Tinzenite uses we heavily relied on enumerations for setting values.
+Coming from Java we expected to find similar \texttt{enum} functionality in Golang.
+This did not prove to be the case.
+Golang lacks a specific implementation of enumerations but does allow for something similar using the \texttt{const} and \texttt{iota} keywords for specified variable types.
+An example can be seen in figure~\ref{golang:enum_example}.
+Our largest issue with this was that when converting these enumeration similes to JSON instead of the name of the enumeration the number value was output due to Golang seeing them as number value variables.
+Thus instead of having JSON where each enumeration was easily interpretable we had values such as \texttt{"MsgType":1} where what we wanted was \texttt{"MsgType":"update"}.
+The solution to this requires a lot of boilerplate code since Golang does not support generics at this point in time.
+For each defined enumeration type we had to write custom \texttt{MarshalJSON} and \texttt{UnmarshalJSON} methods.
 
 \section{Security}
 \label{sec:Security}
