@@ -17,9 +17,10 @@ This includes libraries we utilized and the software used to write the programs.
 As previously stated the proof of concept implementation will be developed using the programming language Golang.
 We will make full use of a range of features which we will briefly highlight in the following.
 
-A Golang program will compile into a single native executable file.
+A Golang program will compile into a single native executable file, with statically linked dependencies.
 Cross compilation is available to all major operating systems and processor architectures.
 Unlike for example Java Golang does not depend on a virtual machine to run resulting in performance that is near to natively compiled C code.
+Furthermore Golang is not an object oriented language and based more on C than any other language.
 Golang is statically typed and garbage collected.
 This gives us type safety and removes the need to manage the memory ourselves\footnote{Mostly. Care has to be taken to avoid needlessly creating some objects as discussed in section~\ref{TODO}}.
 For a developer coming from Java a large standard library helps to ease the transition: Golang offers such a standard library.
@@ -203,9 +204,6 @@ This includes handling all addresses as hexadecimal encoded strings versus byte 
 \subsection{Tin Program}
 \label{sub:Tin Program}
 
-%TODO
-TODO: need to mention core package here too
-
 The \emph{tin} package is an example implementation of a trusted peer built on the \emph{core} package.
 While a true client built on a stable Tinzenite version should interface with the user via a graphical user interface, we forewent this because of the increased development time.
 Thus the Tin program is a simple command line interface based program.
@@ -215,10 +213,12 @@ Each instance of Tin should run for a single trusted Tinzenite peer.
 Additionally the program can also be used to create new peers and bootstrap them to the Tinzenite network.
 In the case of bootstrapping an encrypted peer the program will exit on successful completion.
 For trusted peers it will immediately go over into running the directory.
+If a trusted peer receives a bootstrapping request it asks the user to validate the given peer address and requested trust level.
 
-%TODO: build this in here, maybe specifically
-TODO: Another feature that might be viable to implemented as an advanced feature is the capability of easily comparing peer IDs via pretty hashes or so.
-Since these would be required to be the same on both ends these should probably also be supported by the core library.
+The \emph{core} package itself wraps the complete trusted peer code.
+Basically it uses the model object and the channel object to offer all trusted peer functionality.
+Notably it also implements how Tinzenite handles merge conflicts.
+For software written against it the core package exposes a Tinzenite object with which the trusted peer can be controlled.
 
 \subsection{Bootstrap}
 \label{sub:Bootstrap}
@@ -228,8 +228,11 @@ However the differences in how a peer must react to incoming messages and transf
 Therefore we moved all bootstrapping related code into its own package.
 This has the large advantage that programs can easily implement just bootstrapping if required without requiring any further package imports.
 
-%TODO not done, mention highlights!
-TODO: missing highlights
+The basic function of bootstrapping is relatively simple.
+It requires the address of the trusted peer to connect to and sends a Tox friend request to it to initiate the connection.
+Once the friend request has been accepted and the trusted peer has been connected the actual bootstrapping takes place.
+For a new trusted peer that includes fetching the complete current state of the directory.
+Once the transfers are complete the bootstrapping code finishes and the directory can now be started as a normal trusted peer.
 
 \subsection{Server}
 \label{sub:Server}
