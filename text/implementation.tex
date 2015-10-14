@@ -247,33 +247,39 @@ Apart from bug fixes we only had to update it once we implemented the encrypted 
 \subsection{Server Program}
 \label{sub:Server Program}
 
+Much like the Tin software the \emph{server} package provides an implementation for the \emph{encrypted} package.
+It offers a command line interface program for creating and running an encrypted peer.
+
+Adding encrypted peers to Tinzenite required two tasks to be successful: the implementation of the encrypted peer and the extension of the trusted peer to be capable of utilizing it.
+The first task of implementing the encrypted peer proved to be comparatively simple.
+Basically all it has to do is manage its lock to any single trusted peer and, if locked, allow the fetching and retrieval of files.
+Most files the encrypted peer handles are user data files.
+One of the goals for this thesis was to support writing these files to the Hadoop distributed file system.
+Therefore we implemented the encrypted peer so that all user files are written with a specified storage interface as seen in figure~\ref{golang:storage_interface}.
+
 \begin{figure}[htp]
     \begin{lstlisting}[language=golang,firstnumber=0]
         package encrypted
 
-        /*
-        Storage is the interface a struct must satisfy to allow encrypted to use
-        it as a storage backend.
-        */
         type Storage interface {
-        	/*Store writes the given data to the key.*/
         	Store(key string, data []byte) error
-        	/*Retrieve fetches the data for a key.*/
         	Retrieve(key string) ([]byte, error)
-        	/*Remove is called to remove a key and associated data from storage.*/
         	Remove(key string) error
         }
     \end{lstlisting}
-\caption[Golang Storage Interface]{The storage interface that the encrypted peer must implement to use the \emph{encrypted} package.}
+\caption[Encrypted Storage Interface]{The storage interface that the encrypted peer must implement to use the \emph{encrypted} package. Comments have been removed.}
 \label{golang:storage_interface}
 \end{figure}
 
-TODO: expand on encryption and server package.
-Specifically mention and show store interface!~\ref{golang:storage_interface}
+This allows encrypted clients, such as the \emph{server} package provides an example of, to interface with any storage interface the developer wishes it to.
+For this thesis we implemented two versions of the interface for the server program.
+First for debugging and personal use we implemented a version of the interface that simply writes all data to disk, named as the key of the data.
+Retrieval looks up the file by checking for the existence of a file named as the given key and returns the associated data.
+Then we implemented the actual Hadoop capable version of the interface.
+Our version of the interface creates a connection to a Hadoop distributed file system when initiating.
+All further file accesses will then be handled as operations on the Hadoop cluster.
 
-%TODO continue here
-TODO: Continue here (also recheck all above, this seems to be a bit on the brisk side...)
-Security stuff should probably be partially rewritten to tie into the rest of the implementation chapter.
+TODO: write on extending the trusted peer to support encrypted peers here.
 
 \subsection{Golang Issues}
 \label{sub:Golang Issues}
@@ -333,6 +339,10 @@ For each defined enumeration type we had to write custom \texttt{MarshalJSON} an
 
 \section{Security}
 \label{sec:Security}
+
+%TODO continue here
+TODO: Continue here.
+Security stuff should probably be partially rewritten to tie into the rest of the implementation chapter.
 
 This section will discuss the scheme used to encrypt and decrypt files within Tinzenite and how the keys are stored and shared.
 Generally speaking Tinzenite uses to layers to ensure security.
