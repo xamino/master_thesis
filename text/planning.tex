@@ -4,7 +4,7 @@
 The following chapter discusses all conceptual work that went into creating Tinzenite.
 We will first give an overview of the basic goals of the work created by this thesis.
 Next we will expand on the goals by discussing the features we would like Tinzenite to have and defining their scope.
-These will be based in part on the existing solutions discussed in the related work.
+These will be based in part on the existing solutions discussed in the related work chapter.
 Based on the concept and the proposed features we will explain the software components we plan to implement.
 
 \section{Basic Goals}
@@ -19,8 +19,8 @@ Based on this we hope to implement a proof of concept peer client for normal com
 This encrypted peer should allow the storage of data using the Hadoop file system (see section~\ref{sub:Hadoop File System}).
 
 As proof of the protocol we will implement both programs in Golang (see section~\ref{sub:Golang}).
-These should cover the basic requirements for file synchronization and work correctly for the base cases.
-Thus we will have an actual implementation against which we can compare our proposal against existing solutions and highlight derived problems, solutions, and differences.
+The programs should cover the basic requirements for file synchronization and work correctly for all base cases.
+Thus we will have an actual implementation with which we can compare our proposal against existing solutions and highlight derived problems, solutions, and differences.
 
 \section{Features}
 \label{sec:Features}
@@ -46,7 +46,7 @@ The exact features we would like to have have been synthesized from the existing
 \item \textbf{Delta Updates}
     Since it is wasteful to transfer redundant data when only small parts of files are changed, we would like to add the capability to only send the delta difference between two files.
 \item \textbf{Object Atomicity}
-    We will not touch the content of files, instead treating them as singular objects.
+    We will not touch the content of files, instead we will treat them as singular objects.
     This should help to guarantee that files are never modified by the system beyond the required operations for synchronization.
     In particular this forbids automatically merging changes in files.
     All conflicts must be resolved by the user: we do not intend to guess the correct resolution strategy for any file type.
@@ -55,18 +55,18 @@ The exact features we would like to have have been synthesized from the existing
     This would allow the user to use storage devices as additional peers which can be activated by pointing Tinzenite at them whenever they are connected.
     Much like using mobile active peers as data bridges this feature would allow passive peers to also serve as data bridges while keeping the data fully secure.
 \item \textbf{Performance}
-    The proposed protocol should allow for clients to run as unobtrusively as possible.
+    The proposed protocol should allow for the client software to run as unobtrusively as possible.
     This includes requiring only the bare necessity of performance for all operations and avoiding redundant work.
 \end{enumerate}
 
 Please note that many further features are not dependent on the capability of the Tinzenite system but on the implementation of peers.
-An example for this is web access to an encrypted storage: this is a feature that explicitly can be implemented in a secure way\footnote{The key for decrypting the data can be unlocked by the user in the web browser by entering the correct pass phrase. Utilizing the shadow file capability the web application would act as a temporary trusted peer until a user is done with their data access.}.
+An example for this is web access to an encrypted storage: this is a feature that explicitly can be implemented in a secure way\footnote{The key for decrypting the data can be unlocked by users in the web browser by entering the correct pass phrase. Utilizing the shadow file capability the web application would act as a temporary trusted peer until the users are done with their data access.}.
 
 \subsection{Scope}
 
 In this brief section we will go through the exact scope that this work is to fulfill.
-We therefore divide the above features into three categories, ranging from required to have the thesis considered successful to those that can be added as extras if time permits or as future work.
-Furthermore we we expand on the actual implementation work we intend for each scope definition.
+We therefore divide the above features into three categories, ranging from those required to have for the thesis to be considered successful, to those that can be added as extras if time permits or as future work.
+Furthermore we will expand on the actual implementation work we intend for each scope definition.
 
 \subsubsection{MUST Have}
 \label{subs:MUST Have}
@@ -94,8 +94,8 @@ Data transfer between multiple trusted clients must work as expected with collis
 Features in this category are features that built on the MUST have features and are thus not strictly required.
 In broad terms this includes two important aspects.
 First and foremost is the capability of having a client that only retains an encrypted version of the data.
-Built on this the second aspect is the server client that only ever retains an encrypted data set for each of multiple users.
-The server also adds the capability of handling multiple users' data on a distributed file system capable of handling the large data size that are to be expected for multiple concurrent users.
+Built on this the second aspect is the server client that only retains an encrypted data set for each one of the multiple users.
+The server also adds the capability of handling multiple users' data on a distributed file system capable of handling the large data size that is to be expected for multiple concurrent users.
 
 \begin{description}[leftmargin=10em,style=nextline,noitemsep,nolistsep]
 \item[Third Party Client]
@@ -130,13 +130,13 @@ These would require additional protocol extensions to support higher performance
 \section{Dependencies}
 \label{sec:Dependencies}
 
-This section will introduce the software and programming language we will be basing this thesis.
+This section will introduce the software and programming language this thesis will be based on.
 
 \subsection{Golang}
 \label{sub:Golang}
 
 Our implementation language of choice is Golang, usually referred to by the shorthand Go~\cite{web:site:golang}.
-The language is new to the author of this thesis but will hopefully provide to be an interesting intellectual challenge.
+The language is new to the author of this thesis but will hopefully provide an interesting intellectual challenge.
 Since the main language at Ulm University is mostly Java for student work, this thesis will hopefully also offer some insight into the differences between the two.
 
 Golang was first created at Google in 2007, but announced and open sourced in 2009.
@@ -176,7 +176,7 @@ This file system is part of Apache Hadoop software library for scalable distribu
 
 Utilizing the Hadoop file system brings us a few sought after advantages.
 It will allow the encrypted peer to be implemented without having to give much thought to the actual storage and retrieval of data.
-We can thus build on the Hadoop file system's high fault tolerance which in turn allows the encrypted peer to be run on inexpensive hardware with low risk of data loss.
+We can thus build on the Hadoop file system's high fault tolerance which in turn allows the encrypted peer to run on inexpensive hardware with low risk of data loss.
 
 \section{Software Scope}
 \label{sec:Software Scope}

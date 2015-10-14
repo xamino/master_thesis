@@ -192,23 +192,24 @@ We intend to ensure that the core protocol for Tinzenite will be capable of hand
 
 The paper by Ramsey and Csirmaz~\cite{ramsey2001algebraic} presents an algebra for reasoning about file system operations with the intended purpose of specifying an algorithm for file synchronization.
 Interesting for our work is the discussion of possible commands that can be executed on said file algebra.
-While from a user point of view a multitude of operations seems possible (create, remove, rename, move, derive, and edit) they distill these down to just three for the technical side: create, remove, and edit.
-Rename can be executed by removing the original named file and creating a new file with the new name while keeping the content identical.
-Move can be executed much the same but keeps the name intact, instead changing the location where the new file is created.
-Derive is argued to be indistinguishable from edit without higher level knowledge: while not impossible, this feature we consider to be beyond the scope for Tinzenite.
+While from a user's point of view a multitude of operations seems possible (create, remove, rename, move, derive, and edit) the paper's authors distill these down to just three for the technical side: create, remove, and edit.
+Rename can be executed by removing the original file and creating a new file with the new name while keeping the content identical.
+Move can be executed much the same but keeps the name, instead changing the location where the new file is created.
+Derive is argued to be indistinguishable from edit without higher level knowledge.
+While not impossible to detect, this feature we consider to be beyond the scope of Tinzenite.
 Features that Tinzenite shares with the paper's prototype include that parents must be created before their children and that children must be removed before their parents.
 
-The paper also offers up a number of improvements that Tinzenite could incorporate.
+The paper also offers a number of improvements that Tinzenite could incorporate.
 Notably this includes support for an explicit move command.
-This would remove the need for removing and recreating a file's content when it only moved, thus making this operation more performant.% performant is written correctly
+This would remove the need for removing and recreating a file's content when it was moved, thus making this operation more performant.% performant is written correctly
 They also suggest using fingerprints of content to avoid sending data that already exists.
-Tinzenite already utilizes content hashes, so expanding it to be more intelligent about when to request actual data to be sent should be easily implementable.
+Tinzenite already utilizes content hashes, so expanding it to be more intelligent about when to request actual data to be sent should be easily implementable by comparing hashes of files before requesting transfers.
 
 \subsection{Peer-to-Peer Reconciliation Based Replication for Mobile Computers}
 \label{sub:Peer-to-Peer Reconciliation Based Replication for Mobile Computers}
 
 In~\cite{reiher1996peer}, Reiher et al. nicely state the benefits and drawbacks of using a peer to peer system for file synchronization in regard to mobile devices.
-Benefits include not having to rely on an always on server, being able to transfer files without access to a central server, and transferring files over the shortest available network path.
+Benefits include not having to rely on an permanently available server, being able to transfer files without access to a central server, and transferring files over the shortest available network path.
 The authors list as drawbacks the higher required complexity of the algorithms used to control the replication.
 They conclude that peer to peer replication is well suited for mobile devices.
 
@@ -216,8 +217,8 @@ They conclude that peer to peer replication is well suited for mobile devices.
 \label{sub:Perspectives on Optimistically Replicated, Peer-to-Peer Filing}
 
 The paper by Page et al.~\cite{page1998perspectives} is notable in our case for two main reasons.
-It offers up a nice set of definitions of problems that we must also solve for Tinzenite and even offers up relevant solutions.
-The authors also discuss performance of their implementation.
+It offers a nice set of definitions of problems that we must also solve for Tinzenite and even offers relevant solutions.
+The authors also discuss the performance of their implementation.
 Focus of the paper is the evaluation of the use of optimistic replica consistency, automatic update conflict detection and repair, the peer to peer interaction model, and the Ficus design and construction.
 
 Relevant for Tinzenite is the paper's solution to the insert delete ambiguity.
@@ -230,5 +231,5 @@ In Tinzenite we will use a similar approach.
 
 Based on the listed existing solutions and the briefly discussed related papers we have synthesized a set of features that we wish Tinzenite to have.
 These will be discussed in the next chapter.
-More importantly our research highlights a few problems that we will need to solve or use existing solutions for.
+More importantly our research highlights a few problems that we will need to solve or use already existing solutions for.
 This starts with defining the operations we will allow on objects within a directory and continue on to how to solve ambiguities and merge conflicts when synchronizing between multiple peers.
