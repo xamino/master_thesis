@@ -250,13 +250,6 @@ Apart from bug fixes we only had to update it once we implemented the encrypted 
 Much like the Tin software the \emph{server} package provides an implementation for the \emph{encrypted} package.
 It offers a command line interface program for creating and running an encrypted peer.
 
-Adding encrypted peers to Tinzenite required two tasks to be successful: the implementation of the encrypted peer and the extension of the trusted peer to be capable of utilizing it.
-The first task of implementing the encrypted peer proved to be comparatively simple.
-Basically all it has to do is manage its lock to any single trusted peer and, if locked, allow the fetching and retrieval of files.
-Most files the encrypted peer handles are user data files.
-One of the goals for this thesis was to support writing these files to the Hadoop distributed file system.
-Therefore we implemented the encrypted peer so that all user files are written with a specified storage interface as seen in figure~\ref{golang:storage_interface}.
-
 \begin{figure}[htp]
     \begin{lstlisting}[language=golang,firstnumber=0]
         package encrypted
@@ -271,7 +264,17 @@ Therefore we implemented the encrypted peer so that all user files are written w
 \label{golang:storage_interface}
 \end{figure}
 
-This allows encrypted clients, such as the \emph{server} package provides an example of, to interface with any storage interface the developer wishes it to.
+Adding encrypted peers to Tinzenite required two tasks to be successful: the implementation of the encrypted peer and the extension of the trusted peer to be capable of utilizing it.
+The first task of implementing the encrypted peer proved to be comparatively simple.
+Basically all it has to do is manage its lock to any single trusted peer and, if locked, allow the fetching and retrieval of files.
+Most files the encrypted peer handles are user data files.
+One of the goals for this thesis was to support writing these files to the Hadoop distributed file system.
+Therefore we implemented the encrypted peer so that all user files are written with a specified storage interface as seen in figure~\ref{golang:storage_interface}.
+However this storage interface is not used for all files.
+The authentication file and the peer files are required to exist unencrypted and required for the encrypted peer to run correctly.
+Therefore these files are written to disk within the \textit{"org"} directory\footnote{The encrypted peer does not share the directory structure of a trusted peer. The reason for this is that an encrypted peer lacks many of the features that went into the design of the \textit{".tinzenite"} directory. Thus a simpler, flatter structure was chosen.}.
+
+The storage interface allows encrypted clients, such as the \emph{server} package provides an example of, to interface with any storage interface the developer of a utilizing program wishes it to.
 For this thesis we implemented two versions of the interface for the server program.
 First for debugging and personal use we implemented a version of the interface that simply writes all data to disk, named as the key of the data.
 Retrieval looks up the file by checking for the existence of a file named as the given key and returns the associated data.
@@ -279,7 +282,21 @@ Then we implemented the actual Hadoop capable version of the interface.
 Our version of the interface creates a connection to a Hadoop distributed file system when initiating.
 All further file accesses will then be handled as operations on the Hadoop cluster.
 
-TODO: write on extending the trusted peer to support encrypted peers here.
+Once the encrypted peer was implemented we turned to the more complex task of integrating encrypted peers into the capabilities of the trusted peer.
+This meant modifying the core package so that trusted peers could differentiate between trusted and encrypted peers and communicate with each accordingly.
+Upon receiving a message the trusted peer always first checks whether the message came from an encrypted peer or a trusted peer on a case by case basis.
+We do this by checking the address of the sender against the known peer list and ensuring that trusted peers have been authenticated.
+The message is then passed on to the specific logic for the type of peer.
+
+The logic for handling an encrypted peer comes down to a relatively simple process.
+Upon successful locking an encrypted peer to itself, the trusted peer requests the encrypted model.
+If the encrypted peer responds with a notification that the file doesn't exist the encrypted peer is considered empty and the logic skips to uploading the current state of the trusted peer.
+
+If a model is received the trusted peer must first compare the remote model against its own model to check for changes.
+Unknown updates that the encrypted peer has are applied to the trusted peer by fetching the necessary files.
+Once this is complete the next step is to update the encrypted peer to the state of the trusted peer.
+Updates that the trusted peer has but the encrypted peer lacks are uploaded and finally the current model encrypted and also uploaded.
+Then the encrypted peer is unlocked so that other trusted peers can access it too.
 
 \subsection{Golang Issues}
 \label{sub:Golang Issues}
