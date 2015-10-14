@@ -15,7 +15,7 @@ Additionally most data is written to disk as JSON files.
 \section{Meta Data}
 \label{sec:Meta Data}
 
-Since a trusted peer must store the last known state of the directory it is to synchronize to detect changes, we must store this information to disk somewhere.
+Since a trusted peer must store the last known state of the directory to detect changes for later synchronizations, we must store this information to disk somewhere.
 For Tinzenite we took a page from Git and decided to write this information within the directory to be synchronized.
 To reduce visual clutter and to hide it from users this directory is offered by a hidden directory directly below the root directory.
 We specified it as \textit{".tinzenite"}.
@@ -208,7 +208,7 @@ An example of the proposed model structure can be seen in~\ref{list:model}.
 \label{list:model}
 \end{figure}
 
-Since each file is considered a binary blob and must not modified by Tinzenite in any way to preserve data integrity, any additional information that Tinzenite is required to store for an object must be kept within the model itself.
+Since each file is considered a binary blob and must not be modified by Tinzenite in any way to preserve data integrity, any additional information that Tinzenite is required to store for an object must be kept within the model itself.
 Out of this we can see which values need to be stored within the model for each object specifically.
 
 Each object in the model will for identification purposes be specified by a unique randomly generated hash.
@@ -469,7 +469,7 @@ Peers further away from a network perspective will seem to be online only after 
 We solve this issue by having the peers use a random back off time whenever a request expects an answer\footnote{For example the challenge message for establishing a trusted connection.}.
 
 Since we can not trust the other side of the Tox channel to be a Tinzenite peer, the peer initiating a connection will not advance beyond a step where it expects an answer.
-This means that for example an attacker would either receive only a challenge (to which he can't respond without knowing the keys) or the request for the meta information block to which he'd have to correctly answer.
+This means that for example an attacker would either receive only a challenge (to which he can't respond without knowing the keys) or the request for the meta information block to which he'd have to answer correctly.
 
 A short note on closing a connection: once established this happens when the underlying Tox channel is terminated.
 Furthermore if something interrupts the establishment of a connection, both peers will simply reset to the starting point.
@@ -869,7 +869,7 @@ Detecting a wrong model is trivially done by decrypting it and checking if it is
 Some information is leaked however.
 Since we encrypt on a per file basis it is theoretically possible to analyze file usage associated with size to identify pieces of the user's directory.
 This is only made easier by the fact that file sizes are roughly the same whether encrypted or not, with an accuracy down to the block size of the encryption scheme.
-The information leak could be mitigated by implementing the core protocol with encrypted oblivious storage~\cite{goldreich1987towards}: however this may well be worthy of its own thesis and thus not further considered here.
+The information leak could be mitigated by implementing the core protocol with encrypted oblivious storage~\cite{goldreich1987towards}: however this may well be worthy of its own thesis and thus will not further be considered here.
 
 Possibly even more problematic is the clear text storage of the peer list even on encrypted peers as it can be used to determine the size of the user's Tinzenite network.
 However to allow encrypted peers to facilitate file transfer between two mutually exclusively online peers, it must know this information.

@@ -190,12 +190,13 @@ Note that the exact feature set is to be determined by the required development 
 Those features can be implemented at a later time if so desired and will thus be referenced in the future work (see section~\ref{sec:Future Work}).
 
 \subsection{Tinzenite Core Library}
+\label{sub:Tinzenite Core Library}
 
 The Tinzenite core library is the central reference implementation of the protocol.
 It builds directly on the Tox core library and wraps the complete communication of Tinzenite.
 Programs that implement the provided functionality will attach callbacks and call public methods to interface with it.
 The library will also handle watching a specified directory on disk.
-If the user modifies the contents of the a directory that is watched by the library it will update its internal model and start trying to synchronize the changes to other peers.
+If the user modifies the contents of the directory that is watched by the library it will update its internal model and start trying to synchronize the changes to other peers.
 
 To keep development of clients as easy as possible while at the same time keeping the protocol consistent between them we will separate the core logic for Tinzenite from any user oriented code.
 This will ensure a maximum of adaptability for clients, meaning that they will not be constrained by the cross platform capabilities of the library itself.
