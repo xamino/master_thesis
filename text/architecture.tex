@@ -110,7 +110,7 @@ This includes a peer's address, trust, and further user defined information.
 \end{figure}
 
 Figure~\ref{json:peer_object} shows the structure of an example peer file.
-One of these exist for all known peers.
+One of these must exist for all known peers.
 The \textit{"Name"} is the user defined name for each peer, to be used by the user to make differentiating between peers easier.
 Internally however the peer is referenced by the random assigned hash stored in \textit{"Identification"}.
 The Tox address is stored in \textit{"Address"}.
@@ -152,7 +152,7 @@ This is due to the fact that removals must be synchronized by all peers.
 
 For each object that is removed a directory with the object's identification is created.
 Within this directory two sub directories are created in which empty files named after peer identifications are placed.
-In the \textit{"check"} directory peers write a file named after each peer which must confirm the removal.
+In the \textit{"check"} directory peers write a file named after each peer who must confirm the removal.
 The \textit{"done"} directory contains a file named after every peer that has applied the removal and is now also waiting for it to complete.
 
 \subsection{Unsynchronized Directories}
@@ -167,7 +167,7 @@ Therefore, to keep the RAM storage requirements down, these blocks are immediate
 This also avoids partially overwritting user accessible files if the transfer fails for some reason, thus ensuring that Tinzenite only overwrites the user's files when it is ready to do so with a complete file.
 
 The \textit{"local"} directory is used for three purposes.
-First a copy of the peer's own peer information is written to a file alongside with a binary dump that the underlying Tox channel requires to run which contains the persistent state information.
+First a copy of the peer's own peer information is written into a file alongside with a binary dump that the underlying Tox channel requires to run which contains the persistent state information.
 Second the actual model is written to disk here, although not as a fully expanded object tree as specified in section~\ref{sec:Object Model}.
 Instead Tinzenite writes the internal representation of the model to disk as JSON.
 This differentiates in a few key points, but primarily serves to store both the absolute path and to keep the directory tree in a flat representation that is more efficient to actually work with.
@@ -177,8 +177,8 @@ Finally the \textit{"rmstore"} directory keeps a record of all previously comple
 \label{sec:Object Model}
 
 This section will describe our solution to how Tinzenite keeps track of objects within a directory.
-This data will be henceforth referenced as the data model or just model.
-Based on this we will highlight how Tinzentie applies object operations on the model in a further section.
+This data will be henceforth referenced to as the data model or just model.
+Based on this we will highlight how Tinzenite applies object operations on the model in a further section.
 
 The model is required to enable detection of newly created and removed files, since Tinzenite does not actively watch a directory.
 Having a stored representation of a directory significantly eases the difficulty of detecting file creations and removals, even if the peer software is not running.
@@ -211,8 +211,8 @@ An example of the proposed model structure can be seen in~\ref{list:model}.
 Since each file is considered a binary blob and must not be modified by Tinzenite in any way to preserve data integrity, any additional information that Tinzenite is required to store for an object must be kept within the model itself.
 Out of this we can see which values need to be stored within the model for each object specifically.
 
-Each object in the model will for identification purposes be specified by a unique randomly generated hash.
-This hash allows us to decouple the name of the object from its model representation, effectively serving the same function as node identification numbers when stored on a disk.
+Each object in the model will be specified for identification purposes by a unique randomly generated hash.
+This hash allows us to decouple the name of the object from its model representation, effectively serving as the same function as node identification numbers when stored on a disk.
 Furthermore each model object will contain a path variable that specifies the relative path of the object in the directory tree.
 This has the purpose of allowing the placement of all files in the correct locations on disk for a given root path.
 
@@ -224,7 +224,7 @@ This has the purpose of allowing the placement of all files in the correct locat
         "ec021135799691ae": 3
     }
     \end{lstlisting}
-\caption[Version JSON]{An example of a version vector clock. Each hash is the identification of a trusted peer, the associated number which changes they last issued.}
+\caption[Version JSON]{An example of a version vector clock. Each hash is the identification of a trusted peer, the associated number which version of an object they last modified.}
 \label{json:version_model}
 \end{figure}
 
@@ -238,10 +238,10 @@ An example of the vector clock as we will use it can be seen in figure~\ref{json
 
 It is important to note that the model will not be used to store peer reliant information.
 This includes for example where the directory is placed on the peer's file system, which may differ between peers.
-Such information must be stored separately by the peer and applied when working with the data model, for example when determining what the full path on the file system will be for a file that is to be written.
+Such information must be stored separately by the peer and be applied when working with the data model, for example when determining what the full path on the file system will be for a file that is to be written.
 Some properties are also not suited to be transferred between peers.
 This includes file system or operating system dependent properties such as usage rights, ownership, or flags.
-For Tinzenite we will generally ignore these as primary focus is just raw data synchronization without semantic information.
+For Tinzenite we will generally ignore these as the primary focus is just raw data synchronization without semantic information.
 
 \subsection{Directory Model}
 \label{sec:dir_model}
@@ -274,7 +274,7 @@ To differentiate between updates we require a \textit{"version"} attribute which
 
 Finally an \textit{"objects"} array is where the corresponding sub directories or files are recursively placed.
 To model a directory as shown for example in figure~\ref{list:model} Tinzenite begins the model with directory model for the root directory.
-Within the objects array are then the two files and the two further directories.
+Within the objects array one can the then find the two files and the two further directories.
 Each directory object in turn also stores sub objects in its object array, thus recursively modeling an entire directory.
 
 \subsection{File Model}
@@ -320,14 +320,14 @@ Therefore we require only the following four operations for the basic case to wo
         Files that have been created will be added to the model at the correct location and their attributes calculated, if not given.
         Tinzenite then checks whether it needs to fetch the file if it wasn't created in its own directory instance.
     \item[Modify]
-        Modification is either when the model does not match the file anymore, in which case a new file must be fetched, or the content on the local file has changed.
+        Modification is either when the model does not match the file anymore, in which case a new file must be fetched, or the content of the local file has changed.
         This is detected via the content hash\footnote{Since hashing a file is an expensive operation we have also implemented that the hash is only checked if the modtime of the file has changed since the last update. This greatly speeds up checking for modified files.}.
         The model is updated to match the file again.
     \item[Remove]
         A removal is detected when a file does not exist anymore and was previously tracked by the model.
         File removing is one of the most complex cases in Tinzenite due to the insert delete ambiguity.
-        We solve this by storing the models of deleted files until the delete update has propagated to all currently known peers.
-        Only then is the model discarded also.
+        We will solve this by storing the models of deleted files until the delete update has been propagated to all currently known peers.
+        Only then the model is also discarded.
         For this to work Tinzenite must always ensure that files that exist but are listed as deleted are not added back to the model as a new file by continuously checking the deletion list.
 \end{description}
 
