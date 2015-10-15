@@ -440,7 +440,13 @@ This number hash is then used to seed a pseudo random number generator.
 We then utilize this deterministic random number generator to create the box encryption keys.
 Figure~\ref{golang:boxkey_gen} shows the entire code required to generate the box keys from a given passphrase.
 
-Also note that password can be changed without having to re-encrypt all encrypted data!
+This method of storing the encryption keys has a few advantages over other approaches.
+An important advantage of decoupling the passphrase from the encryption keys via the box keys is that this allows the user to change his passphrase if desired.
+Tinzenite must then only decrypt the encryption keys with the old passphrase and encrypt them with the new one.
+The update will then propagate through the network\footnote{Note that we make no provisions for invalidating old passphrases as this would require substantially more encryption work and likely not be enforceable.}.
+Encrypted peers however do not need to be encrypted anew however since the actual encryption keys remain the same.
+Another advantage is that the entire encryption process is tied to a simple to remember passphrase that the user can freely assign and modify.
+Apart from said passphrase the user must do nothing to ensure full encryption security for the Tinzenite network.
 
 \subsection{Challenge Response}
 \label{sub:Challenge Response}
