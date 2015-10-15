@@ -1,27 +1,66 @@
 \chapter{Results and Recapitulation}
 \label{chap:Results and Recapitulation}
 
+This chapter will discuss the proof of concept implementation and recapitulate on how the architecture was implemented.
+We will then discuss improvements and future work.
 
-%TODO a whole lot
+\section{Comparison}
 
-\section{Performance}
+In this section we will briefly and informally compare Tinzenite against existing solutions.
+Note that an actual study comparing our solution against other storage providers was not the intended goal of this thesis\footnote{TODO TAMINO: bad, reword.}.
+
+\subsection{Performance}
+\label{sub:Performance}
+
+Tinzenite shares a large advantage with the other discussed related peer to peer solutions.
+Because the peers communicate directly with each other the synchronization speed for peers within the same local area network is substantially higher than the solutions that must first upload data to a remote server.
+In the local area network where Tinzenite was mainly developed the only speed limit was that of the wireless internet for data transfers.
+
+%TODO: also state upload comparison to offsite peers
+TODO: also state upload comparison to offsite peers
+
+%TODO: add some sort of example, possibly in graph form?
+TODO: add some sort of example, possibly in graph form?
 
 TODO: do an informal comparison to previously highlighted comparable software.
 Should include hard facts such as speed (internet vs intranet) and limitations.
 
-\section{Usability}
+\subsection{Usability}
+\label{sub:Usability}
 
-TODO: not sure how to do this, but something akin to this should be here
+Here Tinzenite in its current state definitely loses out to existing solutions.
+While actually running the software requires little to no user interaction the setup and management of peers is currently only available via command line interface programs.
+While nothing speaks against implementing a graphical user interface in principle, as this was not an essential part of our work no such client was implemented due to time constraints.
+And while Tinzenite theoretically supports web access to encrypted peers (see section~\ref{sub:Additional Peer Versions} below), this capability was also not tested or implemented.
+We believe that web access would improve usability by a large margin.
 
-\section{Security}
+From a technical standpoint Tinzenite is feature complete in that it can and does synchronize directories correctly.
+However further work should be done for edge cases where the usability could be improved, such as for merge conflicts.
+By notifying and offering support in resolving merge conflicts Tinzenite could provide a more active support for its usability.
+Such features could easily be integrated into a client program without requiring modifications to the underlying Tinzenite code.
 
-TODO: highlight what makes this solution secure, what I did to migitate attack vectors, what risks remain (especially user risks).
+A feature important for the security of a Tinzenite network is support of clients for strong passphrases.
+User's should be guided to create long and secure passphrases as they then become increasingly harder to guess.
+
+\subsection{Security}
+\label{sub:Security}
+
+Tinzenite's security is built on one of the most scrutinized encryption libraries currently in existence, the NaCl library.
+Thus the encryption of data that untrusted, encrypted peers receive should be more than sufficient to deny unauthorized third party access.
+Should services running encrypted peers be requested by hostile governments to hand over user data said data would be inaccessible without brute forcing the passphrase used to encrypt the encryption keys.
+Thus the security of the user data primarily depends on the user's willingness to use a sufficiently complex passphrase.
+
+%disclaimer :P
+However Tinzenite should not be trusted with secure data yet.
+Primarily because it was written as a proof of concept and thus is probably not bug free nor are we confident enough of our implementation of the key encryption to issue Tinzenite secure.
+Furthermore Tinzenite should only be trusted after a security audit has been performed on the core logic.
 
 \section{Future Work}
 \label{sec:Future Work}
 
 TODO: I'm sure you can list a ton of future work to be done by the time you're done.
 If you're lucky at least the API won't have to be totally redone.
+^^ The API has to be redone... XD
 
 One thing I can think of already is that torrents are more efficient because files can be fetched from multiple sources at the same time, hastening the transfer immensely.
 Ideally this won't be too bad in my case though because I don't intend Tinzenite to be used with a large enough number of devices for this to make a difference.
@@ -33,7 +72,12 @@ TODO: encrypted peer data obfuscation
 TODO: all advanced features that we did not get around to. :P
 oblivious storage for encrypted peer
 
+\subsection{Additional Peer Versions}
+\label{sub:Additional Peer Versions}
+
 TODO: additional peers (reference concept chapter)
+
+-- -- --
 
 TODO: rework the stuff below as future work and how we think it could be implemented on top of the existing work.
 
