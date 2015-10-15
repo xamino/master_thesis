@@ -371,6 +371,7 @@ Respectively they are used to generate encryption keys, decrypt data, and encryp
 Every Tinzenite network generates a single permanent key pair which is used to encrypt and decrypt data.
 Each peer upon creation generates these keys but will overwrite them with the network's keys if connected to an existing network during bootstrapping to ensure that each Tinzenite peer uses the same keys.
 Otherwise peers could not share encrypted peers between themselves as each would use a different set of encryption keys.
+The keys themselves are generated using the cryptographically secure random number generation provided by the host operating system to ensure that they are truly random.
 
 File data is encrypted before sending it and decrypted after receiving it when exchanging data with encrypted peers.
 To encrypt and decrypt data via NaCl we require an associated nonce which must be atomic but unique to every encryption decryption cycle.
@@ -393,7 +394,52 @@ The nonce is then discarded and the decrypted data is ready to use.
 \subsection{Key Encryption}
 \label{sub:Key Encryption}
 
-TODO: describe seeding PRNG and how the keys are retrieved.
+Now that all data can be encrypted and decrypted correctly the question turns to how to store the corresponding keys safely.
+At first glance a simple solution would be to synchronize the keys only between trusted peers.
+However this would not allow an implementation for a web peer as described in section~\ref{sub:Web Interface Peer}.
+A temporary peer could not request the keys because it could not authenticate itself.
+Thus the keys must be stored alongside the encrypted data.
+
+It is immediately obvious that simply storing the keys in plain text next to the encrypted data offers no security.
+So the keys must be encrypted too but with another set of keys.
+The question then is where to store these keys for encrypting the encryption keys.
+Since Tinzenite should be user friendly and secure we thus opted for an interesting algorithm for generating the keys that unlock the actual encryption keys.
+To differentiate the two different set of keys in the following we will reference the encryption keys that are used to encrypt and decrypt the keys for the file encryption as the box keys.
+
+On creating a Tinzenite network the user is asked for a password or better yet a passphrase~\cite{web:site:xkcd:pwd_strength}.
+We then use this passphrase to generate the box keys used to encrypt the encryption keys.
+Now the encryption keys can be encrypted with the box keys and safely transmitted to both trusted and encrypted peers.
+The question now arises how other trusted peers can retrieve the box keys.
+
+The answer lies in the user given passphrase and the way the box keys are generated.
+Every trusted peer must be unlocked by the user with the passphrase\footnote{Although the trusted peer may well and probably should store the passphrase once the user has entered it to avoid needless repetition and to increase ease of use.} to decrypt the encrypted peers.
+This passphrase is not stored somewhere in the Tinzenite network for a directory, meaning an attacker has to guess it.
+
+\begin{figure}[htp]
+    \begin{lstlisting}[language=golang,firstnumber=0]
+func (a *Authentication) convertPassword(password string) (public *[32]byte, private *[32]byte, err error) {
+	hasher := fnv.New64a()
+	hasher.Write([]byte(password))
+	seed := int64(hasher.Sum64())
+	seededRandom := unsecure.New(unsecure.NewSource(seed))
+	wrapper := staticRandom{random: seededRandom}
+	public, private, err = box.GenerateKey(wrapper)
+	if err != nil {
+		return nil, nil, err
+	}
+	return public, private, nil
+}
+    \end{lstlisting}
+\caption[Golang Box Key Generation]{The method for generating the box keys from a given passphrase. The \texttt{staticRandom} object is a wrapper for the random source so that it can be passed to the \texttt{box.GenerateKey} as the correct type. It is defined elsewhere.}
+\label{golang:boxkey_gen}
+\end{figure}
+
+The box keys are then generated from the passphrase.
+First we hash the passphrase to a number hash value.
+This number hash is then used to seed a pseudo random number generator.
+We then utilize this deterministic random number generator to create the box encryption keys.
+Figure~\ref{golang:boxkey_gen} shows the entire code required to generate the box keys from a given passphrase.
+
 Also note that password can be changed without having to re-encrypt all encrypted data!
 
 \subsection{Challenge Response}
