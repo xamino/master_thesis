@@ -377,7 +377,6 @@ To encrypt and decrypt data via NaCl we require an associated nonce which must b
 Thus we require a way to store and retrieve the nonce for each encrypted data blob.
 Instead of writing the nonce somewhere else we opted to prepend the nonce to the encrypted data. % prepend is spelled correctly
 Thus the first 24 bytes of every encrypted file contain the nonce required to decrypt it again.
-It is important to note that the nonce is not part of the encrypted data and must be trimmed away before attempting to decrypt.
 Figure~\ref{fig:enc_algo} shows an example of how this works.
 
 \begin{figure}[htp]
@@ -386,6 +385,10 @@ Figure~\ref{fig:enc_algo} shows an example of how this works.
 \caption[Encryption Example]{This diagram shows an example of how the nonce is integrated into the data for an encrypted message.}
 \label{fig:enc_algo}
 \end{figure}
+
+When decrypting data we must thus remove the nonce from the data before decrypting it.
+Since the decryption requires the nonce we can simply use it directly.
+The nonce is then discarded and the decrypted data is ready to use.
 
 \subsection{Key Encryption}
 \label{sub:Key Encryption}
