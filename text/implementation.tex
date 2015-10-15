@@ -357,31 +357,35 @@ For each defined enumeration type we had to write custom \texttt{MarshalJSON} an
 \section{Security}
 \label{sec:Security}
 
-%TODO continue here
-TODO: Continue here.
-Security stuff should probably be partially rewritten to tie into the rest of the implementation chapter.
-
 This section will discuss the scheme used to encrypt and decrypt files within Tinzenite and how the keys are stored and shared.
-Generally speaking Tinzenite uses to layers to ensure security.
+Generally speaking Tinzenite uses two encryption layers to ensure file security.
+We will also briefly discuss the exact method we utilize for the challenge response algorithm.
+
 The encryption scheme we used in Tinzenite is the NaCl library~\cite{bernstein2012security} through its interoperable Golang package~\cite{web:site:golang:box}.% interoperable is spelled correctly
-From this package we utilize just three methods: \textit{"GenerateKey"}, \textit{"Open"}, and \textit{"Seal"}.
+From this package we utilize just three methods: \texttt{GenerateKey}, \texttt{Open}, and \texttt{Seal}.
 Respectively they are used to generate encryption keys, decrypt data, and encrypt data.
 
 \subsection{File Encryption}
 \label{sub:File Encryption}
 
 Every Tinzenite network generates a single permanent key pair which is used to encrypt and decrypt data.
-Each peer upon creation generates these keys but will overwrite them with the network's keys if connected to an existing network during bootstrapping.
-File data is encrypted before sending it and decrypted after receiving it when exchanging data with encrypted peers.
+Each peer upon creation generates these keys but will overwrite them with the network's keys if connected to an existing network during bootstrapping to ensure that each Tinzenite peer uses the same keys.
+Otherwise peers could not share encrypted peers between themselves as each would use a different set of encryption keys.
 
+File data is encrypted before sending it and decrypted after receiving it when exchanging data with encrypted peers.
 To encrypt and decrypt data via NaCl we require an associated nonce which must be atomic but unique to every encryption decryption cycle.
 Thus we require a way to store and retrieve the nonce for each encrypted data blob.
 Instead of writing the nonce somewhere else we opted to prepend the nonce to the encrypted data. % prepend is spelled correctly
 Thus the first 24 bytes of every encrypted file contain the nonce required to decrypt it again.
 It is important to note that the nonce is not part of the encrypted data and must be trimmed away before attempting to decrypt.
+Figure~\ref{fig:enc_algo} shows an example of how this works.
 
-%TODO: add example diagramm: hello world * [nonce] * keys ==> nonce + encrypted ==> nonce:encrypted ==> nonce + encrypted ==> encrypted * [nonce] * keys ==> hello world
-TODO: add diagram / image of this because I can :D
+\begin{figure}[htp]
+\centering
+    \includegraphics[width=14cm]{diagram/enc_algo}
+\caption[Encryption Example]{This diagram shows an example of how the nonce is integrated into the data for an encrypted message.}
+\label{fig:enc_algo}
+\end{figure}
 
 \subsection{Key Encryption}
 \label{sub:Key Encryption}
