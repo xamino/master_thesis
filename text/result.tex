@@ -115,6 +115,7 @@ Thus an improvement would be to implement that Tinzenite only sends the differen
 We propose to use rsync algorithm for this~\cite{tridgell1996rsync}, specifically the librsync implementation~\cite{web:site:librsync}.
 The required information for the library to work can be integrated into the existing request messages.
 Delta updates could however only be used between trusted peers since the encrypted data is completely different for every change.
+Only needing to send the changed part of a file should increase the speed of Tinzenite transfers immensely, expecially for large files.
 
 \subsubsection{Server Peer}
 \label{subs:Server Peer}
@@ -122,11 +123,50 @@ Delta updates could however only be used between trusted peers since the encrypt
 The current implementation for the encrypted peer was implemented for a single Tinzenite network instance.
 It could be extended to provide service for multiple Tinzenite networks and multiple users.
 User accounts can be differentiated by reading parts of the authentication file: the user name can be checked with the bcrypt hash.
-Care should be taken to ensure that the user does not provide the same access password than the passphrase used to access the Tinzenite encryption.
+Care should be taken to ensure that the user does not provide the same access password than the passphrase used to access the Tinzenite encryption, although this won't be enforceable by Tinzenite.
 
-%TODO: expand on this
+Another feature that the server client should be capable of is enforcing potential size restrictions.
+This feature may also be used for a future mobile client as described in section~\ref{subs:Additional Peer Versions}.
+What this means is that Tinzenite should support clients refusing to fetch additional files to enforce a specified size of a directory.
+It could be implemented by building on the shadow files capability described in section~\ref{subs:Shadow Objects}.
+The interesting case is of course what happens to files that are above the limit after a modification: we propose either making the file a shadow file as soon as it crosses the limit or allowing modifications to push the size above the limit temporarily.
+For encrypted peers the enforcement of size restrictions must be handled by the trusted peers.
+This in turn means however that encrypted peers must be capable of denying additional updates since trusted peers could not be trusted to correctly enforce a size limitation.
 
-TODO: support for size limitations.
+%TODO: expand on encrypted peer work?
+
+\subsubsection{Shadow Objects}
+\label{subs:Shadow Objects}
+%TODO: rework when awake
+
+Depending on the location of a client a user may with to only access specific files without having to get an entire set or updates.
+This is a nice feature to have in the case of space and bandwidth restricted devices such as mobile devices.
+This feature could also be used to prioritize which objects Tinzenite will fetch first.
+
+Functionality for the shadow file feature is available via the currently unused \textit{"shadow"} attribute.
+It affects only files directly as the creation of directories is not significant from a size point of view.
+The attribute only serves as a shortcut to set all files of a directory implicitly to being shadowed.
+If files are marked as shadow files they are not updated on the disk, only their model.
+By setting the shadow flag to true the client will then immediately try to fetch the binary file from connected and available peers.
+
+Shadow files pose a few additional difficulties that would have to be solved however.
+First and most trivial: what happens to an already synchronized file when the shadow attribute is set?
+We propose that the file is immediately removed although this could be expensive in terms of bandwidth if the users quickly change their mind again as the file must then be fetched again all anew.
+A more sophisticated approach would integrate the size restriction capability of the client as proposed previously.
+By setting the space limit to a number below the full size of the directory files will only be immediately removed if near the space limit.
+If the user changes their mind the file may thus still be immediately available.
+
+So what do peers do if they receive a model update where the shadow flag is set?
+It is important to note here that the shadow flag is considered to be transient when synchronizing models, meaning its value is considered to be local only.
+However it is still sent as it is used to determine for the receiving peer whether it can fetch an update if applicable from the other peer.
+Again it is up to the peer what happens upon receiving a shadow file update: trivially a peer that has a non shadow copy of the file will ignore shadow updates as it can not fetch the binary file update successfully from it.
+It will then have to wait for another peer to offer the update where the attribute is not set.
+
+%TODO: explain that we need to disable shadow files on the desktop peers. Or extend the protocol to avoid losing data.
+The final edge case is a challenging one: what Tinzenite does not provide is a way to ensure that one full copy of the shadowed file is kept.
+If the user marks a file as shadowed on all peers it may well happen that Tinzenite loses the file.
+For now we propose to avoid this by explicitly warning the user of this possibility.
+One way to mitigate this risk is by allowing user defined shadowed files only for specific clients: we can probably assume that any full desktop peer should always retain a full copy of the directory anyway.
 
 \subsubsection{Implementation Improvements}
 \label{subs:Implementation Improvements}
@@ -146,92 +186,24 @@ TODO: avoid loss of shadow files!
 While encrypted peers already only store encrypted files, simply encrypting a file may not be sufficient to prevent meta information collection on the directory contents.
 Thus we propose that future work could include modifying the encrypted peer implementation and the transfer protocol so that trusted peers send not only encrypted but also obfuscated data to encrypted peers, effectively implementing an oblivious storage system~\cite{goldreich1996software}.
 
+%Not done I think
+
+\subsubsection{Encrypted Peer Synchronization}
+\label{subs:Encrypted Peer Synchronization}
+
+TODO: write a section on allowing encrypted peers to synchronize between themselves.
+Would have to happen "blindly" but should work.
+Note that this requires a shared state because of possible merge conflicts!
+
 \subsubsection{Additional Peer Versions}
 \label{subs:Additional Peer Versions}
 
 TODO: additional peers (reference concept chapter)
 
-%TODO: all stuff below here is WIP and should be rewritten / integrated
-\section{TODO}
-\label{sec:TODO}
+\subsubsection{File Versioning}
+\label{subs:File Versioning}
 
-\subsection{Space Management}
-\label{sub:Space Management}
-
-One feature that should be implemented is that peers can have a limited amount of available space without breaking the protocol.
-This feature can be used to control how much data a mobile device has to synchronize at any given time or for the server peer, thus allowing control over how large directories maximally are.
-
-Each peer is required to enforce the size restriction given by itself.
-If the size limit has been reached it should only allow further updates as shadow files.
-The interesting case is of course what happens to files that are modified above the limit: we propose either making the file a shadow file as soon as it crosses the limit or allowing modifications to push the size above the limit.
-Since shadow files are already part of the Tinzenite protocol no further protocol support for this feature must be considered.
-
-For encrypted peers the enforcement of size restrictions must be handled by the active peers.
-This in turn means however that encrypted peers must be capable of denying additional updates.
-The trusted peer can then notify the user and possibly even immediately mark the file as a shadow file in the encrypted peers model.
-
-\subsection{Ignored Objects}
-\label{sub:Ignored Objects}
-
-To allow a user to only synchronize objects that they consider important another advanced feature we would like to implement is the ability to specify files and directories to be ignored.
-An example for how we propose to implement this feature is the Git source control management software~\cite{web:site:git}.
-By specifying the paths to directories and files within a so called \textit{.gitignore} visibility of these can be finely controlled.
-
-In Tinzenite we plan to implement this functionality in a similar manner.
-The file containing these rules can be synchronized just as any other file at any level within a directory.
-Any new objects detected by Tinzenite that are listed in this file will not be created within the model, effectively keeping it out of the system.
-Since it may well happen that such a file is created at a later point and thus introduce an uncertainty in handling the to be ignored files we propose a simple solution: the file is only ever applied for object creations.
-Once a file has been created within the model it will be modified and deleted as any other file within the system, independent on the ignore file.
-
-This in turn however means that renaming or moving a file in Tinzenite will remove it from the model, deleting it everywhere.
-Since we believe this to be a feature for more advanced users we will not make this feature a core aspect of the system.
-Normal users should have little need for only synchronizing a selected subset of files.
-
-\subsection{Shadow Files}
-\label{sub:Shadow Files}
-
-Depending on the location of a client a user may with to only access specific files without having to get an entire set or updates.
-This is a nice feature to have in the case of space and bandwidth restricted devices such as mobile devices.
-By selecting specific files the client will then only update or retrieve the corresponding files or directories, ignoring the rest.
-This works by fully synchronizing the model and creating placeholder empty files for every shadowed file.
-By selecting a shadowed file it can be unshaded, resulting in Tinzenite trying to fetch the binary blob normally with all updates until it is again shadowed.
-
-Functionality for the shadow file feature is available via the shadow attribute.
-It affects only files directly as the creation of directories is not significant from a size point of view.
-The attribute only serves as a shortcut to set all files of a directory implicitly to being shadowed.
-If files are marked as shadow files they are not updated on the disk, only their model.
-By setting the shadow flag to true the client will then immediately try to fetch the binary file from connected and available peers.
-
-Of interest are then a few edge cases.
-First and most trivial: what happens to an already synchronized file when the shadow attribute is set?
-We propose that the file is immediately removed although this could be expensive in terms of bandwidth if the users quickly change their mind again as the file must then be fetched all anew.
-A more sophisticated approach would integrate the size restriction capability of the client as proposed in section~\ref{sub:Space Management}.
-By setting the space limit to a number below the full size of the directory files will only be immediately removed if near the space limit.
-If the user changes their mind the file may thus still be immediately available.
-
-So what do peers do if they receive a model update where the shadow flag is set?
-It is important to note here that the shadow flag is considered to be transient when synchronizing models, meaning its value is considered to be local only.
-However it is still sent as it is used to determine for the receiving peer whether it can fetch an update if applicable from the other peer.
-Again it is up to the peer what happens upon receiving a shadow file update: trivially a peer that has a non shadow copy of the file will ignore shadow updates as it can not fetch the binary file update successfully from it.
-It will then have to wait for another peer to offer the update where the attribute is not set.
-
-The better solution would be to introduce a third value for the shadow attribute: temp.
-This value is to be set when the peer knows of an update and has applied it to its model but has not fetched the binary file update yet.
-Note that this is a local value only and should not be sent to other peers: in that case all instances of temp should be removed with true.
-When connecting to other peers the peer can then request all available files marked as temp and fully update them as required.
-This approach has the added advantage of allowing a peer to notify the user that the file has been updated but not fetched yet.
-We may also use this functionality to signal slow network transfer speeds: the user could at a glance see that the update is pending, possibly avoiding unnecessary conflicts.
-
-%TODO: explain that we need to disable shadow files on the desktop peers. Or extend the protocol to avoid losing data.
-The final edge case is a challenging one: what Tinzenite does not provide is a way to ensure that one full copy of the shadowed file is kept.
-If the user marks a file as shadowed on all peers it may well happen that Tinzenite loses the file.
-For now we propose to avoid this by explicitly warning the user of this possibility.
-One way to mitigate this risk is by allowing user defined shadowed files only for specific clients: we can probably assume that any full desktop peer should always retain a full copy of the directory anyway.
-
-%TODO: Is this a future work todo?
-
-\subsection{File Versioning}
-\label{sub:File Versioning}
+%TODO: rework wording. Also: requires storing base copy of file plus all following delta differences to ensure that past versions are accessible.
 
 Another advanced feature that would be very nice to have and close the gap of feature parity between Tinzenite and other existing services would be the capability to offer file versions built directly into the protocol.
 Indeed the core protocol would not even have to be changed to support this: all that is required is the capability to keep old files for a specific time somewhere where the peer can reinstate them if the user wishes it.
@@ -249,3 +221,33 @@ Further work could then be done to decrease the size of the versions by only kee
 Again this would require somewhat extensive work on peer logic but no change in the core protocol.
 To differentiate full copies and delta files we propose an identifying name change would suffice: by appending a special marker behind the version number we could differentiate the type.
 The actual synchronization of deltas or full binaries is again already fully implemented in the core protocol and would work as any other file.
+
+%TODO: all stuff below here is WIP and should be rewritten / integrated
+\section{TODO}
+\label{sec:TODO}
+
+% This is another feature... but where to put it? Expanding I think because it requires both rework and additional work?
+The better solution would be to introduce a third value for the shadow attribute: temp.
+This value is to be set when the peer knows of an update and has applied it to its model but has not fetched the binary file update yet.
+Note that this is a local value only and should not be sent to other peers: in that case all instances of temp should be removed with true.
+When connecting to other peers the peer can then request all available files marked as temp and fully update them as required.
+This approach has the added advantage of allowing a peer to notify the user that the file has been updated but not fetched yet.
+We may also use this functionality to signal slow network transfer speeds: the user could at a glance see that the update is pending, possibly avoiding unnecessary conflicts.
+
+\subsection{Ignored Objects}
+\label{sub:Ignored Objects}
+
+%TODO where to put this?
+To allow a user to only synchronize objects that they consider important another advanced feature we would like to implement is the ability to specify files and directories to be ignored.
+An example for how we propose to implement this feature is the Git source control management software~\cite{web:site:git}.
+By specifying the paths to directories and files within a so called \textit{.gitignore} visibility of these can be finely controlled.
+
+In Tinzenite we plan to implement this functionality in a similar manner.
+The file containing these rules can be synchronized just as any other file at any level within a directory.
+Any new objects detected by Tinzenite that are listed in this file will not be created within the model, effectively keeping it out of the system.
+Since it may well happen that such a file is created at a later point and thus introduce an uncertainty in handling the to be ignored files we propose a simple solution: the file is only ever applied for object creations.
+Once a file has been created within the model it will be modified and deleted as any other file within the system, independent on the ignore file.
+
+This in turn however means that renaming or moving a file in Tinzenite will remove it from the model, deleting it everywhere.
+Since we believe this to be a feature for more advanced users we will not make this feature a core aspect of the system.
+Normal users should have little need for only synchronizing a selected subset of files.
