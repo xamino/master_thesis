@@ -16,11 +16,15 @@ Tinzenite shares a large advantage with the other discussed related peer to peer
 Because the peers communicate directly with each other the synchronization speed for peers within the same local area network is substantially higher than the solutions that must first upload data to a remote server.
 In the local area network where Tinzenite was mainly developed the only speed limit was that of the wireless internet for data transfers.
 
-%TODO: also state upload comparison to offsite peers
-TODO: also state upload comparison to offsite peers
+When transferring data between two peers over the internet at large Tinzenite is restricted by the broadband upload speed of the user's internet connection.
+While generally speaking the upload speed is only a fraction of the download speed for most consumer connections, Tinzenite does not suffer under this.
+This is because when comparing transferring a file via Tinzentie and any server hosted service, both require an initial upload of the file.
+Tinzenite actually wins in terms of speed because by the time the upload has completed, the other Tinzenite already has the complete file downloaded while the alternative via the server must still download the file.
 
 %TODO: add some sort of example, possibly in graph form?
 TODO: add some sort of example, possibly in graph form?
+Nah, just add a text example.
+For that move a large file between two devices with Tinzenite and with GDrive.
 
 TODO: do an informal comparison to previously highlighted comparable software.
 Should include hard facts such as speed (internet vs intranet) and limitations.
@@ -30,9 +34,9 @@ Should include hard facts such as speed (internet vs intranet) and limitations.
 
 Here Tinzenite in its current state definitely loses out to existing solutions.
 While actually running the software requires little to no user interaction the setup and management of peers is currently only available via command line interface programs.
-While nothing speaks against implementing a graphical user interface in principle, as this was not an essential part of our work no such client was implemented due to time constraints.
+While nothing speaks against implementing a graphical user interface in principle, this was not an essential part of our work no such client was implemented due to time constraints.
 And while Tinzenite theoretically supports web access to encrypted peers (see section~\ref{sub:Additional Peer Versions} below), this capability was also not tested or implemented.
-We believe that web access would improve usability by a large margin.
+We believe that web access would improve usability by a large margin and allow Tinzenite to close the feature gap.
 
 From a technical standpoint Tinzenite is feature complete in that it can and does synchronize directories correctly.
 However further work should be done for edge cases where the usability could be improved, such as for merge conflicts.
@@ -50,10 +54,17 @@ Thus the encryption of data that untrusted, encrypted peers receive should be mo
 Should services running encrypted peers be requested by hostile governments to hand over user data said data would be inaccessible without brute forcing the passphrase used to encrypt the encryption keys.
 Thus the security of the user data primarily depends on the user's willingness to use a sufficiently complex passphrase.
 
+Theoretically this feature is Tinzenite's distinguishing point between all existing implementation mentioned in section~\ref{sec:Existing Software}.
+Like other peer to peer solutions Tinzenite works directly between peers with most of the advantages that brings with it.
+Tinzenite allows off site backup of the data however.
+Unlike the server-client solutions Tinzenite does not require an account or trust in a third party.
+We believe that Tinzenite therefore combines the best of both worlds in regards to security while retaining readily available access to user stored data for authorized entities.
+
 %disclaimer :P
 However Tinzenite should not be trusted with secure data yet.
-Primarily because it was written as a proof of concept and thus is probably not bug free nor are we confident enough of our implementation of the key encryption to issue Tinzenite secure.
+Primarily because it was written as a proof of concept and thus is probably not bug free nor are we confident enough of our implementation of the encryption scheme.
 Furthermore Tinzenite should only be trusted after a security audit has been performed on the core logic.
+Tinzenite's open source nature however allows any interested parties to audit the code at their own leisure.
 
 \section{Future Work}
 \label{sec:Future Work}
