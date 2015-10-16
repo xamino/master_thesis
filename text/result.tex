@@ -112,21 +112,9 @@ Synchronization with encrypted peers could also be improved to avoid locking mul
 
 Fetching a file in Tinzenite currently always transfers the complete binary data, even if only a small part of the file was changed between two versions.
 Thus an improvement would be to implement that Tinzenite only sends the differences between two versions of a file between peers.
-We propose to use rsync for this~\cite{tridgell1996rsync}.
-
-%TODO rewrite / integrate
-The feature of delta updates is again not a trivial matter and we thus turn to existing solutions to shorten our work load in this regard.
-We intend to utilize librsync~\cite{web:site:librsync} for the implementation of the specifics.
-
-The librsync library is similar to the rsync and xdelta programs.
-Unlike the two however librsync does not require the file in both before and after state to create a delta.
-Requiring both versions of the file would immediately remove any benefit of using file deltas in our case as we would be required to send the file completely anyway.
-Librsync avoids this by only sending a signature of the original version of the file which consists of block-wise hashes of the contents.
-By comparing the new version block for block it can then determine which blocks have been changed and send only the corresponding data.
-
-The library is again written in C, therefore requiring a binding for us to be able to directly use its functionality.
-We found and plan to use the binding offered at TODO LINK.
-
+We propose to use rsync algorithm for this~\cite{tridgell1996rsync}, specifically the librsync implementation~\cite{web:site:librsync}.
+The required information for the library to work can be integrated into the existing request messages.
+Delta updates could however only be used between trusted peers since the encrypted data is completely different for every change.
 
 \subsubsection{Implementation Improvements}
 \label{subs:Implementation Improvements}
