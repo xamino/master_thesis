@@ -39,12 +39,12 @@ However this principle requires active involvement from the user and is thus an 
 Perhaps simply forgoing a third party would be a possible solution.
 Examples of existing peer to peer solutions are BitTorrent Sync~\cite{web:site:bittorrent_sync} and Syncthing~\cite{web:site:synthing}.
 However now the main advantage of a third party is lost: namely the ability to store data in a way that it is readily accessible even if every private peer is currently offline.
-Syncthing notably explicitly states that the user can enable access for trusted third parties, but as it stands now this third party would receive an unencrypted access to any data stored there.
+Syncthing notably explicitly states that the user can enable access for trusted third parties, but as it stands now this third party would receive an unencrypted access to any data stored there which contradicts with the concept of data security.
 
 Thus our motivation is to create a proof of concept of a file synchronization software suite.
 Stated goals are peer to peer communications, bypassing the requirement of a centrally hosted third party service.
 To harden such a peer to peer network it is necessary to encrypt all communication between the peers.
-This is not only required to hinder Wifi sniffing when using unsecured wireless access: Snowden also revealed that most data passing through internet exchange points is surveilled~\cite{web:site:heise:decix}.
+This is not only required to prevent Wifi sniffing when using unsecured wireless access: Snowden also revealed that most data passing through internet exchange points is surveilled~\cite{web:site:heise:decix}.
 Instead of integrating and mixing encrypted communications with the file synchronization commands required for such software to work, we utilize an existing secure peer to peer communication infrastructure in the form of Tox, on top of which we will propose a protocol for the sole task of file synchronization.
 
 To differentiate our proof of concept implementation from existing solutions a unique name was required.

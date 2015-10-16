@@ -47,7 +47,7 @@ On the negative side the service relies on its back-end servers, although comput
 Dropbox also lacks any end to end encryption, but does encrypt data while in transit and when "at rest" in their data centers~\cite{web:site:dropbox:blog}.
 Therefore it comes with little surprise that they were prominently featured in the Snowden leaks~\cite{web:site:rt:dropbox}.
 The company does have full access to any data the user uploads to their servers, as long as the users do not encrypt the files beforehand themselves.
-Therefore we can extrapolate that Dropbox can offer up a user's data if required to by a government, as is the case in the United States of America.
+Therefore we can extrapolate that Dropbox can offer up a user's data if required to by a fourth party, as is the case in the United States of America.
 
 Dropbox offers a free account for a basic storage plan.
 Additional storage capacity is available for purchase.
@@ -76,28 +76,11 @@ Google also offers a basic storage amount at no charge for the user.
 Again additional space can be purchased on a monthly basis.
 Apart from offering access to fewer clients than Dropbox, Google also has failed to open source the components of its service.
 
-\subsubsection{Boxcryptor}
-\label{subs:Boxcryptor}
-
-Both services mentioned are not to be trusted with private information that must remain secure.
-However solutions for encrypting the data sent over such services exist.
-One example of such a service is the Boxcryptor software~\cite{web:site:boxcryptor}.
-It encrypts all data before uploading it to the connected cloud storage service and decrypts it when retrieving it.
-The user keys are attached to the user's account.
-Asymmetric encryption is used to upload all keys to the companies key server so that other clients can retrieve and, with a correct password, decrypt the data.
-Sharing of data is still possible even for users without an account by utilizing special keys.
-
-The downside to this approach is mainly that it has to be used on top of an existing cloud storage service.
-This effectively means that the user must run an additional program on top of the file storage service to ensure secure data.
-Boxcryptor can be used with most existing third party data storage systems.
-Boxcryptor offers a free version of its service, but to access all security features a paid subscription is required.
-The software is not open source and thus not independently verifiable.
-
 \subsection{Peer to Peer Solutions}
 \label{sub:Peer to Peer Solutions}
 
 Peer to peer systems work without a central server.
-The trade off is that such solutions require assistance in locating other peers, which means that some form of peer discovery must be implemented.
+The trade off is that such solutions require assistance in locating other peers, which means that some form of a peer discovery system must be implemented.
 While this could be done via a central server, nowadays the common solution to the problem is a distributed hash table~\cite{ratnasamy2001scalable} which is used to look up the required peers.
 Once another peer has been found the connection can be established.
 Apart from not relying on the availability and trustworthiness of a central server, peer to peer solutions offer a possible performance advantage as they can distribute bandwidth between every peer, even actively unchoke a saturated peer.
@@ -125,8 +108,34 @@ Again the user can not designate untrusted peers.
 
 Unlike the other solutions mentioned here, Syncthing is open source and can thus be independently verified to be secure.
 Like Tinzenite it is also implemented in Golang.
-A feature that BitTorrent Sync shares with most client-server solutions is the capability of sharing a specified file or directory with other users who are not part of the storage system.
-Syncthing lacks such a feature.
+The downside is that Syncthing lacks a feature which BitTorrent Sync shares with most client-server solutions: the capability of sharing a specified file or directory with other users who are not part of the storage system.
+
+\subsection{Additional Security Layers}
+\label{sub:Additional Security Layers}
+
+It is of course possible to encrypt all data before using any data storage service beforehand.
+This has a few notable downsides however.
+For many client-server solutions the user loses out on web access to the data along with a host of additional feature built on the availability of the data.
+While advanced users may be capable of encrypting their data themselves using a range of available tools, such solutions require the user to manage the encryption keys themselves.
+This is a non trivial issue beyond adding an additional hurdle to using data storage services.
+As so often commercial solutions for this exist.
+
+\subsubsection{Boxcryptor}
+\label{subs:Boxcryptor}
+
+All three server-client services mentioned are not to be trusted with private information that must remain secure due to possible fourth party access.
+However solutions for encrypting the data sent over such services which manage the encryption keys exist.
+One example of such a service is the Boxcryptor software~\cite{web:site:boxcryptor}.
+It encrypts all data before uploading it to the connected cloud storage service and decrypts it when retrieving it.
+The user keys are attached to the user's account.
+Asymmetric encryption is used to upload all keys to the companies key server so that other clients can retrieve and, with a correct password, decrypt the data.
+Sharing of data is still possible even for users without an account by utilizing special keys.
+
+The downside to this approach is mainly that it has to be used on top of an existing cloud storage service.
+This effectively means that the user must run an additional program on top of the file storage service to ensure secure data.
+Boxcryptor can be used with most existing third party data storage systems.
+Boxcryptor offers a free version of its service, but to access all security features a paid subscription is required.
+The software is not open source and thus not independently verifiable.
 
 \subsection{Comparison}
 \label{sub:Comparison}
@@ -174,12 +183,12 @@ We discuss their general content with a focus on what information we extracted a
 \subsection{What is a File Synchronizer?}
 \label{sub:What is a File Synchronizer?}
 
-This paper by Balasubramaniam and Pierce~\cite{balasubramaniam1998file} has the stated goal of offering a framework for describing the behavior of file synchronizers.
+The paper by Balasubramaniam and Pierce~\cite{balasubramaniam1998file} has the stated goal of offering a framework for describing the behavior of file synchronizers.
 Notably the paper's authors divide the process into two separate phases: update detection and reconciliation.
 Update detection is defined as the recognition of where updates have been made to the directory since the last synchronization.
 Reconciliation is defined as the combination of updates between peers to transfer all peers to a new, synchronized state.
 
-For Tinzenite we took a few things out of this paper: primarily the distinction between the update detection and the reconciliation phase.
+For Tinzenite we assimilated a few things out of this paper: primarily the distinction between the update detection and the reconciliation phase.
 We will also initially ignore links and file permissions due to increased complexity, but unlike them we will never modify a file ourself.
 The paper also gave us a definition for the type of update detection strategy we wanted to try: namely the modtime inode strategy.
 Ideally we would take an on-line update detector but this seems impossible to do under Linux currently for an unlimited amount of files.

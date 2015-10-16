@@ -10,12 +10,12 @@ Finally we will take a look at the advanced features and how they can be built o
 
 We chose to use JSON for all communication between peers (see section~\ref{sub:JSON}).
 Therefore generally speaking all messages will be defined as JSON messages.
-Additionally most data is written to disk as JSON files.
+Additionally most data is written to storage as JSON files.
 
 \section{Meta Data}
 \label{sec:Meta Data}
 
-Since a trusted peer must store the last known state of the directory to detect changes for later synchronizations, we must store this information to disk somewhere.
+Since a trusted peer must store the last known state of the directory to detect changes for later synchronizations, we must store this information to storage somewhere.
 For Tinzenite we took a page from Git and decided to write this information within the directory to be synchronized.
 To reduce visual clutter and to hide it from users this directory is offered by a hidden directory directly below the root directory.
 We specified it as \textit{".tinzenite"}.
@@ -79,19 +79,19 @@ Figure~\ref{json:auth_object} shows the contents of an example authentication fi
 \label{json:auth_object}
 \end{figure}
 
-The key \textit{"User"} stores a bcrypt hash of the user's name~\cite{provos1999future}.
+The key \textit{"User"} stores a bcrypt hash~\cite{provos1999future} of the user's name.
 This is important for example for the support of encrypted third party peers: they can attach accounts to the provided user name for controlling server side access.
 The user given name of the directory is stored in \textit{"Dirname"}.
 We also need a way to distinguish multiple synchronized directories from each other: this is the random unique hash stored in \textit{"DirID"}.
 Again, this can be used by third party service providers to differentiate the amount of directories that a user can store with them.
 The encryption keys for encrypting and decrypting file data for encrypted peers is stored in \textit{"Secure"}.
-These keys are encrypted with a password derived encryption scheme further discussed in section~\ref{sec:Encryption}.
+These keys are encrypted with a password derived encryption scheme further discussed in section~\ref{sub:Key Encryption}.
 \textit{"Nonce"} stores the nonce value that is required additionally to the user provided password to successfully access the encryption keys.
 
 \subsubsection{Peer Files}
 \label{subs:Peer Files}
 
-Within the \textit{"peers"} folder Tinzenite writes all data synchronization peers.
+Within the \textit{"peers"} folder Tinzenite writes all data related to synchronization peers.
 It is in essence the contact list, filled with information required to access peers.
 This includes a peer's address, trust, and further user defined information.
 
@@ -163,13 +163,13 @@ The file which contains the rules for this is the \textit{".tinignore"} file (fo
 
 The \textit{"temp"}, \textit{"received"}, and \textit{"sending"} directories are used for files in transit either in preparation before being sent encrypted or upon receiving before being applied to the local directory.
 Files are transmitted by chunks by Tox.
-Therefore, to keep the RAM storage requirements down, these blocks are immediately written to disk.
+Therefore, to keep the RAM storage requirements down, these blocks are immediately written to storage.
 This also avoids partially overwritting user accessible files if the transfer fails for some reason, thus ensuring that Tinzenite only overwrites the user's files when it is ready to do so with a complete file.
 
 The \textit{"local"} directory is used for three purposes.
 First a copy of the peer's own peer information is written into a file alongside with a binary dump that the underlying Tox channel requires to run which contains the persistent state information.
-Second the actual model is written to disk here, although not as a fully expanded object tree as specified in section~\ref{sec:Object Model}.
-Instead Tinzenite writes the internal representation of the model to disk as JSON.
+Second the actual model is written to storage here, although not as a fully expanded object tree as specified in section~\ref{sec:Object Model}.
+Instead Tinzenite writes the internal representation of the model to storage as JSON.
 This differentiates in a few key points, but primarily serves to store both the absolute path and to keep the directory tree in a flat representation that is more efficient to actually work with.
 Finally the \textit{"rmstore"} directory keeps a record of all previously completed removals in the case that a peer tries to reintroduce a completed removal.
 
@@ -212,9 +212,9 @@ Since each file is considered a binary blob and must not be modified by Tinzenit
 Out of this we can see which values need to be stored within the model for each object specifically.
 
 Each object in the model will be specified for identification purposes by a unique randomly generated hash.
-This hash allows us to decouple the name of the object from its model representation, effectively serving as the same function as node identification numbers when stored on a disk.
+This hash allows us to decouple the name of the object from its model representation, effectively serving as the same function as node identification numbers when stored on a hard drive.
 Furthermore each model object will contain a path variable that specifies the relative path of the object in the directory tree.
-This has the purpose of allowing the placement of all files in the correct locations on disk for a given root path.
+This has the purpose of allowing the placement of all files in the correct locations on storage for a given root path.
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
@@ -273,7 +273,7 @@ The \textit{"shadow"} flag is used to signal whether the contents of the directo
 To differentiate between updates we require a \textit{"version"} attribute which represents a vector clock of peers and their last known version.
 
 Finally an \textit{"objects"} array is where the corresponding sub directories or files are recursively placed.
-To model a directory as shown for example in figure~\ref{list:model} Tinzenite begins the model with directory model for the root directory.
+To model a directory as shown for example in figure~\ref{list:model} Tinzenite begins the model with a directory model for the root directory.
 Within the objects array one can the then find the two files and the two further directories.
 Each directory object in turn also stores sub objects in its object array, thus recursively modeling an entire directory.
 
@@ -413,9 +413,11 @@ Now a final note on what happens should a peer receive a deletion update for an 
 In this case the message can not simply be silently discarded as there is no other representation of the update in the object model.
 This could lead to orphaned updates if the peer acts as a bridge between two peers that were previously directly connected.
 Therefore unknown deletion updates should be propagated if possible.
-However, since orphaned updates can only happen as long as the peer list has not been fully updated between all peers, this is a sufficiently unlikely case that we can live with it.
+However, since orphaned updates can only happen as long as the peer list has not been fully updated between all peers, this is a sufficiently unlikely case that we can live with.
 By adding a time stamp we can even detect orphaned deletion updates and warn the user to help in solving the issue.
 Alternatively we can also warn if we have too many possibly orphaned updates, although this would signify a larger issue.
+Since there is no way to reliably ensure that all peers are at the same state simply for the reason that a peer may be offline at any point, there is little more we can do to ensure clean removals.
+It is more important to work towards a common model state than to ensure previous states were legitimate for all peers.
 
 \section{Communication Specification}
 \label{sec:Communication Specification}
@@ -543,7 +545,7 @@ At the end of a model request both peers should share a common model state and a
 If local changes happen during or after the model has been exchanged the \nameref{subs:Update Message}s are used to notify the other model of the update without having to retransmit the entire model again.
 However to ensure that all updates do propagate at some point, ideally rather faster than longer, we propose that each peer resend the model every few units.
 The exact spacing of when the complete model is resent is again up to the peer itself and can be adjusted per instance.
-This allows mobile peers to work more energy efficient by synchronizing less often in comparison to desktop peers where power and bandwidth usage don't play a prominent role.
+This allows mobile peers to work more energy efficient by synchronizing less often in comparison to desktop peers where power and bandwidth usage don't play such prominent roles.
 
 Since encrypted peers work passively it is again up to the trusted peers to ensure that they are queried regularly.
 To avoid creating merge conflicts on encrypted peers which these could not independently resolve as all data is encrypted, encrypted peers can only be accessed by a single trusted peer at the same time.
@@ -752,8 +754,8 @@ When a Tinzenite directory is created the initial model of the directory is crea
 To detect changes within the directory Tinzenite thus regularly compares the current state of all objects within the directory against the previous model.
 If creations, modifications, or removals are detected they are applied to the model and any further required operations completed.
 
-Creations are simply detected when objects exist on disk that are not tracked in the model.
-The reverse is used to detect removals: tracked objects that do not exist on disk.
+Creations are simply detected when objects exist in the storage directory that are not tracked in the model.
+The reverse is used to detect removals: tracked objects that do not exist in storage.
 Modifications must be checked for every tracked existing object.
 
 \subsection{Update Reconciliation}
@@ -780,7 +782,7 @@ The naive check is simply whether for a given remote object entry an entry exist
 However to avoid reintroducing objects that have been locally removed but where the removal has not yet reached the remote peer, we must also check this list of potentially created objects against all known local removals.
 If the creation is for an object that has been locally removed we ignore it as the remote peer is not up to date on this object.
 On the other hand if the creation is valid the local peer can request the binary data if the creation is for a file.
-Finally when the file has been received the creation is applied to the local model and the file written to disk at the corresponding location.
+Finally when the file has been received the creation is applied to the local model and the file written to storage at the corresponding location.
 
 \subsubsection{Object Removal}
 \label{subs:Object Removal}

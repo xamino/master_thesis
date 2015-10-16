@@ -454,7 +454,7 @@ Apart from said passphrase the user must do nothing to ensure full encryption se
 The challenge response we use in Tinzenite is built on a very simple challenge.
 For each challenge we generate a random number and locally store it, then encrypt it with the data encryption keys and send it to the other peer.
 This responding peer decrypts the message and retrieves the number.
-It then increments it by one, encrypts its answer, and sends it back.
+It then increments it by one, encrypts its answer, and sends it back\footnote{What we actually do with the number is irrelevant as long as both sides of the challenge response algorithm use the same operation. The only property the operation must have is that it is sufficient to prove that both sides could read the unencrypted number and work on it.}.
 If the received number is one value higher than the stored number, the challenge response is valid.
 
 The challenging peer can thus be satisfied that the other peer is valid because it proved that it could validly decrypt and encrypt the correct values.

@@ -177,7 +177,8 @@ When connecting to other peers the peer can then request all available files mar
 This approach has the added advantage of allowing a peer to notify the user that the file has been updated but not fetched yet.
 We may also use this functionality to signal slow network transfer speeds: the user could at a glance see that the update is pending, possibly avoiding unnecessary conflicts.
 
-The final edge case is an unpleasant one: what Tinzenite does not provide is a way to ensure that one full copy of the shadowed file is kept.
+%TODO: explain that we need to disable shadow files on the desktop peers. Or extend the protocol to avoid losing data.
+The final edge case is a challenging one: what Tinzenite does not provide is a way to ensure that one full copy of the shadowed file is kept.
 If the user marks a file as shadowed on all peers it may well happen that Tinzenite loses the file.
 For now we propose to avoid this by explicitly warning the user of this possibility.
 One way to mitigate this risk is by allowing user defined shadowed files only for specific clients: we can probably assume that any full desktop peer should always retain a full copy of the directory anyway.
