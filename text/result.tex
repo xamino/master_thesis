@@ -116,6 +116,18 @@ We propose to use rsync algorithm for this~\cite{tridgell1996rsync}, specificall
 The required information for the library to work can be integrated into the existing request messages.
 Delta updates could however only be used between trusted peers since the encrypted data is completely different for every change.
 
+\subsubsection{Server Peer}
+\label{subs:Server Peer}
+
+The current implementation for the encrypted peer was implemented for a single Tinzenite network instance.
+It could be extended to provide service for multiple Tinzenite networks and multiple users.
+User accounts can be differentiated by reading parts of the authentication file: the user name can be checked with the bcrypt hash.
+Care should be taken to ensure that the user does not provide the same access password than the passphrase used to access the Tinzenite encryption.
+
+%TODO: expand on this
+
+TODO: support for size limitations.
+
 \subsubsection{Implementation Improvements}
 \label{subs:Implementation Improvements}
 
@@ -142,11 +154,6 @@ TODO: additional peers (reference concept chapter)
 %TODO: all stuff below here is WIP and should be rewritten / integrated
 \section{TODO}
 \label{sec:TODO}
-
-TODO: rework the stuff below as future work and how we think it could be implemented on top of the existing work.
-
-In this section we will describe the features that we consider to be advanced features.
-These will for the most part be implemented at a later stage and are not relevant for the core functionality of the Tinzenite system.
 
 \subsection{Space Management}
 \label{sub:Space Management}
