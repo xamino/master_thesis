@@ -107,6 +107,27 @@ Another example would be extending the Tinzenite \emph{core} package to allow fo
 This could include synchronizing only once when initially connected and then simply updating locally, avoiding unnecessary complete model comparisons.
 Synchronization with encrypted peers could also be improved to avoid locking multiple encrypted peers at once and ensure that they are kept up to date at a reasonable rate.
 
+\subsubsection{Delta Updates}
+\label{subs:Delta Updates}
+
+Fetching a file in Tinzenite currently always transfers the complete binary data, even if only a small part of the file was changed between two versions.
+Thus an improvement would be to implement that Tinzenite only sends the differences between two versions of a file between peers.
+We propose to use rsync for this~\cite{tridgell1996rsync}.
+
+%TODO rewrite / integrate
+The feature of delta updates is again not a trivial matter and we thus turn to existing solutions to shorten our work load in this regard.
+We intend to utilize librsync~\cite{web:site:librsync} for the implementation of the specifics.
+
+The librsync library is similar to the rsync and xdelta programs.
+Unlike the two however librsync does not require the file in both before and after state to create a delta.
+Requiring both versions of the file would immediately remove any benefit of using file deltas in our case as we would be required to send the file completely anyway.
+Librsync avoids this by only sending a signature of the original version of the file which consists of block-wise hashes of the contents.
+By comparing the new version block for block it can then determine which blocks have been changed and send only the corresponding data.
+
+The library is again written in C, therefore requiring a binding for us to be able to directly use its functionality.
+We found and plan to use the binding offered at TODO LINK.
+
+
 \subsubsection{Implementation Improvements}
 \label{subs:Implementation Improvements}
 
@@ -123,22 +144,7 @@ TODO: avoid loss of shadow files!
 \label{subs:Data Obfuscation}
 
 While encrypted peers already only store encrypted files, simply encrypting a file may not be sufficient to prevent meta information collection on the directory contents.
-Thus we propose that future work could include modifying the encrypted peer implementation and the transfer protocol so that trusted peers send not only encrypted but also obfuscated data to encrypted peers.
-
-\subsubsection{Delta Updates}
-\label{subs:Delta Updates}
-
-The feature of delta updates is again not a trivial matter and we thus turn to existing solutions to shorten our work load in this regard.
-We intend to utilize librsync~\cite{web:site:librsync} for the implementation of the specifics.
-
-The librsync library is similar to the rsync and xdelta programs.
-Unlike the two however librsync does not require the file in both before and after state to create a delta.
-Requiring both versions of the file would immediately remove any benefit of using file deltas in our case as we would be required to send the file completely anyway.
-Librsync avoids this by only sending a signature of the original version of the file which consists of block-wise hashes of the contents.
-By comparing the new version block for block it can then determine which blocks have been changed and send only the corresponding data.
-
-The library is again written in C, therefore requiring a binding for us to be able to directly use its functionality.
-We found and plan to use the binding offered at TODO LINK.
+Thus we propose that future work could include modifying the encrypted peer implementation and the transfer protocol so that trusted peers send not only encrypted but also obfuscated data to encrypted peers, effectively implementing an oblivious storage system~\cite{goldreich1996software}.
 
 \subsubsection{Additional Peer Versions}
 \label{subs:Additional Peer Versions}
@@ -165,23 +171,8 @@ If the size limit has been reached it should only allow further updates as shado
 The interesting case is of course what happens to files that are modified above the limit: we propose either making the file a shadow file as soon as it crosses the limit or allowing modifications to push the size above the limit.
 Since shadow files are already part of the Tinzenite protocol no further protocol support for this feature must be considered.
 
-\begin{figure}[htp]
-    \begin{lstlisting}[language=json,firstnumber=0]
-    {
-        "operation":"info",
-        "size_limit":"bytes_value",
-        "size_current":"bytes_value",
-        "message":"message_text"
-    }
-    \end{lstlisting}
-\caption[Information Message]{Message used by encrypted peers to send the user messages.}
-\label{json:info_message}
-\end{figure}
-
 For encrypted peers the enforcement of size restrictions must be handled by the active peers.
 This in turn means however that encrypted peers must be capable of denying additional updates.
-The message for this is defined as in figure~\ref{json:info_message}.
-It is sent upon an apply message that exceeds the size limit after the file transfer is denied.
 The trusted peer can then notify the user and possibly even immediately mark the file as a shadow file in the encrypted peers model.
 
 \subsection{Ignored Objects}

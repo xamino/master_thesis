@@ -871,7 +871,7 @@ Detecting a wrong model is trivially done by decrypting it and checking if it is
 Some information is leaked however.
 Since we encrypt on a per file basis it is theoretically possible to analyze file usage associated with size to identify pieces of the user's directory.
 This is only made easier by the fact that file sizes are roughly the same whether encrypted or not, with an accuracy down to the block size of the encryption scheme.
-The information leak could be mitigated by implementing the core protocol with encrypted oblivious storage~\cite{goldreich1987towards}: however this may well be worthy of its own thesis and thus will not further be considered here.
+For a future work proposal to solve this see section~\ref{subs:Data Obfuscation}.
 
 Possibly even more problematic is the clear text storage of the peer list even on encrypted peers as it can be used to determine the size of the user's Tinzenite network.
 However to allow encrypted peers to facilitate file transfer between two mutually exclusively online peers, it must know this information.
