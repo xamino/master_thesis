@@ -69,26 +69,85 @@ Tinzenite's open source nature however allows any interested parties to audit th
 \section{Future Work}
 \label{sec:Future Work}
 
-TODO: I'm sure you can list a ton of future work to be done by the time you're done.
-If you're lucky at least the API won't have to be totally redone.
-^^ The API has to be redone... XD
+Tinzenite offers a lot of room for future work, both concerning the current implementation and expanding on the provided work.
+This section will serve to discuss many of the points we believe could greatly benefit any further work on Tinzenite.
+Thus we will begin this section by discussing changes to the current Tinzenite architecture and implementation.
+We will conclude this section by offering an outlook of further work that could be based on the existing implementation.
 
-One thing I can think of already is that torrents are more efficient because files can be fetched from multiple sources at the same time, hastening the transfer immensely.
-Ideally this won't be too bad in my case though because I don't intend Tinzenite to be used with a large enough number of devices for this to make a difference.
+\subsection{Improvements to Existing Work}
+\label{sub:Improvements to Existing Work}
+
+Since our implementation of the architecture was built from the ground up without previous knowledge of many of the aspects touched on by this work, we encountered a number of things that should and could be improved.
+
+\subsubsection{Data Transfer}
+\label{subs:Data Transfer}
+
+We believe our implementation to be not fully optimized for the best possible data transfer characteristics between a peer network.
+Thus improvements to how Tinzenite fetches and sends data could be implemented to improve robustness and speed of data transfers.
+
+In our implementation when a trusted peer receives an update, the associated file is fetched from the peer where the update originated from.
+If the update is received from multiple peers only the first peer is used to fetch the data.
+Building on the same ideas that led to the development of the torrent protocol, we could implement swarm fetching capabilities.
+This would allow the unchoking of saturated peers where upload speeds are slow and allow the file request to complete even if one peer out of many goes offline or encounters issues.
+
+Issues may arise for implementing this for two reasons.
+If delta fetching is implemented as described in section~\ref{TODO}, care has to be taken to keep the swarm behavior compatible even if multiple peers have varying states of the original file.
+Another source of possible issues is how to combine it with the existing encrypted peer behavior.
+Since encrypted peers are currently locked to a single trusted peer for a synchronization this precludes having them partake in a swarm apart from the issue that the encrypted peer will transfer encrypted data while trusted peers will transfer unencrypted data.
+
+\subsubsection{Peer Behavior}
+\label{subs:Peer Behavior}
+
+Trusted peers of the current Tinzenite implementation synchronize with timing based intervals.
+While this works sufficiently for the proof of concept, ideally it would not be the case.
+Instead peers should dynamically adjust the timing and order of operations for when to synchronize based on the network environment and current status of the own directory.
+
+An example for this includes pausing the remote synchronization interval if outside changes are still being fetched to avoid unnecessary double fetch requests and associated work.
+Another example would be extending the Tinzenite \emph{core} package to allow for finer control over which peers to synchronize and then implementing the client program so that peer synchronizations happen in a smarter fashion (or implementing this directly within Tinzenite itself).
+This could include synchronizing only once when initially connected and then simply updating locally, avoiding unnecessary complete model comparisons.
+Synchronization with encrypted peers could also be improved to avoid locking multiple encrypted peers at once and ensure that they are kept up to date at a reasonable rate.
+
+\subsubsection{Implementation Improvements}
+\label{subs:Implementation Improvements}
+
+Our current implementation, while working, is surely not the best way to implement it.
+Not all possible error cases are handled in the most optimal way possible.
+Furthermore the implementation of Tinzenite could use extensive testing and debugging.
+
+\subsection{Expanding Work}
+\label{sub:Expanding Work}
 
 TODO: avoid loss of shadow files!
 
-TODO: encrypted peer data obfuscation
+\subsubsection{Data Obfuscation}
+\label{subs:Data Obfuscation}
 
-TODO: all advanced features that we did not get around to. :P
-oblivious storage for encrypted peer
+While encrypted peers already only store encrypted files, simply encrypting a file may not be sufficient to prevent meta information collection on the directory contents.
+Thus we propose that future work could include modifying the encrypted peer implementation and the transfer protocol so that trusted peers send not only encrypted but also obfuscated data to encrypted peers.
 
-\subsection{Additional Peer Versions}
-\label{sub:Additional Peer Versions}
+\subsubsection{Delta Updates}
+\label{subs:Delta Updates}
+
+The feature of delta updates is again not a trivial matter and we thus turn to existing solutions to shorten our work load in this regard.
+We intend to utilize librsync~\cite{web:site:librsync} for the implementation of the specifics.
+
+The librsync library is similar to the rsync and xdelta programs.
+Unlike the two however librsync does not require the file in both before and after state to create a delta.
+Requiring both versions of the file would immediately remove any benefit of using file deltas in our case as we would be required to send the file completely anyway.
+Librsync avoids this by only sending a signature of the original version of the file which consists of block-wise hashes of the contents.
+By comparing the new version block for block it can then determine which blocks have been changed and send only the corresponding data.
+
+The library is again written in C, therefore requiring a binding for us to be able to directly use its functionality.
+We found and plan to use the binding offered at TODO LINK.
+
+\subsubsection{Additional Peer Versions}
+\label{subs:Additional Peer Versions}
 
 TODO: additional peers (reference concept chapter)
 
--- -- --
+%TODO: all stuff below here is WIP and should be rewritten / integrated
+\section{TODO}
+\label{sec:TODO}
 
 TODO: rework the stuff below as future work and how we think it could be implemented on top of the existing work.
 
@@ -185,20 +244,6 @@ One way to mitigate this risk is by allowing user defined shadowed files only fo
 
 %TODO: Is this a future work todo?
 
-\subsection{Encrypted Peers}
-\label{sub:Encrypted Peers}
-
-The final advanced feature that is vital for the encrypted peer for third party support is how encryption is handled within the protocol.
-Trigger for detecting that a peer is encrypted is when the challenge is not correctly responded or denied (if it outright fails Tinzenite probably should warn the user as it would mean that someone is trying to guess the response).
-If the peer is already marked as a non trusted peer the challenge must never even be offered in the first case of course.
-Once the other peer has been identified as an encrypted peer it is up to the local peer to enforce the correct encryption on files.
-
-Explicitly this means that encrypted peers only receive encrypted blobs of files, not knowing what is in them and where to store them in relation to each other.
-This is all right however: encrypted peers only store the list of all encrypted files with the encrypted directory model alongside.
-Notable exception is the \textit{org} directory as previously discussed.
-Encrypted peers must only be able to send and receive objects as requested by a trusted peer.
-For this each binary encrypted file is stored with the name of its unique identification hash, allowing the encrypted peer to know which files to send and which to overwrite as required.
-
 \subsection{File Versioning}
 \label{sub:File Versioning}
 
@@ -218,18 +263,3 @@ Further work could then be done to decrease the size of the versions by only kee
 Again this would require somewhat extensive work on peer logic but no change in the core protocol.
 To differentiate full copies and delta files we propose an identifying name change would suffice: by appending a special marker behind the version number we could differentiate the type.
 The actual synchronization of deltas or full binaries is again already fully implemented in the core protocol and would work as any other file.
-
-\subsection{Delta Updates}
-\label{sub:Delta Updates}
-
-The feature of delta updates is again not a trivial matter and we thus turn to existing solutions to shorten our work load in this regard.
-We intend to utilize librsync~\cite{web:site:librsync} for the implementation of the specifics.
-
-The librsync library is similar to the rsync and xdelta programs.
-Unlike the two however librsync does not require the file in both before and after state to create a delta.
-Requiring both versions of the file would immediately remove any benefit of using file deltas in our case as we would be required to send the file completely anyway.
-Librsync avoids this by only sending a signature of the original version of the file which consists of block-wise hashes of the contents.
-By comparing the new version block for block it can then determine which blocks have been changed and send only the corresponding data.
-
-The library is again written in C, therefore requiring a binding for us to be able to directly use its functionality.
-We found and plan to use the binding offered at TODO LINK.
