@@ -65,6 +65,8 @@ However Tinzenite should not be trusted with secure data yet.
 Primarily because it was written as a proof of concept and thus is probably not bug free nor are we confident enough of our implementation of the encryption scheme.
 Furthermore Tinzenite should only be trusted after a security audit has been performed on the core logic.
 Tinzenite's open source nature however allows any interested parties to audit the code at their own leisure.
+Furthermore Tinzenite does leak some information: namely the peer list is available unencrypted.
+While a small risk as no true user information is stored in those files it is still a possible attack vector for a malicious peer.
 
 \section{Future Work}
 \label{sec:Future Work}
@@ -91,7 +93,7 @@ Building on the same ideas that led to the development of the torrent protocol, 
 This would allow the unchoking of saturated peers where upload speeds are slow and allow the file request to complete even if one peer out of many goes offline or encounters issues.
 
 Issues may arise for implementing this for two reasons.
-If delta fetching is implemented as described in section~\ref{TODO}, care has to be taken to keep the swarm behavior compatible even if multiple peers have varying states of the original file.
+If delta fetching is implemented as described below, care has to be taken to keep the swarm behavior compatible even if multiple peers have varying states of the original file.
 Another source of possible issues is how to combine it with the existing encrypted peer behavior.
 Since encrypted peers are currently locked to a single trusted peer for a synchronization this precludes having them partake in a swarm apart from the issue that the encrypted peer will transfer encrypted data while trusted peers will transfer unencrypted data.
 
@@ -128,19 +130,16 @@ Care should be taken to ensure that the user does not provide the same access pa
 Another feature that the server client should be capable of is enforcing potential size restrictions.
 This feature may also be used for a future mobile client as described in section~\ref{subs:Additional Peer Versions}.
 What this means is that Tinzenite should support clients refusing to fetch additional files to enforce a specified size of a directory.
-It could be implemented by building on the shadow files capability described in section~\ref{subs:Shadow Objects}.
+It could be implemented by building on the shadow files capability which we will expand on in the next section.
 The interesting case is of course what happens to files that are above the limit after a modification: we propose either making the file a shadow file as soon as it crosses the limit or allowing modifications to push the size above the limit temporarily.
 For encrypted peers the enforcement of size restrictions must be handled by the trusted peers.
 This in turn means however that encrypted peers must be capable of denying additional updates since trusted peers could not be trusted to correctly enforce a size limitation.
 
-%TODO: expand on encrypted peer work?
-
 \subsubsection{Shadow Objects}
 \label{subs:Shadow Objects}
-%TODO: rework when awake
 
-Depending on the location of a client a user may with to only access specific files without having to get an entire set or updates.
-This is a nice feature to have in the case of space and bandwidth restricted devices such as mobile devices.
+Depending on the location of a client a user may wish to only access specific files without having to get an entire set or updates.
+This is a nice feature to have in the case of space and bandwidth restricted devices such as mobile devices or for the web interface.
 This feature could also be used to prioritize which objects Tinzenite will fetch first.
 
 Functionality for the shadow file feature is available via the currently unused \textit{"shadow"} attribute.
@@ -158,15 +157,16 @@ If the user changes their mind the file may thus still be immediately available.
 
 So what do peers do if they receive a model update where the shadow flag is set?
 It is important to note here that the shadow flag is considered to be transient when synchronizing models, meaning its value is considered to be local only.
-However it is still sent as it is used to determine for the receiving peer whether it can fetch an update if applicable from the other peer.
+However it is still sent as it is used to determine for the receiving peer whether it can fetch an update from the other peer if applicable.
 Again it is up to the peer what happens upon receiving a shadow file update: trivially a peer that has a non shadow copy of the file will ignore shadow updates as it can not fetch the binary file update successfully from it.
 It will then have to wait for another peer to offer the update where the attribute is not set.
 
 %TODO: explain that we need to disable shadow files on the desktop peers. Or extend the protocol to avoid losing data.
-The final edge case is a challenging one: what Tinzenite does not provide is a way to ensure that one full copy of the shadowed file is kept.
+The final edge case is a challenging one: what Tinzenite does not provide is a way to ensure that one full copy of the shadowed file is always kept somewhere.
 If the user marks a file as shadowed on all peers it may well happen that Tinzenite loses the file.
 For now we propose to avoid this by explicitly warning the user of this possibility.
 One way to mitigate this risk is by allowing user defined shadowed files only for specific clients: we can probably assume that any full desktop peer should always retain a full copy of the directory anyway.
+Thus shadow files should only be used for the proposed mobile peer and web interface peer.
 
 \subsubsection{Implementation Improvements}
 \label{subs:Implementation Improvements}
@@ -178,15 +178,9 @@ Furthermore the implementation of Tinzenite could use extensive testing and debu
 \subsection{Expanding Work}
 \label{sub:Expanding Work}
 
-TODO: avoid loss of shadow files!
-
-\subsubsection{Data Obfuscation}
-\label{subs:Data Obfuscation}
-
-While encrypted peers already only store encrypted files, simply encrypting a file may not be sufficient to prevent meta information collection on the directory contents.
-Thus we propose that future work could include modifying the encrypted peer implementation and the transfer protocol so that trusted peers send not only encrypted but also obfuscated data to encrypted peers, effectively implementing an oblivious storage system~\cite{goldreich1996software}.
-
-%Not done I think
+Tinzenite offers a lot of room to build on.
+In this section we will discuss some proposals for building on our work instead of modifying it.
+Note that some expanded features require features from the previous section.
 
 \subsubsection{Encrypted Peer Synchronization}
 \label{subs:Encrypted Peer Synchronization}
@@ -195,10 +189,46 @@ TODO: write a section on allowing encrypted peers to synchronize between themsel
 Would have to happen "blindly" but should work.
 Note that this requires a shared state because of possible merge conflicts!
 
+\subsubsection{Data Obfuscation}
+\label{subs:Data Obfuscation}
+
+While encrypted peers already only store encrypted files, simply encrypting a file may not be sufficient to prevent meta information collection on the directory contents.
+Thus we propose that future work could include modifying the encrypted peer implementation and the transfer protocol so that trusted peers send not only encrypted but also obfuscated data to encrypted peers, effectively implementing an oblivious storage system~\cite{goldreich1996software}.
+
+This especially makes sense if combined with the swarm behavior mentioned previously and the encrypted peer synchronization.
+The entire group of encrypted peers could then be used to obfuscate and store data redundantly.
+This would increase the third party security and further reduce the trust of said party required.
+Obfuscation would be sufficient to hide most meta data that may be deduced from encrypted synchronization.
+
 \subsubsection{Additional Peer Versions}
 \label{subs:Additional Peer Versions}
 
-TODO: additional peers (reference concept chapter)
+Our current implementation of Tinzenite offers two peers: a standard trusted peer for a personal computer and a peer for encrypted storage.
+As discussed in section~\ref{sec:Software Scope} we have already considered adding a mobile client for smartphones and a web interface client for temporary access to an encrypted peer, plus a passive peer for secure cold storage.
+
+A mobile peer would be a trusted active peer of the Tinzenite network.
+As previously discussed however the mobile peer would most likely not retain a full copy of the Tinzenite directory due to size and bandwidth limitations.
+Thus both shadow objects and size restrictions are likely prerequisites for a mobile client.
+On the positive side little else would need to be changed in our provided work as Golang can be executed on both of the most popular mobile operating systems in use currently, Android and iOS.
+Indeed the entire application could be written in Golang, building on our already completed work, by utilizing the \emph{mobile} package~\cite{web:site:golang:mobile}.
+
+The web interface peer would be an interesting challenge.
+It would allow the user to log in to a web server and enter their passphrase.
+The web peer would then be capable of fetching and decrypting the model file and allow the user to upload and download encrypted data directly from an encrypted peer.
+This could happen entirely without requiring the underlying Tox communication architecture.
+All data to and from the web server would be fully encrypted since decrypted data would only be kept on the web interface peer.
+The moment the user closes the web page all temporary data would be discarded.
+This would enable users to access their data stored in the Tinzenite network anywhere where they have internet access, as long as they have encrypted peers that enable this feature.
+
+Finally a cold storage peer could be offered.
+Technically it would not be a true peer of the Tinzenite network, but for the sake of this text we will reference it as a passive peer.
+A user could command a trusted Tinzenite peer to utilize a storage location as a passive peer.
+Tinzenite would then encrypt all local files and its current state and write the data to the location.
+This location could be anything from a USB stick to more permanent storage device.
+If the users wish to update the passive peer they would not even have to do it at the same peer: any other trusted peer could be used too.
+This other trusted peer would, much like how the encrypted peer works, read and synchronize the passive peer against itself.
+This would allow passive peers to be used both as safeguards against data lose and even as secure transport containers.
+Two trusted peers not connected via the internet could be kept synchronized manually by regularly moving a passive peer between them.
 
 \subsubsection{File Versioning}
 \label{subs:File Versioning}
