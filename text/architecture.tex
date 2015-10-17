@@ -67,13 +67,13 @@ Figure~\ref{json:auth_object} shows the contents of an example authentication fi
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
-    {
-        "User": "$2a$10$E8Wlr9Jn/EYJLZ7J0yZoR.Qscp.MKD2kG8dHF7OQWYNA1mCfp.Qqe",
-        "Dirname": "sync",
-        "DirID": "ffff1d4cbfded232",
-        "Secure": "Kbk4+sx17VKHma1Z67OU6R7TbHPWMr4SpZhWUQqheS/CNcKKHVYjTTSv0rbF4qDAa0vwikigsm7wHhy4iGjWB84i0ErO7rNwhqrPPxudeDM=",
-        "Nonce": [255,142,165,173,201,188,98,116,29,31,173,181,84,84,137,54,159,50,193,248,51,162,76,195]
-    }
+{
+    "User": "$2a$10$E8Wlr9Jn/EYJLZ7J0yZoR.Qscp.MKD2kG8dHF7OQWYNA1mCfp.Qqe",
+    "Dirname": "sync",
+    "DirID": "ffff1d4cbfded232",
+    "Secure": "Kbk4+sx17VKHma1Z67OU6R7TbHPWMr4SpZhWUQqheS/CNcKKHVYjTTSv0rbF4qDAa0vwikigsm7wHhy4iGjWB84i0ErO7rNwhqrPPxudeDM=",
+    "Nonce": [255,142,165,173,201,188,98,116,29,31,173,181,84,84,137,54,159,50,193,248,51,162,76,195]
+}
     \end{lstlisting}
 \caption[Authentication JSON Object]{An example of an authentication file.}
 \label{json:auth_object}
@@ -97,13 +97,13 @@ This includes a peer's address, trust, and further user defined information.
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
-    {
-        "Name": "box",
-        "Address": "b6ad2388839d3068f9d6562c10d1151dd87818373c88cf9aad829144c63aac36",
-        "Protocol": 1,
-        "Trusted": false,
-        "Identification": "19baf5873da66797"
-    }
+{
+    "Name": "box",
+    "Address": "b6ad2388839d3068f9d6562c10d1151dd87818373c88cf9aad829144c63aac36",
+    "Protocol": 1,
+    "Trusted": false,
+    "Identification": "19baf5873da66797"
+}
     \end{lstlisting}
 \caption[Peer JSON Object]{An example of a peer JSON object. Note that the encryption attribute is not to be trusted, it is only an optimization.}
 \label{json:peer_object}
@@ -218,11 +218,11 @@ This has the purpose of allowing the placement of all files in the correct locat
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
-    "Version": {
-        "927325d7a930dac9": 1,
-        "19baf5873da66797": 4,
-        "ec021135799691ae": 3
-    }
+"Version": {
+    "927325d7a930dac9": 1,
+    "19baf5873da66797": 4,
+    "ec021135799691ae": 3
+}
     \end{lstlisting}
 \caption[Version JSON]{An example of a version vector clock. Each hash is the identification of a trusted peer, the associated number which version of an object they last modified.}
 \label{json:version_model}
@@ -248,15 +248,15 @@ For Tinzenite we will generally ignore these as the primary focus is just raw da
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
-    {
-        "Directory":true,
-        "Identification":"db198086d1708794",
-        "Name":"test",
-        "Path":"test/test",
-        "Shadow":false,
-        "Version":{},
-        "Objects":[]
-    }
+{
+    "Directory":true,
+    "Identification":"db198086d1708794",
+    "Name":"test",
+    "Path":"test/test",
+    "Shadow":false,
+    "Version":{},
+    "Objects":[]
+}
     \end{lstlisting}
 \caption[Directory JSON Model]{An example of a directory JSON object. Note that for brevity no files or sub directories are shown in the \textit{"objects"} array. The version object is also left empty here.}
 \label{json:directory_model}
@@ -282,18 +282,18 @@ Each directory object in turn also stores sub objects in its object array, thus 
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
+{
+    "Directory":false,
+    "Identification":"b83cf06d4e056e1a",
+    "Name":"else.txt",
+    "Path":"test/else.txt",
+    "Shadow":false,
+    "Version":
     {
-        "Directory":false,
-        "Identification":"b83cf06d4e056e1a",
-        "Name":"else.txt",
-        "Path":"test/else.txt",
-        "Shadow":false,
-        "Version":
-        {
-            "927325d7a930dac9":1
-        },
-        "Content":"e4abda92f30700d751ac82f7454787d5"
-    }
+        "927325d7a930dac9":1
+    },
+    "Content":"e4abda92f30700d751ac82f7454787d5"
+}
     \end{lstlisting}
 \caption[File JSON Model]{An example of a file JSON object.}
 \label{json:file_model}
@@ -569,10 +569,10 @@ For a more in depth look into how the mechanism works see section~\ref{sub:Chall
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
-    {
-        "Type":"challenge",
-        "Encrypted":"5HFXCQBMwe6ohx9fKeLsNxaBsOK7+9pxWFiXX4aE4cRtdt8oUOHQBJ6XrowiwwgLunM="
-    }
+{
+    "Type":"challenge",
+    "Encrypted":"5HFXCQBMwe6ohx9fKeLsNxaBsOK7+9pxWFiXX4aE4cRtdt8oUOHQBJ6XrowiwwgLunM="
+}
     \end{lstlisting}
 \caption[Authentication Message]{An example of a valid authentication message containing a challenge.}
 \label{json:authentication_message}
@@ -593,11 +593,11 @@ Upon receiving the message the other peer starts a Tox file transfer which the i
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
-    {
-        "Type":"request",
-        "ObjType":"object",
-        "Identification":"b83cf06d4e056e1a"
-    }
+{
+    "Type":"request",
+    "ObjType":"object",
+    "Identification":"b83cf06d4e056e1a"
+}
     \end{lstlisting}
 \caption[Request Message]{Example of a JSON request message.}
 \label{json:request_message}
@@ -625,23 +625,23 @@ Therefore we have included the option of sending current updates to all currentl
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
+{
+    "Type":"update",
+    "Operation":"modify",
+    "Object":
     {
-        "Type":"update",
-        "Operation":"modify",
-        "Object":
+        "Directory":false,
+        "Identification":"b83cf06d4e056e1a",
+        "Name":"else.txt",
+        "Path":"else.txt",
+        "Shadow":false,
+        "Version":
         {
-            "Directory":false,
-            "Identification":"b83cf06d4e056e1a",
-            "Name":"else.txt",
-            "Path":"else.txt",
-            "Shadow":false,
-            "Version":
-            {
-                "927325d7a930dac9":3
-            },
-            "Content":"cecef410a6ef0d3c3e101ab726af2776"
-        }
+            "927325d7a930dac9":3
+        },
+        "Content":"cecef410a6ef0d3c3e101ab726af2776"
     }
+}
     \end{lstlisting}
 \caption[Update Object Message]{The message broadcast by a peer to connected peers to notify that an update has happened.}
 \label{json:update_object}
@@ -669,10 +669,10 @@ We do this by ensuring that only ever one trusted peer may synchronize with an e
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
-    {
-        "Type":"lock",
-        "Action":"request"
-    }
+{
+    "Type":"lock",
+    "Action":"request"
+}
     \end{lstlisting}
 \caption[Lock Peer Message]{Message for negotiating a lock for a peer.}
 \label{json:lock_peer}
@@ -697,11 +697,11 @@ We solve this by using a push message.
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
-    {
-        "Type":"push",
-        "Identification":"b83cf06d4e056e1a",
-        "ObjType":"object"
-    }
+{
+    "Type":"push",
+    "Identification":"b83cf06d4e056e1a",
+    "ObjType":"object"
+}
     \end{lstlisting}
 \caption[Push Message]{Message that is used to initiate a file upload to an encrypted peer.}
 \label{json:push_message}
@@ -727,11 +727,11 @@ Encrypted peers use it to signal trusted peers that a request can not be answere
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
-    {
-        "Type":"notify",
-        "Notify":"missing",
-        "Identification":"b83cf06d4e056e1a"
-    }
+{
+    "Type":"notify",
+    "Notify":"missing",
+    "Identification":"b83cf06d4e056e1a"
+}
     \end{lstlisting}
 \caption[Notify Message]{Example notification message.}
 \label{json:notify_message}

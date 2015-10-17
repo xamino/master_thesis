@@ -50,18 +50,18 @@ A variety of tools are directly built into the development suite, including a to
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=golang,firstnumber=0]
-    type Message struct {
-        Address string
-        Subject string `json:"omitempty"`
-        Content string `json:"Message"`
-        read    bool
-    }
+type Message struct {
+    Address string
+    Subject string `json:"omitempty"`
+    Content string `json:"Message"`
+    read    bool
+}
     \end{lstlisting}
     \begin{lstlisting}[language=json,firstnumber=0]
-    {
-        "Address":"192.168.178.100",
-        "Message":"Log in successful!"
-    }
+{
+    "Address":"192.168.178.100",
+    "Message":"Log in successful!"
+}
     \end{lstlisting}
 \caption[Golang JSON Example]{
     An example Golang struct with tags and its corresponding JSON representation.
@@ -175,6 +175,25 @@ Tinzenite handles merge conflicts as part of the \emph{core} package.
 
 The \emph{model} package also implements the matcher object.
 This object checks each directory for a \textit{".tinignore"} file and if it exists applies it to any model work on the directory.
+The file containing these rules can be synchronized just as any other file at any level within a directory.
+Any new objects detected by Tinzenite that are listed in this file will not be created within the model, effectively keeping it out of the Tinzenite network.
+Since it may well happen that a \textit{".tinignore"} is created at a later point and thus introduces an uncertainty in handling the to be ignored files we propose a simple solution: the file is only ever applied for object creations.
+Once a file has been created within the model it will be modified and deleted as any other file within the system, independent of whether it was or is to be ignored.
+
+\begin{figure}[htp]
+    \begin{lstlisting}[language=golang,firstnumber=0]
+# DO NOT MODIFY!
+/local
+/temp
+/receiving
+/sending
+    \end{lstlisting}
+\caption[Meta Ignore File]{The \textit{".tinignore"} file contents for the \textit{".tinzenite"} directory. Note that it allows comments. In this example only directories are excluded. Files can be excluded too: lines starting with the slash are considered file ignore rules.}
+\label{tinignore:meta}
+\end{figure}
+
+The \textit{".tinignore"} file is used in the \textit{".tinzenite"} directory to control which parts are synchronized and which not, as mentioned in section~\ref{sec:Meta Data}.
+Figure~\ref{tinignore:meta} shows the contents of this \textit{".tinignore"} file.
 
 \subsection{Channel}
 \label{sub:Channel}
@@ -252,13 +271,13 @@ It offers a command line interface program for creating and running an encrypted
 
 \begin{figure}[htp]
     \begin{lstlisting}[language=golang,firstnumber=0]
-        package encrypted
+package encrypted
 
-        type Storage interface {
-        	Store(key string, data []byte) error
-        	Retrieve(key string) ([]byte, error)
-        	Remove(key string) error
-        }
+type Storage interface {
+	Store(key string, data []byte) error
+	Retrieve(key string) ([]byte, error)
+	Remove(key string) error
+}
     \end{lstlisting}
 \caption[Encrypted Storage Interface]{The storage interface that the encrypted peer must implement to use the \emph{encrypted} package. Comments have been removed.}
 \label{golang:storage_interface}

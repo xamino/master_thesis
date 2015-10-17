@@ -185,9 +185,17 @@ Note that some expanded features require features from the previous section.
 \subsubsection{Encrypted Peer Synchronization}
 \label{subs:Encrypted Peer Synchronization}
 
-TODO: write a section on allowing encrypted peers to synchronize between themselves.
-Would have to happen "blindly" but should work.
-Note that this requires a shared state because of possible merge conflicts!
+Each encrypted peer is a single point of back up in the current state of our work.
+This requires each trusted peer to check up on each encrypted peer in turn and ensure that all of them are kept at the same synchronization state.
+This could be improved by allowing encrypted peers to update each other.
+However, care has to be taken that encrypted peers will not cause merge conflicts that they can not resolve, since both the model and its objects are fully encrypted.
+We thus propose to extend the Tinzenite architecture for all encrypted peers to work as a single meta peer, where in truth multiple instances are kept in the same, most up to date state possible.
+
+This would require some further logic in how to detect and merge different encrypted peer states.
+Generally it could be done if the directory model had an unencrypted version state attached to it.
+As long as no model conflicts arise, all encrypted peers can keep updating themselves to the most current version.
+If however two encrypted peers receive conflicting update states, the entire swarm of encrypted peers would need to wait for a trusted peer to resolve the issue.
+This would require some large extensions to the current protocol, but should in theory be doable.
 
 \subsubsection{Data Obfuscation}
 \label{subs:Data Obfuscation}
@@ -199,6 +207,15 @@ This especially makes sense if combined with the swarm behavior mentioned previo
 The entire group of encrypted peers could then be used to obfuscate and store data redundantly.
 This would increase the third party security and further reduce the trust of said party required.
 Obfuscation would be sufficient to hide most meta data that may be deduced from encrypted synchronization.
+
+\subsubsection{Update Feedback}
+\label{subs:Update Feedback}
+
+While our implementation allows for a basic feedback of large file transfers in the form of basic progress meters, a lot more detailed and better specified feedback could be offered to peers.
+This would allow them to signal to the user for example of outstanding updates -- updates that it has received but not yet applied for example because the transfer is pending.
+Generally such features would also tie in with the better control of peer behavior previously mentioned.
+If the user can quickly see at a glance the general state of the local trusted peer or even other connected peers, usability of the entire Tinzenite network increases.
+It would also hasten the user's trust in that the synchronization is fully working as intended.
 
 \subsubsection{Additional Peer Versions}
 \label{subs:Additional Peer Versions}
@@ -233,51 +250,13 @@ Two trusted peers not connected via the internet could be kept synchronized manu
 \subsubsection{File Versioning}
 \label{subs:File Versioning}
 
-%TODO: rework wording. Also: requires storing base copy of file plus all following delta differences to ensure that past versions are accessible.
+Another advanced feature that would be very nice to have and close the gap of feature parity between Tinzenite and other existing services would be the capability to offer file versions built directly into the Tinzenite architecture.
+Indeed the core protocol would not even have to be changed to support this: all that is required is the capability to keep old files for a specific time somewhere where the peer can reinstate them if the user wishes to.
 
-Another advanced feature that would be very nice to have and close the gap of feature parity between Tinzenite and other existing services would be the capability to offer file versions built directly into the protocol.
-Indeed the core protocol would not even have to be changed to support this: all that is required is the capability to keep old files for a specific time somewhere where the peer can reinstate them if the user wishes it.
-
-Therefore all that is needed is a definition of space where these old files can be stored.
-We propose placing these files in a further directory labeled \textit{"versions"} within the \textit{.tinzenite} directory.
-For each file object a directory with the name of the file identification is created as required where old versions can be stored.
-To differentiate the multiple copies each file must be uniquely named: we propose a simple number for each version that increments.
-
-It is important to be able to limit the amount of versions stored to keep the size of the directory manageable.
-We believe that this could simple be done by telling any single client how many different copies of files are to be stored, for example the last six.
-If a new version is added and it exceeds this self imposed limit the peer can simply trigger a normal removal, thus deleting the version from all peers once the removal has propagated.
-
-Further work could then be done to decrease the size of the versions by only keeping one base copy and storing only binary deltas.
-Again this would require somewhat extensive work on peer logic but no change in the core protocol.
-To differentiate full copies and delta files we propose an identifying name change would suffice: by appending a special marker behind the version number we could differentiate the type.
-The actual synchronization of deltas or full binaries is again already fully implemented in the core protocol and would work as any other file.
-
-%TODO: all stuff below here is WIP and should be rewritten / integrated
-\section{TODO}
-\label{sec:TODO}
-
-% This is another feature... but where to put it? Expanding I think because it requires both rework and additional work?
-The better solution would be to introduce a third value for the shadow attribute: temp.
-This value is to be set when the peer knows of an update and has applied it to its model but has not fetched the binary file update yet.
-Note that this is a local value only and should not be sent to other peers: in that case all instances of temp should be removed with true.
-When connecting to other peers the peer can then request all available files marked as temp and fully update them as required.
-This approach has the added advantage of allowing a peer to notify the user that the file has been updated but not fetched yet.
-We may also use this functionality to signal slow network transfer speeds: the user could at a glance see that the update is pending, possibly avoiding unnecessary conflicts.
-
-\subsection{Ignored Objects}
-\label{sub:Ignored Objects}
-
-%TODO where to put this?
-To allow a user to only synchronize objects that they consider important another advanced feature we would like to implement is the ability to specify files and directories to be ignored.
-An example for how we propose to implement this feature is the Git source control management software~\cite{web:site:git}.
-By specifying the paths to directories and files within a so called \textit{.gitignore} visibility of these can be finely controlled.
-
-In Tinzenite we plan to implement this functionality in a similar manner.
-The file containing these rules can be synchronized just as any other file at any level within a directory.
-Any new objects detected by Tinzenite that are listed in this file will not be created within the model, effectively keeping it out of the system.
-Since it may well happen that such a file is created at a later point and thus introduce an uncertainty in handling the to be ignored files we propose a simple solution: the file is only ever applied for object creations.
-Once a file has been created within the model it will be modified and deleted as any other file within the system, independent on the ignore file.
-
-This in turn however means that renaming or moving a file in Tinzenite will remove it from the model, deleting it everywhere.
-Since we believe this to be a feature for more advanced users we will not make this feature a core aspect of the system.
-Normal users should have little need for only synchronizing a selected subset of files.
+We propose to implement this as follows.
+First, for every created object that Tinzenite detects, it copies the initial version into a hidden directory for future reference.
+Then, whenever a change to the file is detected, the delta update functionality can be used to store the difference between the old version and the new version of the file.
+A file removal could be marked specifically.
+A setting could be introduced to allow the user to control how far back different versions of an object are kept to keep storage requirements at a reasonable level.
+Thus it should be comparatively easy to only retain the last three versions of an object.
+Trusted peers could then offer assistance in actually managing the versions if the user wants to reinstate one over the current object.
