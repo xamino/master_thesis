@@ -181,6 +181,9 @@ This is signaled by the model via an error.
 It is up to the caller to then handle the merge in a valid fashion, likely calling the model to apply resulting updates to the directory.
 Tinzenite handles merge conflicts as part of the \emph{core} package.
 
+\subsubsection{Ignoring Objects}
+\label{subs:Ignoring Objects}
+
 The \emph{model} package also implements the matcher object.
 This object checks each directory for a \textit{".tinignore"} file and if it exists applies it to any model work on the directory.
 The file containing these rules can be synchronized just as any other file at any level within a directory.
