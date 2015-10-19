@@ -13,8 +13,7 @@
 \usepackage{threeparttable}
 
 % Better captions
-% TODO make sure caption size isn't TOO small
-\usepackage[font=footnotesize,labelfont=bf]{caption}
+\usepackage[font=small,labelfont=bf]{caption}
 
 % show author information in pdf document properties
 \hypersetup{
@@ -122,13 +121,15 @@ California, 94105, USA. \\ Setting: PDF-\LaTeXe
 \impressum
 
 \cleardoublepage
-\setstretch{1.2}	% original value: 1.4
+\setstretch{1.4}	% original value: 1.4
 
 \input{text/abstract}
+
 \cleardoublepage
+
 \include{text/gratitude}
 
-%TODO set good depth level
+%TODO set good depth level -- 1?
 \setcounter{tocdepth}{2}
 \tableofcontents
 
