@@ -109,8 +109,16 @@ Git~\cite{web:site:git} was used for the version control system, with a hosted r
 \section{Software Structure}
 \label{sec:Software Structure}
 
+\begin{figure}[htp]
+\centering
+    \includegraphics[width=5cm]{diagram/topo_implementation}
+\caption[Tinzenite Structure]{This diagram shows an informal representation of the package structure of our implementation.}
+\label{fig:implementation_structure}
+\end{figure}
+
 Tinzenite was developed not as a single package but as a package collection that each covers some parts of the complete scope.
 In this section we will discuss the general layout of the packages and how they depend on one another.
+Figure~\ref{fig:implementation_structure} shows an informal diagram of the structure.
 All packages have their own repository on Github~\cite{web:site:github:tinzenite}.
 
 \begin{description}[leftmargin=6em,style=nextline,noitemsep,nolistsep]
