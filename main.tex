@@ -15,6 +15,11 @@
 % Better captions
 \usepackage[font=small,labelfont=bf]{caption}
 
+% define listing floats
+\newfloat{listing}{tbhp}{lst}[chapter]
+\floatname{listing}{Listing}
+\newcommand{\listoflistings}{\listof{listing}{List of Listings}}
+
 % show author information in pdf document properties
 \hypersetup{
 	pdftitle={Tinzenite},
@@ -150,6 +155,7 @@ California, 94105, USA. \\ Setting: PDF-\LaTeXe
 
 \backmatter
 
+\listoflistings
 \listoffigures
 \listoftables
 

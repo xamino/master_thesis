@@ -63,9 +63,9 @@ It is first of two directories that are synchronized along with user specified f
 The authentication file stores information required for the complete Tinzenite network.
 This includes information on the user, the directory the network synchronizes, and the encryption keys required to encrypt and decrypt data for encrypted peers.
 Since the authentication file is not encrypted upon upload to encrypted peers as it is meant to be used to enable user account management, all personal or otherwise critical information is stored either hashed or fully encrypted.
-Figure~\ref{json:auth_object} shows the contents of an example authentication file.
+Listing~\ref{json:auth_object} shows the contents of an example authentication file.
 
-\begin{figure}[htp]
+\begin{listing}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
 {
     "User": "$2a$10$E8Wlr9Jn/EYJLZ7J0yZoR.Qscp.MKD2kG8dHF7OQWYNA1mCfp.Qqe",
@@ -77,7 +77,7 @@ Figure~\ref{json:auth_object} shows the contents of an example authentication fi
     \end{lstlisting}
 \caption[Authentication JSON Object]{An example of an authentication file.}
 \label{json:auth_object}
-\end{figure}
+\end{listing}
 
 The key \textit{"User"} stores a bcrypt hash~\cite{provos1999future} of the user's name.
 This is important for example for the support of encrypted third party peers: they can attach accounts to the provided user name for controlling server side access.
@@ -95,7 +95,7 @@ Within the \textit{"peers"} folder Tinzenite writes all data related to synchron
 It is in essence the contact list, filled with information required to access peers.
 This includes a peer's address, trust, and further user defined information.
 
-\begin{figure}[htp]
+\begin{listing}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
 {
     "Name": "box",
@@ -107,9 +107,9 @@ This includes a peer's address, trust, and further user defined information.
     \end{lstlisting}
 \caption[Peer JSON Object]{An example of a peer JSON object. Note that the encryption attribute is not to be trusted, it is only an optimization.}
 \label{json:peer_object}
-\end{figure}
+\end{listing}
 
-Figure~\ref{json:peer_object} shows the structure of an example peer file.
+Listing~\ref{json:peer_object} shows the structure of an example peer file.
 One of these must exist for all known peers.
 The \textit{"Name"} is the user defined name for each peer, to be used by the user to make differentiating between peers easier.
 Internally however the peer is referenced by the random assigned hash stored in \textit{"Identification"}.
@@ -216,7 +216,7 @@ This hash allows us to decouple the name of the object from its model representa
 Furthermore each model object will contain a path variable that specifies the relative path of the object in the directory tree.
 This has the purpose of allowing the placement of all files in the correct locations on storage for a given root path.
 
-\begin{figure}[htp]
+\begin{listing}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
 "Version": {
     "927325d7a930dac9": 1,
@@ -226,7 +226,7 @@ This has the purpose of allowing the placement of all files in the correct locat
     \end{lstlisting}
 \caption[Version JSON]{An example of a version vector clock. Each hash is the identification of a trusted peer, the associated number which version of an object they last modified.}
 \label{json:version_model}
-\end{figure}
+\end{listing}
 
 Apart from the above attributes Tinzenite must also track versions of files to allow detection of when objects have been updated.
 We will use a vector clock~\cite{mattern1989virtual} to implement this, where entries represent peers and the associated number is the last version where that peer actively contributed to the object's history.
@@ -234,7 +234,7 @@ The vector clock can also be used to detect collisions.
 Note that the vector clock must only store the versions for active, trusted peers as these are the only peers where versions can differ upon user interaction.
 We avoid using a simple dirty flag for reasons of complexity: determining which peer's update to take in which order is not trivially doable with a simple boolean flag.
 Utilizing vector clocks gives us greater flexibility, both for the implementation and for any visualizations in the case of tracing changes.
-An example of the vector clock as we will use it can be seen in figure~\ref{json:version_model}.
+An example of the vector clock as we will use it can be seen in listing~\ref{json:version_model}.
 
 It is important to note that the model will not be used to store peer reliant information.
 This includes for example where the directory is placed on the peer's file system, which may differ between peers.
@@ -246,7 +246,7 @@ For Tinzenite we will generally ignore these as the primary focus is just raw da
 \subsection{Directory Model}
 \label{sec:dir_model}
 
-\begin{figure}[htp]
+\begin{listing}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
 {
     "Directory":true,
@@ -260,9 +260,9 @@ For Tinzenite we will generally ignore these as the primary focus is just raw da
     \end{lstlisting}
 \caption[Directory JSON Model]{An example of a directory JSON object. Note that for brevity no files or sub directories are shown in the \textit{"objects"} array. The version object is also left empty here.}
 \label{json:directory_model}
-\end{figure}
+\end{listing}
 
-Figure~\ref{json:directory_model} shows an example of the proposed JSON structure for representing a directory.
+Listing~\ref{json:directory_model} shows an example of the proposed JSON structure for representing a directory.
 A directory is somewhat special as it does not require the synchronization of an attached binary file.
 This is the case for Tinzenite because directories are viewed independent from their content.
 
@@ -280,7 +280,7 @@ Each directory object in turn also stores sub objects in its object array, thus 
 \subsection{File Model}
 \label{sec:file_model}
 
-\begin{figure}[htp]
+\begin{listing}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
 {
     "Directory":false,
@@ -297,9 +297,9 @@ Each directory object in turn also stores sub objects in its object array, thus 
     \end{lstlisting}
 \caption[File JSON Model]{An example of a file JSON object.}
 \label{json:file_model}
-\end{figure}
+\end{listing}
 
-Figure~\ref{json:file_model} shows an example of the proposed JSON structure for representing a file object.
+Listing~\ref{json:file_model} shows an example of the proposed JSON structure for representing a file object.
 The \textit{"identification"} attribute is a random generated hash that uniquely identifies the file.
 The \textit{"path"} attribute stores the concatenated relative full path from the peers root directory.
 The clear text \textit{"name"} is also stored here as an attribute.
@@ -568,7 +568,7 @@ The authentication message is used to verify trusted peers against each other to
 The same method is used for both challenge and response.
 For a more in depth look into how the mechanism works see section~\ref{sub:Challenge Response}.
 
-\begin{figure}[htp]
+\begin{listing}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
 {
     "Type":"challenge",
@@ -577,9 +577,9 @@ For a more in depth look into how the mechanism works see section~\ref{sub:Chall
     \end{lstlisting}
 \caption[Authentication Message]{An example of a valid authentication message containing a challenge.}
 \label{json:authentication_message}
-\end{figure}
+\end{listing}
 
-Figure~\ref{json:authentication_message} shows an example of a challenging authentication message.
+Listing~\ref{json:authentication_message} shows an example of a challenging authentication message.
 The \textit{"Encrypted"} value contains the challenge value or the response value encrypted with the data encryption keys.
 
 \subsubsection{Request Message}
@@ -592,7 +592,7 @@ It is important to note here that directories should never be requested as they 
 Thus a request operation is only ever for operations that require data to be transferred.
 Upon receiving the message the other peer starts a Tox file transfer which the initiating peer knows to accept as it just requested it.
 
-\begin{figure}[htp]
+\begin{listing}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
 {
     "Type":"request",
@@ -602,9 +602,9 @@ Upon receiving the message the other peer starts a Tox file transfer which the i
     \end{lstlisting}
 \caption[Request Message]{Example of a JSON request message.}
 \label{json:request_message}
-\end{figure}
+\end{listing}
 
-Figure~\ref{json:request_message} shows how a message to initiate a file transfer is structured.
+Listing~\ref{json:request_message} shows how a message to initiate a file transfer is structured.
 \textit{"ObjType"} can have the values object, peer, model, or auth.
 The peer and auth values are used by the encrypted peer to differentiate these special meta data from normal encrypted files.
 \textit{"Identification"} is the unique hash that each object is referenced by.
@@ -624,7 +624,7 @@ Continuously requesting and receiving the model is not ideal however.
 For large directories just the transfer of the model may require significant bandwidth.
 Therefore we have included the option of sending current updates to all currently connected trusted peers so that they can apply the update without first having to request the complete model.
 
-\begin{figure}[htp]
+\begin{listing}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
 {
     "Type":"update",
@@ -646,9 +646,9 @@ Therefore we have included the option of sending current updates to all currentl
     \end{lstlisting}
 \caption[Update Object Message]{The message broadcast by a peer to connected peers to notify that an update has happened.}
 \label{json:update_object}
-\end{figure}
+\end{listing}
 
-Figure~\ref{json:update_object} is a message for broadcasting a model update to other connected trusted peers.
+Listing~\ref{json:update_object} is a message for broadcasting a model update to other connected trusted peers.
 \textit{"Operation"} can be any value of either create, remove, or modify.
 The key \textit{"Object"} contains the object representation for the updated object as seen in section~\ref{sec:Object Model}.
 
@@ -668,7 +668,7 @@ We do this by ensuring that only ever one trusted peer may synchronize with an e
 \subsubsection{Lock Message}
 \label{subs:Lock Message}
 
-\begin{figure}[htp]
+\begin{listing}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
 {
     "Type":"lock",
@@ -677,9 +677,9 @@ We do this by ensuring that only ever one trusted peer may synchronize with an e
     \end{lstlisting}
 \caption[Lock Peer Message]{Message for negotiating a lock for a peer.}
 \label{json:lock_peer}
-\end{figure}
+\end{listing}
 
-Figure~\ref{json:lock_peer} shows the format of the message used to negotiate a lock for an encrypted peer.
+Listing~\ref{json:lock_peer} shows the format of the message used to negotiate a lock for an encrypted peer.
 The key \textit{"Action"} can have a value of request, release, or accept.
 The trusted peer first sends such a request to which the encrypted peer can answer.
 If it answers with release or fails to answer the trusted peer considers the encrypted peer already locked and will retry at a later time.
@@ -696,7 +696,7 @@ Once the trusted peer is done with its operations it should remove the lock by s
 Since the encrypted peer is a passive peer, it requires a message to initiate a file transfer when files need to be uploaded to it.
 We solve this by using a push message.
 
-\begin{figure}[htp]
+\begin{listing}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
 {
     "Type":"push",
@@ -706,9 +706,9 @@ We solve this by using a push message.
     \end{lstlisting}
 \caption[Push Message]{Message that is used to initiate a file upload to an encrypted peer.}
 \label{json:push_message}
-\end{figure}
+\end{listing}
 
-Figure~\ref{json:push_message} shows the format of such a push message.
+Listing~\ref{json:push_message} shows the format of such a push message.
 Both \textit{"Identification"} and \textit{"ObjType"} contain the same possible values as in similar messages.
 
 When an encrypted peer is locked to a trusted peer and receives a push message it will respond with a corresponding request message.
@@ -726,7 +726,7 @@ The notify message is used to notify special states to peers.
 For trusted peers it can be used to signal that a removal has been fully applied to avoid reintroduction of removals.
 Encrypted peers use it to signal trusted peers that a request can not be answered if a file for a given unique hash identification can not be retrieved and transfered.
 
-\begin{figure}[htp]
+\begin{listing}[htp]
     \begin{lstlisting}[language=json,firstnumber=0]
 {
     "Type":"notify",
@@ -736,9 +736,9 @@ Encrypted peers use it to signal trusted peers that a request can not be answere
     \end{lstlisting}
 \caption[Notify Message]{Example notification message.}
 \label{json:notify_message}
-\end{figure}
+\end{listing}
 
-Figure~\ref{json:notify_message} shows an example message for a missing object from an encrypted peer.
+Listing~\ref{json:notify_message} shows an example message for a missing object from an encrypted peer.
 The value \textit{"Notify"} can be either missing or removed.
 The \textit{"Identification"} is the unique hash for the object which the notification message references.
 
@@ -824,7 +824,7 @@ In this case we trigger a merge conflict.
 \end{table}
 
 As stated Tinzenite uses only the model objects to detect changes, specifically only the version attribute.
-As shown in figure~\ref{json:version_model} the version attribute contains a list of peers and the last known version of the object they have.
+As shown in listing~\ref{json:version_model} the version attribute contains a list of peers and the last known version of the object they have.
 From this list we only ever are interested in the versions of the remote peer and the local peer.
 By comparing these two attributes between the versions that both peers have we can reliably detect how to proceed without losing data.
 Table~\ref{table:version_states_possible} shows the four possible cases.

@@ -192,7 +192,7 @@ We can thus build on the Hadoop file system's high fault tolerance which in turn
 
 This section is dedicated to differentiating the possible client applications we will implement as reference implementations.
 Figure~\ref{fig:software} shows an overview of how the various parts could mesh together to form a complete Tinzenite network.
-Note that the exact feature set is to be determined by the required development time of each feature and thus might lead to some features or even complete clients not being done with the thesis.
+Note that the exact feature set is to be determined by the required development time of each feature and thus might lead to some features or even complete clients not being implemented for the thesis.
 Those features can be implemented at a later time if so desired and will thus be referenced in the future work (see section~\ref{sec:Future Work}).
 
 \subsection{Tinzenite Core Library}
@@ -225,12 +225,12 @@ This software will implement an encrypted peer for the Tinzenite network.
 As the task of encrypting data falls to the trusted peer before uploading said data, the server peer must only offer a simple key value storage system for writing the encrypted data somewhere where it can later be retrieved.
 Thus the encrypted peer allows clients to offer a storage interface and will use that instead of writing via a self specified method.
 
-As a proof of concept that this works we will develop two instances of such a storage interface.
-First will be a simple store and retrieval to the local disk where the encrypted peer is running.
-The other one will utilize the Hadoop file system to offer an example of a large scale distributed storage system as it might be used on a true server for multiple users.
+As a proof of concept that this is going to work we will develop two instances of such a storage interface.
+The first one will be a simple store and retrieval to the local disk where the encrypted peer is running.
+The other one will utilize the Hadoop file system to offer an example of a large scale distributed storage system as it might be used on an actual server for multiple users.
 
 Unlike the client peer however we do not require user interfaces and file watchers.
-Since the encrypted peer must only be started and connected to an existing network, no further user interaction than those two operations is required.
+Since the encrypted peer must only be started and connected to an existing network, no further user interaction than those two operations are required.
 A file watcher like the client peer is not required because updates can not originate from the encrypted data set.
 These encrypted peers will also utilize a different subset of the communication protocol as they operate essentially as blind data dumps.
 
@@ -238,7 +238,7 @@ These encrypted peers will also utilize a different subset of the communication 
 \label{sub:Web Interface Peer}
 
 Built on top of an encrypted server peer it should theoretically be possible to implement access to the encrypted data for the user via a web interface.
-This can be realized by allowing a user to enter their password which in turn unlocks the decryption keys required to decrypt the stored data.
+This can be realized by allowing users to enter their password which in turn unlocks the decryption keys required to decrypt the stored data.
 By utilizing client side code within a web browser, these operations can be done without involving the server peer beyond its use as a blind data store.
 
 \subsection{Mobile Peer}
@@ -249,11 +249,11 @@ Apart from the specific touchscreen oriented interface this peer would prove tha
 This would build on Golang's cross platform support even for Android~\cite{web:site:golang:mobile}.
 Further work may be done here to ensure that Tinzenite runs in a mobile friendly way.
 This implies low power consumption and low bandwidth capabilities.
-Therefore support for shadow files and deltas are almost strictly required to meet the needs of a mobile peer.
-When first starting up the mobile peer for the first time it may even be beneficial to ask the user whether the mobile peer should pull all data or just immediately mark everything as shadow objects, thus requiring the user to mark files manually to be fetched locally but reducing bandwidth requirements enormously.
+Therefore support for shadow files and deltas is almost strictly required to meet the needs of a mobile peer.
+When first using the mobile peer for the first time it may even be beneficial to ask the user whether the mobile peer should pull all data or just immediately mark everything as shadow objects, thus requiring the user to mark files manually to be fetched locally but reducing bandwidth requirements enormously.
 
 \subsection{Passive Peer}
 
-While not in itself a program, support for blind passive data dumps as passive peers is another aspect for which Tinzenite could be expanded to work.
+While not in itself a program, support for blind data dumps as passive peers is another aspect for which Tinzenite could be expanded to include support for.
 This feature would require of Tinzenite to run the base encrypted peer logic on a given directory without the communication aspect via Tox.
 These passive peers would allow easy backups of directories on passive storage media that can be easily updated by connecting it to an active peer.

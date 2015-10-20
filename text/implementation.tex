@@ -48,7 +48,7 @@ A variety of tools are directly built into the development suite, including a to
 \subsection{JSON}
 \label{sub:JSON}
 
-\begin{figure}[htp]
+\begin{listing}[htp]
     \begin{lstlisting}[language=golang,firstnumber=0]
 type Message struct {
     Address string
@@ -69,13 +69,13 @@ type Message struct {
     Also note that \textit{"Content"} has been renamed to \textit{"Message"}.
 }
 \label{golang:json_example}
-\end{figure}
+\end{listing}
 
 Since the underlying Tox channel is built for text based messaging we propose to implement all peer to peer communication as a human readable messaging format.
 We will therefore utilize Javascript object notation, short JSON, as a machine readable message format while retaining easy readability for developers.
 As an added bonus Golang has support for converting objects by default thanks to the standard libraries.
 The generation of JSON can be fine tuned by utilizing in-language tagging.
-Figure~\ref{golang:json_example} shows a very simple example.
+Listing~\ref{golang:json_example} shows a very simple example.
 
 \subsection{Tox Binding}
 \label{sub:Tox Binding}
@@ -191,7 +191,7 @@ Any new objects detected by Tinzenite that are listed in this file will not be c
 Since it may well happen that a \textit{".tinignore"} is created at a later point and thus introduces an uncertainty in handling the to be ignored files we propose a simple solution: the file is only ever applied for object creations.
 Once a file has been created within the model it will be modified and deleted as any other file within the system, independent of whether it was or is to be ignored.
 
-\begin{figure}[htp]
+\begin{listing}[htp]
     \begin{lstlisting}[language=golang,firstnumber=0]
 # DO NOT MODIFY!
 /local
@@ -201,10 +201,10 @@ Once a file has been created within the model it will be modified and deleted as
     \end{lstlisting}
 \caption[Meta Ignore File]{The \textit{".tinignore"} file contents for the \textit{".tinzenite"} directory. Note that it allows comments. In this example only directories are excluded. Files can be excluded too: lines starting with the slash are considered file ignore rules.}
 \label{tinignore:meta}
-\end{figure}
+\end{listing}
 
 The \textit{".tinignore"} file is used in the \textit{".tinzenite"} directory to control which parts are synchronized and which not, as mentioned in section~\ref{sec:Meta Data}.
-Figure~\ref{tinignore:meta} shows the contents of this \textit{".tinignore"} file.
+Listing~\ref{tinignore:meta} shows the contents of this \textit{".tinignore"} file.
 
 \subsection{Channel}
 \label{sub:Channel}
@@ -280,7 +280,7 @@ Apart from bug fixes we only had to update it once we implemented the encrypted 
 Much like the Tin software the \emph{server} package provides an implementation for the \emph{encrypted} package.
 It offers a command line interface program for creating and running an encrypted peer.
 
-\begin{figure}[htp]
+\begin{listing}[htp]
     \begin{lstlisting}[language=golang,firstnumber=0]
 package encrypted
 
@@ -292,14 +292,14 @@ type Storage interface {
     \end{lstlisting}
 \caption[Encrypted Storage Interface]{The storage interface that the encrypted peer must implement to use the \emph{encrypted} package. Comments have been removed.}
 \label{golang:storage_interface}
-\end{figure}
+\end{listing}
 
 Adding encrypted peers to Tinzenite required two tasks to be successful: the implementation of the encrypted peer and the extension of the trusted peer to be capable of utilizing it.
 The first task of implementing the encrypted peer proved to be comparatively simple.
 Basically all it has to do is manage its lock to any single trusted peer and, if locked, allow the fetching and retrieval of files.
 Most files the encrypted peer handles are user data files.
 One of the goals for this thesis was to support writing these files to the Hadoop distributed file system.
-Therefore we implemented the encrypted peer so that all user files are written with a specified storage interface as seen in figure~\ref{golang:storage_interface}.
+Therefore we implemented the encrypted peer so that all user files are written with a specified storage interface as seen in listing~\ref{golang:storage_interface}.
 However this storage interface is not used for all files.
 The authentication file and the peer files are required to exist unencrypted and required for the encrypted peer to run correctly.
 Therefore these files are written to disk within the \textit{"org"} directory\footnote{The encrypted peer does not share the directory structure of a trusted peer. The reason for this is that an encrypted peer lacks many of the features that went into the design of the \textit{".tinzenite"} directory. Thus a simpler, flatter structure was chosen.}.
@@ -356,7 +356,7 @@ Golang's composition was not a viable way of solving this to our satisfaction as
 The correct way to do this is to parse the incoming messages to an empty interface which is valid for all types.
 The type can then be checked against and the message cast.
 
-\begin{figure}[htp]
+\begin{listing}[htp]
     \begin{lstlisting}[language=golang,firstnumber=0]
 type MsgType int
 
@@ -372,13 +372,13 @@ const (
     \end{lstlisting}
 \caption[Golang Enum Example]{One of the enumerations we defined for Tinzenite. Note that for brevity we removed the comments.}
 \label{golang:enum_example}
-\end{figure}
+\end{listing}
 
 For the defined messages that Tinzenite uses we heavily relied on enumerations for setting values.
 Coming from Java we expected to find similar \texttt{enum} functionality in Golang.
 This did not prove to be the case.
 Golang lacks a specific implementation of enumerations but does allow for something similar using the \texttt{const} and \texttt{iota} keywords for specified variable types.
-An example can be seen in figure~\ref{golang:enum_example}.
+An example can be seen in listing~\ref{golang:enum_example}.
 Our largest issue with this was that when converting these enumeration similes to JSON instead of the name of the enumeration the number value was output due to Golang seeing them as number value variables.
 Thus instead of having JSON where each enumeration was easily interpretable we had values such as \texttt{"MsgType":1} where what we wanted was \texttt{"MsgType":"update"}.
 The solution to this requires a lot of boilerplate code since Golang does not support generics at this point in time.
@@ -445,7 +445,7 @@ The answer lies in the user given passphrase and the way the box keys are genera
 Every trusted peer must be unlocked by the user with the passphrase\footnote{Although the trusted peer may well and probably should store the passphrase once the user has entered it to avoid needless repetition and to increase ease of use.} to decrypt the encrypted peers.
 This passphrase is not stored somewhere in the Tinzenite network for a directory, meaning an attacker has to guess it.
 
-\begin{figure}[htp]
+\begin{listing}[htp]
     \begin{lstlisting}[language=golang,firstnumber=0]
 func (a *Authentication) convertPassword(password string) (public *[32]byte, private *[32]byte, err error) {
 	hasher := fnv.New64a()
@@ -462,13 +462,13 @@ func (a *Authentication) convertPassword(password string) (public *[32]byte, pri
     \end{lstlisting}
 \caption[Golang Box Key Generation]{The method for generating the box keys from a given passphrase. The \texttt{staticRandom} object is a wrapper for the random source so that it can be passed to the \texttt{box.GenerateKey} as the correct type. It is defined elsewhere.}
 \label{golang:boxkey_gen}
-\end{figure}
+\end{listing}
 
 The box keys are then generated from the passphrase.
 First we hash the passphrase to a number hash value.
 This number hash is then used to seed a pseudo random number generator.
 We then utilize this deterministic random number generator to create the box encryption keys.
-Figure~\ref{golang:boxkey_gen} shows the entire code required to generate the box keys from a given passphrase.
+Listing~\ref{golang:boxkey_gen} shows the entire code required to generate the box keys from a given passphrase.
 
 This method of storing the encryption keys has a few advantages over other approaches.
 An important advantage of decoupling the passphrase from the encryption keys via the box keys is that this allows the user to change his passphrase if desired.
