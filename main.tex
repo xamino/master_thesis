@@ -153,6 +153,10 @@ California, 94105, USA. \\ Setting: PDF-\LaTeXe
 \listoffigures
 \listoftables
 
+% set left justified and hyphenation penalty so that nothing is broken in bib
+\raggedright
+\hyphenpenalty=10000
+% bib define
 \bibliographystyle{alpha}
 {\small
 \bibliography{cite.bib}
