@@ -813,11 +813,11 @@ In this case we trigger a merge conflict.
 \begin{table}[htp]
 \centering
 \begin{tabulary}{\textwidth}{R || C | C }
-      & Local object not modified & Local object modified \\
+      & \textbf{Local object not modified} & \textbf{Local object modified} \\
     \hline \hline
-    Remote object not modified & Nothing & Nothing (It is up to the remote peer to actively fetch this update.) \\
+    \textbf{Remote object not modified} & Nothing & Nothing (It is up to the remote peer to actively fetch this update.) \\
     \hline
-    Remote object modified & Fetch remote object and apply update & Resolve conflict \\
+    \textbf{Remote object modified} & Fetch remote object and apply update & Resolve conflict \\
 \end{tabulary}
 \caption[Peer Object Version States]{This table shows the four possible cases that can result from comparing the versions between two peers.}
 \label{table:version_states_possible}
