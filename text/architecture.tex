@@ -321,7 +321,7 @@ Therefore we require only the following four operations for the basic case to wo
         Tinzenite then checks whether it needs to fetch the file if it wasn't created in its own directory instance.
     \item[Modify]
         Modification is either when the model does not match the file anymore, in which case a new file must be fetched, or the content of the local file has changed.
-        This is detected via the content hash\footnote{Since hashing a file is an expensive operation we have also implemented that the hash is only checked if the modtime of the file has changed since the last update. This greatly speeds up checking for modified files.}.
+        This is detected via the content hash\footnote{Since hashing a file is an expensive operation we have also implemented that the hash is only checked if the modtime of the file has changed since its last update. This greatly speeds up checking for modified files.}.
         The model is updated to match the file again.
     \item[Remove]
         A removal is detected when a file does not exist anymore and was previously tracked by the model.
@@ -344,7 +344,7 @@ The choice of these three basic operations for Tinzenite was heavily based on th
 
 Therefore the life cycle of an object is very simple, as can be seen in figure~\ref{diagram:object_operations}.
 Objects can only come into existence via the create operation.
-Objects can either be changed by changing their content, which is a modify operation, or by changing their location, which is a move operation.
+Objects can either be changed by changing their content which is a modify operation, or by changing their location which is a move operation.
 Finally objects can also be removed.
 If an object has been removed it will stay removed unless the user creates a new clone of it.
 
@@ -356,23 +356,23 @@ Note that these operations are only for trusted peers: since encrypted peers can
 \label{subs:Create}
 
 The creation of an object can be trivially detected in Tinzenite.
-Basically there are two cases where an object must be created: the first is local manual creation which implies that the peer is the origin of the file; the second is creation via receiving an creation message from another peer.
+Basically there are two cases where an object must be created: the first is local manual creation which implies that the peer is the origin of the file; the second is creation via receiving a creation message from another peer.
 
-For the first case, if the object does not have a representation within the model and is not listed as removed, it triggers the creation case.
+In the first case, if the object does not have a representation within the model and is not listed as removed, it triggers the creation case.
 Tinzenite creates the correct object representation and inserts it into the correct place in the model.
 This includes creating the unique identification hash and, if the object is a file, creating a hash of the file contents.
 For a remote creation the peer will queue a fetch operation for the required file.
-Only when the file has been received completely is it placed at the correct location and the model updated.
+Only when the file has been received completely it is placed at the correct location and the model will be updated.
 
 \subsubsection{Modify}
 \label{subs:Modify}
 
 The modification of an object is not as trivially detected as an object creation.
-Special care must be made in the case of conflicting changes which can obviously happen since the directory is shared among multiple peers (see section~\ref{sec:Update Detection and Reconciliation}).
-Here we will only concern ourself with what happens once a modification has been detected.
-Again we have two cases for triggering this case: a local file has been modified or the peer has received an update message for a remote modification.
+Special care must be taken in the case of conflicting changes which can obviously happen since the directory is shared among multiple peers (see section~\ref{sec:Update Detection and Reconciliation}).
+Here we will only consider what happens once a modification has been detected.
+Again we have two possibilities for triggering this case: a local file has been modified or the peer has received an update message for a remote modification.
 
-If the modification is detected locally first we update the model to match and then initiate an update message.
+If the modification is detected locally we update the model to match the new directory state for that object and then initiate an update message.
 If, on the other hand, we receive a remote modification, we queue the fetching of the updated file.
 Upon receiving the changes we apply them and finally propagate the update to the other connected trusted peers.
 
@@ -380,50 +380,53 @@ Upon receiving the changes we apply them and finally propagate the update to the
 \label{subs:Remove}
 
 Finally the deletion of an object is the hardest case within Tinzenite because of the insert delete ambiguity as discussed in section~\ref{sub:Perspectives on Optimistically Replicated, Peer-to-Peer Filing}.
-It is non trivial to ensure that an object deletion has been received by all required peers so that it truly and finally can be removed from the complete Tinzenite network.
-A simple solution would be a list of all deleted objects ever, but this list promises to grow quickly on often used synchronized directories.
+It is nontrivial to ensure that an object deletion has been received by all required peers so that it truly and finally can be removed from the complete Tinzenite network.
+A simple solution would be a list of all deleted objects ever, but this list would promise to grow quickly on often used synchronized directories.
 Therefore we require a sort of garbage collection so that we can trim the list from deleted files that have been applied to all known peers.
 
-For the base case we will look at how Tinzenite deletes an object that has been removed locally first, then discuss how the update propagates and what the other peers are required to do to ensure a safe and complete deletion.
+We will look at Tinzenite's deletion of an object that has been removed locally first, then discuss how the update propagates and what the other peers are required to do to ensure a safe and complete deletion.
 Upon detection of a local deletion the trusted peer creates a directory within the \textit{"removed"} directory with the name of the removed object's identification hash.
-Within this the peer copies the list of currently known trusted peers\footnote{Note that encrypted peers must not be considered because they basically mirror only active peers, meaning they are guaranteed to correctly apply deletions once the active peers have reconciled it.} to the \textit{"check"} sub directory.
+Within this directory the peer copies the list of currently known trusted peers\footnote{Note that encrypted peers must not be considered because they basically mirror only active peers, meaning they are guaranteed to correctly apply deletions once the active peers have reconciled it.} to the \textit{"check"} sub directory.
 We utilize simple empty files named after the peer identification hashes as entries since that is all the information we require for a deletion.
-Finally it writes another empty file named after its own peer identification also to the \textit{"done"} sub directory.
-This sub directory contains a file for all the trusted peers that have acknowledged receiving the deletion update.
+We will refer to these files as the peer entry files for the purpose of describing the rest of the operation.
+To complete the removal operations required to initiate the removal through the Tinzenite network, the peer writes another peer entry file to the \textit{"done"} sub directory.
+This sub directory contains a peer entry file for all the trusted peers that have acknowledged receiving the deletion update.
 For an example of a removal directory for a file, see figure~\ref{list:removed_folder}.
 
 Since the removal directory is also synchronized to all trusted peers they can continue applying the removal.
 Each peer receives first the creation of the removal directory and the deletion message for the object.
-Once the removal has been locally applied each peer writes another empty file named after its identification hash to the \textit{"done"} directory so long as it finds itself in the \textit{"check"} directory.
-If the peer knows of peers itself that do not exist in the \textit{"check"} directory it must append them.
-This guarantees that all peers that have know of the existence of an object to receive its removal.
-An example of where this appending is vitally important is when a new peer has recently been added to the Tinzenite network but its creation not yet reached the deleting peer.
-In this case at some peer the removal and the creation of the new peer will meet and the peer will append the newly created peer.
-This guarantees that even though the origin of the removal did not know of all peers it will still wait for the new peer to also apply the removal since the appended peer will reach it before the removal is completed in any case.
+Once the removal has been locally applied each peer writes a peer entry file to the \textit{"done"} directory -- so long as it finds a corresponding file in the \textit{"check"} directory.
+If the peer knows of peers that do not have a peer entry file in the \textit{"check"} directory it must append them.
+This guarantees that all peers that have known of the existence of an object will receive its removal.
+An example of where this appending is vitally important is when a new peer has recently been added to the Tinzenite network but its creation has not yet reached the deleting peer.
+In this case at some point the removal and the creation of the new peer will collide and the peer where the collision happens will append the newly created peer to the \textit{"check"} directory.
+This guarantees that even though the peer where the removal originated from did not know of all peers, it will still wait for the new peer to also apply the removal.
+This is guaranteed to happen as the new peer entry file for the appended peer will reach the peer where the removal originated from before the removal is completed in any case.
 
-Once the last peer enters itself into the \textit{"done"} directory it propagates the update one final time and can then remove the removal directory.
-It is important to note that this removal differs from other tracked removals: unlike when any other object is removed removals within the \textit{"removed"} directory must not trigger another round of removals.
+Once the last peer enters itself into the \textit{"done"} directory it propagates the update one final time and can then deletes the removal directory.
+It is important to note that this deletion differs from other tracked removals: unlike when any other object is removed, deletions within the \textit{"removed"} directory must not trigger another round of tracked removals.
 This would cause an endless removal of removals and basically bring the entire Tinzenite network to a halt as each peer is swamped with keeping up.
-Instead the objects and associated model entry are simply silently removed.
-However since it is very likely that not all peers remove the removal directory at the same time we must guard against it being unnecessarily reintroduced.
-Therefore each peer must locally remember each removal for a specified time span until it can be sure that all peers have applied the completed removal.
-During this time span it ignores the reintroduction of the removed objects\footnote{As an improvement to this behavior we also utilize notification messages to more rapidly terminate removals. See section~\ref{subs:Notify Message} for more details on this.}.
+Instead the objects and associated model entries are simply silently purged.
+Yet since it is very likely that not all peers delete the removal directory at the same time we must guard it against being unnecessarily reintroduced.
+Therefore each peer must locally remember each deletion for a specified time span until it can be sure that all peers have applied the completed deletion.
+During this time span each peer ignores the reintroduction of the deleted objects\footnote{As an improvement to this behavior we also utilize notification messages to more rapidly terminate removals. See section~\ref{subs:Notify Message} for more details on this.}.
 
 Now a final note on what happens should a peer receive a deletion update for an object that it doesn't know.
-In this case the message can not simply be silently discarded as there is no other representation of the update in the object model.
+In this case the message can not simply be discarded silently as there is no other representation of the update in the object model.
 This could lead to orphaned updates if the peer acts as a bridge between two peers that were previously directly connected.
 Therefore unknown deletion updates should be propagated if possible.
 However, since orphaned updates can only happen as long as the peer list has not been fully updated between all peers, this is a sufficiently unlikely case that we can live with.
-By adding a time stamp we can even detect orphaned deletion updates and warn the user to help in solving the issue.
+By adding a time stamp we can even detect orphaned deletion updates and warn the user to help solve the issue.
 Alternatively we can also warn if we have too many possibly orphaned updates, although this would signify a larger issue.
-Since there is no way to reliably ensure that all peers are at the same state simply for the reason that a peer may be offline at any point, there is little more we can do to ensure clean removals.
-It is more important to work towards a common model state than to ensure previous states were legitimate for all peers.
+Since there is no way to reliably ensure that all peers are in the same state simply for the reason that a peer may be offline at any point, there is little more we can do to ensure clean removals.
+%NOTE: this is a good philosophy for Tinzenite, remember it for presentation! :D
+It is more important to work towards a common model state than to ensure that previous states were legitimate for all peers.
 
 \section{Communication Specification}
 \label{sec:Communication Specification}
 
 This section describes the specifications for the messages that will be used to synchronize two models on separate peers.
-Thus we start with defining how connections are managed, then build on this to explain how new peers are added to an existing network.
+We start with defining how connections are managed, then build on this to explain how new peers are added to an existing network.
 Then we will specify the messages used for model synchronizations between trusted and between trusted and encrypted peers.
 Finally we will briefly expand on the ordering of messages and the expected emerging behavior.
 
@@ -437,18 +440,19 @@ Therefore a single peer has a base state of no other connected peers.
 
 In this section we will discuss how Tinzenite connects to other peers.
 As we distinguish between trusted and encrypted peers we must determine how the data we will send is to be modified accordingly.
-Note that encrypted peers by default will not initiate connections, only trusted peers as they are the only peers capable of working on the user's data.
+Note that encrypted peers by default will not initiate connections, only trusted peers will do that as they are the only peers capable of working on the user's data.
 Encrypted peers in general have a very passive role in the Tinzenite network.
 
-Since each trusted peer has access to a list of all connected peers (see section~\ref{sub:Organizational Directory}) this list is used for the initial presumption what connected peer is trusted and which is encrypted.
-Therefore peers marked as encrypted are not even issued the challenge.
-To vet trusted peers however the challenge must be met.
-Therefore the trusted peer queries each trusted connected peer in turn.
+Since each trusted peer has access to a list of all connected peers (see section~\ref{sub:Organizational Directory}) this list is used for the initial presumption which connected peer is trusted and which is encrypted.
+Therefore peers marked as encrypted are not even issued a challenge to authenticate themselves.
+To vet trusted peers however the challenge must be issued and met.
+Consequently the trusted peer queries each trusted connected peer in turn.
 Since we should not trust a peer just because it has been marked as trusted, this query must be cryptographically secure.
-An attacker that wants to connect to a trusted peer illegitimately thus can not establish a clear connection without the required keys, which they should not be in possession of\footnote{Tinzenite is designed to avoid revealing keys to outsiders. However attacks such as key loggers are beyond its control.}.
+An attacker that wants to connect to a trusted peer illegitimately thus can not establish a clear connection without the required keys, which the attacker should not be in possession of\footnote{Tinzenite is designed to avoid revealing keys to outsiders. However attacks such as key loggers are beyond its control.}.
 We define this as the authentication challenge.
-Only if the challenge is successfully answered is the other peer considered trusted and the following communication not anonymous.
-If the challenge is answered incorrectly or not at all we can not be assured that the other peer is either trusted nor encrypted, thus we simply ignore it for all further operations\footnote{Ideally we would warn the user of this as it may result in peers being orphaned within the network. As this requires either the user having tried to connect to an insecure peer or a peer having become corrupted, the chance that this behavior is undesired is comparatively slim.}.
+Only if the challenge is successfully answered the other peer is considered trusted and the following communication will not be encrypted.
+If the challenge is answered incorrectly or not at all we can not be assured that the other peer is either trusted or encrypted.
+Therefore we simply ignore it for all further operations\footnote{Ideally we would warn the user of this as it may result in peers being orphaned within the network. Since this requires either the user having tried to connect to an insecure peer or a peer having become compromised, the chance that this behavior is undesired is comparatively small.}.
 This concludes opening a communication channel with a connected peer.
 
 \begin{figure}[htp]
@@ -461,20 +465,20 @@ This concludes opening a communication channel with a connected peer.
 Figure~\ref{graph:connection_states} shows an informal state diagram of how a peer reaches the idle state where the connection is ready and set up, both for trusted and encrypted peers.
 The switch from the disconnected state to the connected state is signaled by the underlying Tox connection, meaning it happens when the other peer is online and visible via the Tox channel.
 Once connected and if the peer itself is a trusted peer, a challenge is sent which contains an encrypted nonce.
-For a more in depth look at the challenge response mechanism see section~\ref{sub:Challenge Response}.
+For a more comprehensive look at the challenge response mechanism see section~\ref{sub:Challenge Response}.
 
 Note that a few points must be considered that can not be shown in the diagram.
 Since Tinzenite is designed as a peer to peer network, no client-server structure exists.
-This poses the challenge of who begins the construction of a connection, especially as we can not distinguish between peers that have been online for a while already and peers that just activated when the base peer starts up.
+This poses the challenge of who begins the construction of a connection, especially as we can not distinguish between peers that have been online for a while already and peers that just become activated when the base peer connects to the network.
 This is due to peer to peer architecture of Tox: not all peers will respond to queries within the same time frame.
-Peers further away from a network perspective will seem to be online only after peers that are nearer.
+From a network perspective peers that are further away will seem to be online slower than peers that are nearer.
 We solve this issue by having the peers use a random back off time whenever a request expects an answer\footnote{For example the challenge message for establishing a trusted connection.}.
 
-Since we can not trust the other side of the Tox channel to be a Tinzenite peer, the peer initiating a connection will not advance beyond a step where it expects an answer.
+Since we can not trust the other side of the Tox channel to be a Tinzenite peer, the peer initiating a connection will not advance beyond the step where it expects an answer.
 This means that for example an attacker would either receive only a challenge (to which he can't respond without knowing the keys) or the request for the meta information block to which he'd have to answer correctly.
 
 A short note on closing a connection: once established this happens when the underlying Tox channel is terminated.
-Furthermore if something interrupts the establishment of a connection, both peers will simply reset to the starting point.
+Furthermore if something interrupts the establishment of a connection, both peers will simply go back to the starting point.
 Establishing a connection is done every time a peer reconnects.
 
 \subsection{New Connection Establishment}
@@ -482,7 +486,7 @@ Establishing a connection is done every time a peer reconnects.
 
 The previous section described how Tinzenite connects to known peers.
 This section therefore discusses how Tinzenite connects to new peers, meaning peers that the user adds to the network.
-Notably this is a manual process where the user is used as a secondary channel to prevent man in the middle attacks.
+Notably this is a manual process where the user is used as a secondary channel to prevent man-in-the-middle attacks.
 Since a typical Tinzenite network might have many peers, it is not desirable to have to authenticate a new peer manually with every other peer.
 We therefore propose that the user only need authenticate the new peer with one existing trusted peer.
 From there the authentication is synchronized to the other existing peers much like any other file or property update.
@@ -500,7 +504,7 @@ As prose: the users simply start the new peer client for the first time, whether
 Then they can point it at the directory location, change settings, and check that a trusted peer is available.
 To establish an initial connection a Tox ID of an available Tinzenite peer is required.
 The users can then command the new peer to connect to this available peer by entering the Tox ID.
-To ensure that no man in the middle attack can happen the users will now have to confirm the connection on the available peer.
+To ensure that no man-in-the-middle attack can happen the users will now have to confirm the connection on the available peer.
 This means allowing the connection there and ideally ensuring that the seen Tox ID is identical with the new peer's Tox ID.
 Furthermore Tinzenite reports to the user whether the newly connected peer requested to be registered as a trusted peer or not.
 Once the connection has been confirmed for the given trust level on the other peer the channel is opened and ready.
@@ -855,7 +859,7 @@ Please note however that a full security review is not the goal of this work nor
 Nonetheless we hope that the implementation will be secure enough for practical usage.
 
 First we will concern ourselves with a network of only trusted peers.
-In this case Tinzenite should be very secure as long as the user ensures that no man in the middle attack happens on setting up initial connections between new trusted peers.
+In this case Tinzenite should be very secure as long as the user ensures that no man-in-the-middle attack happens on setting up initial connections between new trusted peers.
 All further communications are encrypted and authorized by Tox.
 This in turn means that Tinzenite remains as secure as the software it is built on.
 As with any software all security is for naught should the user make an error or allow the stored data to leak outside of Tinzenite.
