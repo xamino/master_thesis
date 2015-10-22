@@ -26,8 +26,8 @@ This gives us type safety and removes the need to manage the memory ourselves.
 For a developer coming from Java a large standard library helps to ease the transition: Golang offers such a standard library.
 We found writing Golang code to be less verbose than Java code for the same task while not being any harder to comprehend.
 
-Different is the way errors are handled.
-While in Java error handling is done via exceptions, Golang uses return values to signal errors.
+Golang handles errors and exceptions differently in comparison to Java.
+While in Java error handling is done explicitly via exceptions, Golang uses simple return values to signal errors.
 This poses less of a problem than it may initially seem to as Golang functions can return multiple values.
 Furthermore Golang exposes and allows working with object pointers.
 Concurrency is also directly built into the language via so called \textit{"go routines"} and channels.
@@ -35,8 +35,8 @@ Unlike Java which builds objects with class inheritance, Golang uses composition
 Building on this Golang does not even require the declaration of which interfaces an object implements -- having the method of an interface means that that object implements the interface.
 
 Golang also lacks a few features, notably generics and function overloading.
-We found these to be relatively trivial to work around, although the lack of generics leads to an increase in redundant boilerplate code.
-A possibly higher hurdle is the lack of fine granular permissions: unlike Java Golang knows only private and public variables and functions, indicated by their names beginning with respectively a lowercase or uppercase letter.
+We found these to be relatively easy to work around, although the lack of generics leads to an increase in redundant boilerplate code in some instances.
+A possibly higher hurdle is the lack of fine granular permissions: unlike Java Golang knows only private and public variables and functions, indicated by their names beginning with a lowercase or respectively uppercase letter.
 
 As to the development environment surrounding Golang only a few specifics should be noted.
 A very nice feature is that packaging is directly built on top of version control systems.
@@ -116,7 +116,7 @@ Git~\cite{web:site:git} was used for the version control system, with a hosted r
 \label{fig:implementation_structure}
 \end{figure}
 
-Tinzenite was developed not as a single package but as a package collection that each covers some parts of the complete scope.
+Tinzenite was developed not as a single package but as a package collection where each package covers some part of the complete scope.
 In this section we will discuss the general layout of the packages and how they depend on one another.
 Figure~\ref{fig:implementation_structure} shows an informal diagram of the structure.
 All packages have their own repository on Github~\cite{web:site:github:tinzenite}.
@@ -166,12 +166,12 @@ The initial version of the model object only used file hashes to check for modif
 For large files or a large amount of files this proved to be a very slow operation.
 Thus we also store the modification time as written to the file system upon creation and modification of a file to the model.
 This attribute is private to the model.
-As long as the modification time did not change we do not need to recalculate the hash as nothing has changed since the last check.
-Thus the model only needs to recalculate the hash when the file was actually modified.
+As long as the modification time has not changed we do not need to recalculate the hash as nothing has changed since the last check.
+Thus the model is only required to recalculate the hash when the file actually has been modified.
 This greatly speeds up the update detection phase.
 
 Apart from reacting to direct directory changes the model object also allows remote updates to be applied.
-Before a remote update can be applied a number of parameters must be checked however -- therefore the model object offers a \texttt{CheckMessage} method that returns whether the update must be truly applied.
+Before a remote update can be applied a number of parameters must be checked -- therefore the model object offers a \texttt{CheckMessage} method that returns whether the update must be truly applied.
 The update may be ignored for example if it has already been applied, or when it concerns an already completed removal as stated in section~\ref{subs:Remove}.
 Any call to \texttt{ApplyUpdateMessage} should be preceded by applying this message check.
 Note that we have moved most of the removal logic code to its own code file for easier comprehension.
@@ -188,7 +188,7 @@ The \emph{model} package also implements the matcher object.
 This object checks each directory for a \textit{".tinignore"} file and if it exists applies it to any model work on the directory.
 The file containing these rules can be synchronized just as any other file at any level within a directory.
 Any new objects detected by Tinzenite that are listed in this file will not be created within the model, effectively keeping it out of the Tinzenite network.
-Since it may well happen that a \textit{".tinignore"} is created at a later point and thus introduces an uncertainty in handling the to be ignored files we propose a simple solution: the file is only ever applied for object creations.
+Since it may well happen that a \textit{".tinignore"} is created at a later point and thus introduces an uncertainty in handling the files to be ignored we propose a simple solution: the file is only ever applied for object creations.
 Once a file has been created within the model it will be modified and deleted as any other file within the system, independent of whether it was or is to be ignored.
 
 \begin{listing}[htp]
@@ -209,7 +209,7 @@ Listing~\ref{tinignore:meta} shows the contents of this \textit{".tinignore"} fi
 \subsection{Channel}
 \label{sub:Channel}
 
-The \emph{channel} package wraps the Tox wrapper into the channel object which all communication is sent via.
+The \emph{channel} package wraps the Tox wrapper into the channel object via which all communication is sent.
 The channel object makes use of callbacks to allow callers to react to incoming messages, file transfers, and other events.
 
 Since the underlying Tox instance must be called in regular intervals, the channel object implements a background go routine that keeps Tox ticking.
@@ -238,7 +238,7 @@ The \emph{tin} package is an example implementation of a trusted peer built on t
 While a true client built on a stable Tinzenite version should interface with the user via a graphical user interface, we forewent this because of the increased development time.
 Thus the Tin program is a simple command line interface based program.
 
-It offers up a range of flags to make managing a Tinzenite directory easier.
+It offers a range of flags to make a Tinzenite directory easier to manage.
 Each instance of Tin should run for a single trusted Tinzenite peer.
 Additionally the program can also be used to create new peers and bootstrap them to the Tinzenite network.
 In the case of bootstrapping an encrypted peer the program will exit on successful completion.
@@ -246,9 +246,9 @@ For trusted peers it will immediately go over into running the directory.
 If a trusted peer receives a bootstrapping request it asks the user to validate the given peer address and requested trust level.
 
 The program also automatically updates the local directory, requests remote updates, and synchronizes with available encrypted peers at certain intervals.
-This servers to prove that Tinzenite can run completely without user input.
+This serves to prove that Tinzenite can run completely without user input.
 In fact apart from setting up a peer the synchronization runs fully without user input, even if merge conflicts arise.
-Care was furthermore taken to ensure that the entire program could run using as little resources as possible.
+Care was taken to ensure that the entire program could run using as little resources as possible.
 Currently the program runs with negligible CPU and RAM usage even though synchronizing regularly.
 The only truly expensive operation where the program requires more performance is for hash generation and encryption when handling files.
 
