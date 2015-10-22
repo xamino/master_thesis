@@ -488,9 +488,9 @@ The previous section described how Tinzenite connects to known peers.
 This section therefore discusses how Tinzenite connects to new peers, meaning peers that the user adds to the network.
 Notably this is a manual process where the user is used as a secondary channel to prevent man-in-the-middle attacks.
 Since a typical Tinzenite network might have many peers, it is not desirable to have to authenticate a new peer manually with every other peer.
-We therefore propose that the user only need authenticate the new peer with one existing trusted peer.
+We therefore propose that the user only needs to authenticate the new peer with one existing trusted peer.
 From there the authentication is synchronized to the other existing peers much like any other file or property update.
-This bootstrapping process allows a user friendly setup of peers.
+This bootstrapping process allows a user-friendly setup of peers.
 
 \begin{figure}[htp]
 \centering
@@ -501,15 +501,15 @@ This bootstrapping process allows a user friendly setup of peers.
 
 Figure~\ref{diagram:new_connection} shows how a user interacts with a Tinzenite peer and the Tinzenite network (consisting of 1 to n other existing peers) to connect a new peer to the network for the first time.
 As prose: the users simply start the new peer client for the first time, whether encrypted or trusted.
-Then they can point it at the directory location, change settings, and check that a trusted peer is available.
+Then they can point it at the directory location, change settings, and check whether a trusted peer is available.
 To establish an initial connection a Tox ID of an available Tinzenite peer is required.
 The users can then command the new peer to connect to this available peer by entering the Tox ID.
-To ensure that no man-in-the-middle attack can happen the users will now have to confirm the connection on the available peer.
+To ensure that no man-in-the-middle attack can happen the users will now have to confirm to the connection the available peer.
 This means allowing the connection there and ideally ensuring that the seen Tox ID is identical with the new peer's Tox ID.
-Furthermore Tinzenite reports to the user whether the newly connected peer requested to be registered as a trusted peer or not.
+Tinzenite then reports to the user whether the newly connected peer requested can be registered as a trusted peer or not.
 Once the connection has been confirmed for the given trust level on the other peer the channel is opened and ready.
 
-Depending on whether the new peer is an encrypted or a trusted peer what happens next differs somewhat.
+What happens next differs somewhat depending on whether the new peer is an encrypted or a trusted peer.
 Since encrypted peers are passive peers the bootstrapping process is finished once the peer has established a connection to a trusted peer.
 However the encrypted peer at this state still lacks any encrypted files or more importantly the list of other peers and the authentication file.
 It falls upon the connected trusted peer to initiate the first data upload, after which the new encrypted peer will have all the required information.
@@ -521,22 +521,22 @@ Once all files have been fetched the new trusted peer is ready to run.
 This includes immediately connecting to other existing peers since the peer list is now also available to it.
 
 Even if the new peer goes offline immediately after completing the bootstrap process, the new peer information will be synchronized throughout the already connected peers once they synchronize with the peer which accepted the new peer.
-This is enabled because the connection request by a new peer includes its own peer information, and when the connection is accepted this peer information is immediately added to the \textit{"peers"} directory.
-Thus it will be synchronized to all other peers which will automatically accept any connections of peers listed in the peer list.
+This is possible because the connection request by a new peer includes its own peer information, and when the connection is accepted this peer information is immediately added to the \textit{"peers"} directory.
+Thus it will be synchronized to all other peers who will automatically accept any connections of peers listed in the peer list.
 
 Removing peers will work much in the same way from a system perspective.
 A user can note a peer to be removed, resulting in it being removed immediately from the peer where the action was initiated.
-It will then transit through online peers and result in a complete removal once all peers have been online.
-An interesting aspect to how to handle removal from the perspective of the to be removed peer is what to do with the data on the peer.
+The removal will then transit through online peers and result in a complete removal once all peers have been online.
+An interesting aspect to how to handle removal from the perspective of the removed peer is what to do with the remaining data.
 For a trusted peer we might offer a choice whether to remove the data or simply disconnect it from the Tinzenite network.
 On the other hand encrypted peers can simply remove the data immediately as they can't access it anyway.
-Notably removing a peer requires no action on the to be removed peer's side.
-This ensures that a peer can be excluded even if it was lost.
+Notably removing a peer requires no action on the removed peer's side.
+This ensures that a peer can be excluded even if direct access to the peer was lost.
 
 \subsection{Message Order}
 \label{sub:Message Order}
 
-Now we must define when which messages are required to be sent to keep two models between peers synchronized.
+We must define which messages are required to be sent when to keep two models between peers synchronized.
 Once the connection is established we must differentiate between trusted peers and encrypted peers.
 For trusted peers a connection is only considered established after the \nameref{subs:Authentication Message}s have been exchanged.
 
@@ -548,12 +548,12 @@ Upon reception of the model, both peers will merge the models and request any ch
 At the end of a model request both peers should share a common model state and associated directory state.
 
 If local changes happen during or after the model has been exchanged the \nameref{subs:Update Message}s are used to notify the other model of the update without having to retransmit the entire model again.
-However to ensure that all updates do propagate at some point, ideally rather faster than longer, we propose that each peer resend the model every few units.
+However to ensure that all updates do propagate at some point, ideally rather faster than longer, we propose that each peer resends the model every few units.
 The exact spacing of when the complete model is resent is again up to the peer itself and can be adjusted per instance.
 This allows mobile peers to work more energy efficient by synchronizing less often in comparison to desktop peers where power and bandwidth usage don't play such prominent roles.
 
 Since encrypted peers work passively it is again up to the trusted peers to ensure that they are queried regularly.
-To avoid creating merge conflicts on encrypted peers which these could not independently resolve as all data is encrypted, encrypted peers can only be accessed by a single trusted peer at the same time.
+To avoid creating merge conflicts on encrypted peers which these could not independently resolve since all data is encrypted, encrypted peers can only be accessed by a single trusted peer at the same time.
 This will be negotiated via \nameref{subs:Lock Message}s.
 Once successfully locked request messages can be used to fetch data from the encrypted peer.
 To place data on the encrypted peer we thus require a \nameref{subs:Push Message}.
@@ -593,7 +593,7 @@ In general each peer does not rely on other peers to update.
 Therefore we propose the creation of request operation which serves to request resources required for synchronization with another peer.
 This request can be used both for the complete directory model as for each specific file.
 It is important to note here that directories should never be requested as they do not require attached binary data to be either created, modified, or removed.
-Thus a request operation is only ever for operations that require data to be transferred.
+Thus a request operation is only for operations that require data to be transferred.
 Upon receiving the message the other peer starts a Tox file transfer which the initiating peer knows to accept as it just requested it.
 
 \begin{listing}[htp]
@@ -615,7 +615,7 @@ The peer and auth values are used by the encrypted peer to differentiate these s
 
 By switching the \textit{"ObjType"} attribute from object to model the other peer, whether encrypted or trusted, can be commanded to send its current model.
 After comparing the received model to its own model, the peer knows for which files it must request data.
-Thus periodically actively requesting a full model update will still allow updates to propagate independent of individual update messages at some point in time.
+Thus actively requesting a full model update periodically will still allow updates to propagate independent of individual update messages at some point in time.
 
 This message is also explicitly used to get an encrypted peer to initiate a file transfer of the requested file or the encrypted model.
 The encrypted peer will respond with a file transfer of the requested object if the trusted peer has successfully locked it.
@@ -624,7 +624,7 @@ If not, the trusted peer will receive lock denial messages until it has successf
 \subsubsection{Update Message}
 \label{subs:Update Message}
 
-Continuously requesting and receiving the model is not ideal however.
+Continuously requesting and receiving the model is not ideal.
 For large directories just the transfer of the model may require significant bandwidth.
 Therefore we have included the option of sending current updates to all currently connected trusted peers so that they can apply the update without first having to request the complete model.
 
@@ -659,7 +659,7 @@ The key \textit{"Object"} contains the object representation for the updated obj
 The update message serves to keep both models in sync even after the initial synchronization at connection establishment.
 Upon receiving an update message the peer should immediately respond with a fetch message to retrieve the updated file.
 If a peer receives a message for an operation that it has already applied, the message is silently discarded.
-This does not disturb the propagation of updates since the peer will have already sent the update to the other connected peers if it has the update already.
+This does not disturb the propagation of updates since the peer will have sent the update to the other connected peers if it  already has the update.
 In this way we ensure that every message propagates as far as possible without consuming unnecessary bandwidth\footnote{Peers are of course free to implement message sending in any way since the update messages are not critical for Tinzenite to work. Peers can simply only send update messages to a limited number of peers, down to none if bandwidth is scarce for example in the case of a mobile device.}.
 
 \subsection{Encrypted Synchronization}
@@ -667,7 +667,7 @@ In this way we ensure that every message propagates as far as possible without c
 
 Communication with the encrypted peer is a special case as all operations on the encrypted files must happen on the trusted peer.
 Since the encrypted peers can not resolve conflicts we must ensure that no conflicts ever happen specifically on the encrypted data.
-We do this by ensuring that only ever one trusted peer may synchronize with an encrypted peer by utilizing a locking mechanism.
+We do this by ensuring that only one trusted peer may synchronize with an encrypted peer at once by utilizing a locking mechanism.
 
 \subsubsection{Lock Message}
 \label{subs:Lock Message}
@@ -719,7 +719,7 @@ When an encrypted peer is locked to a trusted peer and receives a push message i
 This request message will trigger the trusted peer to encrypt the file and send it to the encrypted peer.
 The encrypted peer will accept the file transfer because it now expects it.
 
-For the peers and authentication file the different value of \textit{"ObjType"} will allow the encrypted peer to place these unencrypted files in a different location than the normal data.
+For the peers and authentication file the different value of \textit{"ObjType"} will allow the encrypted peer to place these unencrypted files in a different location from the normal data.
 This is required so that it can access them and work with the contained data as required.
 Since trusted peers store the model internally and the model is privacy sensitive as it contains clear text paths and names, the model is also stored as a special file on the encrypted peer.
 
@@ -744,12 +744,12 @@ Encrypted peers use it to signal trusted peers that a request can not be answere
 
 Listing~\ref{json:notify_message} shows an example message for a missing object from an encrypted peer.
 The value \textit{"Notify"} can be either missing or removed.
-The \textit{"Identification"} is the unique hash for the object which the notification message references.
+The \textit{"Identification"} is the unique hash for the object which the notification message references to.
 
 \section{Update Detection and Reconciliation}
 \label{sec:Update Detection and Reconciliation}
 
-This section describes the theoretical side of the update detection: how we detect updates on file systems in a way that does not consume too much resources from the hosting computer.
+This section describes the theoretical side of the update detection: how we detect updates on file systems in a way that does not consume too many resources from the hosting computer.
 Then we will discuss the interesting case of update reconciliation and how Tinzenite reacts to conflicts.
 
 \subsection{Update Detection}
@@ -757,7 +757,7 @@ Then we will discuss the interesting case of update reconciliation and how Tinze
 
 When a Tinzenite directory is created the initial model of the directory is created and stored as described in section~\ref{sec:Object Model}.
 To detect changes within the directory Tinzenite thus regularly compares the current state of all objects within the directory against the previous model.
-If creations, modifications, or removals are detected they are applied to the model and any further required operations completed.
+If creations, modifications, or removals are detected they are applied to the model and any further required operations will be completed.
 
 Creations are simply detected when objects exist in the storage directory that are not tracked in the model.
 The reverse is used to detect removals: tracked objects that do not exist in storage.
@@ -767,12 +767,12 @@ Modifications must be checked for every tracked existing object.
 \label{sub:Update Reconciliation}
 
 The core algorithm for how update reconciliation is done is another important element of Tinzenite.
-The following section introduces it and discusses the ramifications for the system based on the initial model synchronization, leaving aside the per object update messages at first.
+The following section introduces it and discusses the ramifications for the system based on the initial model synchronization while leaving aside the object update messages for now.
 These will be discussed once the basic mode is understood.
 Note that only trusted peers actively resolve updates, although reconciliation can happen for models received from both trusted and encrypted peers.
 
 The reconciliation begins by receiving the model of the other peer.
-The model is temporarily stored so that Tinzenite can work with it until the reconciliation has finished.
+The model is temporarily stored so that Tinzenite can work with it until the reconciliation is finished.
 To guarantee that the directory remains consistent with the model right from the start we propose a simple rule: the model of the local directory is updated atomically with the successful reception of the binary object updates.
 
 For each object in the received and temporarily stored model Tinzenite performs a series of checks.
@@ -784,7 +784,7 @@ For the sake of decreasing algorithm complexity we start with the easy case of f
 Object creations are trivial to detect initially.
 Any object that the remote model has knowledge of that the local model has no equivalent entry for is considered as newly created.
 The naive check is simply whether for a given remote object entry an entry exists at the same path for the same identification.
-However to avoid reintroducing objects that have been locally removed but where the removal has not yet reached the remote peer, we must also check this list of potentially created objects against all known local removals.
+To avoid reintroducing objects that have been locally removed but where the removal has not yet reached the remote peer, we must also check this list of potentially created objects against all known local removals.
 If the creation is for an object that has been locally removed we ignore it as the remote peer is not up to date on this object.
 On the other hand if the creation is valid the local peer can request the binary data if the creation is for a file.
 Finally when the file has been received the creation is applied to the local model and the file written to storage at the corresponding location.
@@ -809,9 +809,9 @@ For each candidate we compare the local vector clock state against the remote ve
 Tinzenite checks for every entry in the remote vector clock whether the local vector clock entry's value is equal or lower.
 If the entry exists and the value is equal or lower the local vector clock is current and the remote file has not been modified since the last check.
 If an entry does not exist or a version is higher the remote entry has been modified and we must fetch the file.
-What remains to do then is to check for a merge conflict.
+What remains to be done then is to check for a merge conflict.
 We do this by simply reversing the comparison: if the remote version knows of all local version information it can be applied and the local file overwritten.
-If the states diverge however both objects have been modified.
+If the states diverge both objects have been modified.
 In this case we trigger a merge conflict.
 
 \begin{table}[htp]
@@ -829,7 +829,7 @@ In this case we trigger a merge conflict.
 
 As stated Tinzenite uses only the model objects to detect changes, specifically only the version attribute.
 As shown in listing~\ref{json:version_model} the version attribute contains a list of peers and the last known version of the object they have.
-From this list we only ever are interested in the versions of the remote peer and the local peer.
+From this list we are only interested in the versions of the remote peer and the local peer.
 By comparing these two attributes between the versions that both peers have we can reliably detect how to proceed without losing data.
 Table~\ref{table:version_states_possible} shows the four possible cases.
 Since there is nothing to do independent of our local state if the remote peer has no modifications\footnote{This is the case because the other peer is responsible for requesting our local changes: the local peer has no obligation to actively push changes.}, Tinzenite will check this first.
@@ -854,8 +854,8 @@ Both cases will be propagated through the network as normal file operations.
 \label{sec:Security Considerations}
 
 As stated in the motivation for this thesis in section~\ref{sec:Motivation} security and privacy are a primary concern for this thesis.
-As such we will give a brief overview of conceptual thoughts on the security of the proposed work.
-Please note however that a full security review is not the goal of this work nor within its scope.
+We believe it important to give a brief overview of conceptual thoughts on the security of the proposed work.
+Please note that a full security review is not the goal of this work nor within its scope.
 Nonetheless we hope that the implementation will be secure enough for practical usage.
 
 First we will concern ourselves with a network of only trusted peers.
@@ -867,19 +867,19 @@ This is especially true as Tinzenite does not offer protection from other progra
 
 So what changes when encrypted peers are given access to the network?
 Not a lot for the communication between peers itself: Tox still theoretically guarantees a fully encrypted and authorized data channel.
-Since the to be stored data is encrypted on trusted peers before being sent, direct access to the user's data should also prove difficult, pending that the encryption algorithm is secure enough.
+Since the data to be stored is encrypted on trusted peers before being sent, direct access to the user's data should also prove difficult, pending that the encryption algorithm is secure enough.
 
-Since encrypted peers receive the model and all associated files only fully encrypted, this should not provide to be a problem from a security standpoint.
+Since encrypted peers receive the model and all associated files only fully encrypted, this should not be a problem from a security standpoint.
 Trying to overwrite user data by replacing the binary blobs with random blobs is detected by trusted peers when comparing the unencrypted file with its hash from the unencrypted model: if they don't match the update can be marked as invalid and corresponding action taken.
 Detecting a wrong model is trivially done by decrypting it and checking if it is valid syntax.
 
-Some information is leaked however.
+Some meta information is leaked however.
 Since we encrypt on a per file basis it is theoretically possible to analyze file usage associated with size to identify pieces of the user's directory.
 This is only made easier by the fact that file sizes are roughly the same whether encrypted or not, with an accuracy down to the block size of the encryption scheme.
 For a future work proposal to solve this see section~\ref{subs:Data Obfuscation}.
 
 Possibly even more problematic is the clear text storage of the peer list even on encrypted peers as it can be used to determine the size of the user's Tinzenite network.
-However to allow encrypted peers to facilitate file transfer between two mutually exclusively online peers, it must know this information.
-This is mitigated by the fact that Tox IDs are hard to guess and not shared beyond the Tinzenite peer network.
-They however can be used to monitor the user's devices by utilizing the Tox network.
+To allow encrypted peers to facilitate file transfer between two mutually exclusively online peers, they must have access to this information.
+This problem is mitigated by the fact that Tox identifications are hard to guess and not shared beyond the Tinzenite peer network.
+Another possible risk is that Tox identifications can be used to monitor users' devices by querying the Tox network.
 Recovering a user's IP addresses should not be possible however as Tox employs onion routing to mitigate this risk~\cite{web:site:tox:wiki:onion}.
