@@ -205,6 +205,9 @@ Once a file has been created within the model it will be modified and deleted as
 
 The \textit{".tinignore"} file is used in the \textit{".tinzenite"} directory to control which parts are synchronized and which not, as mentioned in section~\ref{sec:Meta Data}.
 Listing~\ref{tinignore:meta} shows the contents of this \textit{".tinignore"} file.
+Note that ignoring objects is supported within the complete Tinzenite directory: users that are so inclined can add such files themselves to control what objects Tinzenite synchronizes.
+We added support for comments to improve readability for users.
+The current implementation does not offer support for regular expressions or more advanced matching grammars, although these features should be comparatively simple to add.
 
 \subsection{Channel}
 \label{sub:Channel}
