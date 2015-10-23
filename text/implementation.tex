@@ -263,7 +263,7 @@ For software written against it the core package exposes a Tinzenite object with
 Initially we planned to include the bootstrapping code directly within the tin and core packages.
 However the differences in how a peer must react to incoming messages and transfers would have greatly increased the already substantial code complexity of these packages.
 Therefore we moved all bootstrapping related code into its own package.
-This has the large advantage that programs can easily implement just bootstrapping if required without requiring any further package imports.
+This has the large advantage that programs can easily implement just bootstrapping if required to without needing any further package imports.
 
 The basic function of bootstrapping is relatively simple.
 It requires the address of the trusted peer to connect to and sends a Tox friend request to it to initiate the connection.
@@ -296,7 +296,7 @@ type Storage interface {
 
 Adding encrypted peers to Tinzenite required two tasks to be successful: the implementation of the encrypted peer and the extension of the trusted peer to be capable of utilizing it.
 The first task of implementing the encrypted peer proved to be comparatively simple.
-Basically all it has to do is manage its lock to any single trusted peer and, if locked, allow the fetching and retrieval of files.
+Basically all it has to do is offer a lock to any single trusted peer and the, when locked, allow the fetching and retrieval of files.
 Most files the encrypted peer handles are user data files.
 One of the goals for this thesis was to support writing these files to the Hadoop distributed file system.
 Therefore we implemented the encrypted peer so that all user files are written with a specified storage interface as seen in listing~\ref{golang:storage_interface}.
@@ -304,7 +304,7 @@ However this storage interface is not used for all files.
 The authentication file and the peer files are required to exist unencrypted and required for the encrypted peer to run correctly.
 Therefore these files are written to disk within the \textit{"org"} directory\footnote{The encrypted peer does not share the directory structure of a trusted peer. The reason for this is that an encrypted peer lacks many of the features that went into the design of the \textit{".tinzenite"} directory. Thus a simpler, flatter structure was chosen.}.
 
-The storage interface allows encrypted clients, such as the \emph{server} package provides an example of, to interface with any storage interface the developer of a utilizing program wishes it to.
+The storage interface allows encrypted clients, such as the \emph{server} package provides an example of, to interface with any storage interface a developer requires it to.
 For this thesis we implemented two versions of the interface for the server program.
 First for debugging and personal use we implemented a version of the interface that simply writes all data to disk, named as the key of the data.
 Retrieval looks up the file by checking for the existence of a file named as the given key and returns the associated data.
@@ -325,7 +325,7 @@ If the encrypted peer responds with a notification that the file doesn't exist t
 If a model is received the trusted peer must first compare the remote model against its own model to check for changes.
 Unknown updates that the encrypted peer has are applied to the trusted peer by fetching the necessary files.
 Once this is complete the next step is to update the encrypted peer to the state of the trusted peer.
-Updates that the trusted peer has but the encrypted peer lacks are uploaded and finally the current model encrypted and also uploaded.
+Updates that the trusted peer has but the encrypted peer lacks are uploaded and finally the current model is encrypted and also uploaded.
 Then the encrypted peer is unlocked so that other trusted peers can access it too.
 
 \subsection{Golang Issues}
@@ -336,25 +336,25 @@ In the interest of full disclosure we will use this section to briefly touch on 
 
 Tinzenite builds heavily on the standard libraries included with the language.
 Since Golang is still a relatively new language we expected to encounter bugs and issues as we implemented Tinzenite.
-However we only ever encountered a single bug.
+However we only encountered a single bug.
 It effected the generation of a random integer for issuing a challenge.
 After creating a valid random \texttt{int64} value for the challenge we required a byte slice representation of the variable to encrypt it.
-However we had to determine how large to make the byte slice so that the variable could be stored in it.
-Research lead to us believe that utilizing the \texttt{byte.Size} method would allows us to make the byte slice just large enough to contain the random number.
+We had to determine the size of the byte slice so that the variable could be stored in it.
+Research lead us to believe that utilizing the \texttt{byte.Size} method would allow us to make the byte slice just large enough to contain the random number.
 But the method always returned incorrect values.
 Our workaround is to simply create the slice large enough for all possible values at a small memory cost.
 
 The good performance of Tinzenite was initially not the case.
 First versions of the trusted peer had a slow memory and processing leak resulting in steadily rising CPU and RAM usage until the host computer killed the process after a few minutes.
-We tracked this down to our usage of an endlessly running go routine utilizing time.Tick to run in intervals.
-As stated in the method documentation the underlying Ticker can not be closed, thus resulting in a leak~\cite{web:site:golang:time:tick}.
-We worked around this issue by simply reusing the timing objects instead of recreating new ones every interval.
+We tracked this down to our usage of an endlessly running go routine utilizing \texttt{time.Tick} to run in intervals.
+As stated in the method documentation the underlying \texttt{Ticker} can not be closed, thus resulting in a leak~\cite{web:site:golang:time:tick}.
+We worked around this issue by simply reusing the timing objects instead of recreating new ones within every interval.
 
-Another issue we found ourselves with was that we had no way to determine the type of \texttt{struct} we required to parse incoming JSON messages.
+Another problem was that we had no way to determine the type of \texttt{struct} we required to parse incoming JSON messages.
 Thus we implemented a \textit{"Type"} attribute for all messages which we use to determine the correct type of the message.
-Golang's composition was not a viable way of solving this to our satisfaction as all message objects did not have any differing methods.
+Golang's composition was not a viable way of solving this to our satisfaction since all message objects did not have any differing methods.
 The correct way to do this is to parse the incoming messages to an empty interface which is valid for all types.
-The type can then be checked against and the message cast.
+The type can then be checked and the message can then be casted.
 
 \begin{listing}[htp]
     \begin{lstlisting}[language=golang,firstnumber=0]
@@ -393,7 +393,7 @@ We will also briefly discuss the exact method we utilize for the challenge respo
 
 The encryption scheme we used in Tinzenite is the NaCl library~\cite{bernstein2012security} through its interoperable Golang package~\cite{web:site:golang:box}.% interoperable is spelled correctly
 From this package we utilize just three methods: \texttt{GenerateKey}, \texttt{Open}, and \texttt{Seal}.
-Respectively they are used to generate encryption keys, decrypt data, and encrypt data.
+They are used to generate encryption keys, decrypt data, and encrypt data.
 
 \subsection{File Encryption}
 \label{sub:File Encryption}
@@ -405,7 +405,7 @@ The keys themselves are generated using the cryptographically secure random numb
 
 File data is encrypted before sending it and decrypted after receiving it when exchanging data with encrypted peers.
 To encrypt and decrypt data via NaCl we require an associated nonce which must be atomic but unique to every encryption decryption cycle.
-Thus we require a way to store and retrieve the nonce for each encrypted data blob.
+We require a way to store and retrieve the nonce for each encrypted data blob.
 Instead of writing the nonce somewhere else we opted to prepend the nonce to the encrypted data. % prepend is spelled correctly
 Thus the first 24 bytes of every encrypted file contain the nonce required to decrypt it again.
 Figure~\ref{fig:enc_algo} shows an example of how this works.
@@ -433,7 +433,7 @@ Thus the keys must be stored alongside the encrypted data.
 It is immediately obvious that simply storing the keys in plain text next to the encrypted data offers no security.
 So the keys must be encrypted too but with another set of keys.
 The question then is where to store these keys for encrypting the encryption keys.
-Since Tinzenite should be user friendly and secure we thus opted for an interesting algorithm for generating the keys that unlock the actual encryption keys.
+Since Tinzenite should be user friendly and secure we opted for an interesting algorithm for generating the keys that unlock the actual encryption keys.
 To differentiate the two different set of keys in the following we will reference the encryption keys that are used to encrypt and decrypt the keys for the file encryption as the box keys.
 
 On creating a Tinzenite network the user is asked for a password or better yet a passphrase~\cite{web:site:xkcd:pwd_strength}.
@@ -442,7 +442,7 @@ Now the encryption keys can be encrypted with the box keys and safely transmitte
 The question now arises how other trusted peers can retrieve the box keys.
 
 The answer lies in the user given passphrase and the way the box keys are generated.
-Every trusted peer must be unlocked by the user with the passphrase\footnote{Although the trusted peer may well and probably should store the passphrase once the user has entered it to avoid needless repetition and to increase ease of use.} to decrypt the encrypted peers.
+Every trusted peer must be unlocked by the user with the passphrase\footnote{Note that the trusted peer should store the passphrase once the user has entered it to avoid needless repetition and to increase the ease of use for future accesses.} to decrypt the encrypted peers.
 This passphrase is not stored somewhere in the Tinzenite network for a directory, meaning an attacker has to guess it.
 
 \begin{listing}[htp]
@@ -473,9 +473,9 @@ Listing~\ref{golang:boxkey_gen} shows the entire code required to generate the b
 This method of storing the encryption keys has a few advantages over other approaches.
 An important advantage of decoupling the passphrase from the encryption keys via the box keys is that this allows the user to change his passphrase if desired.
 Tinzenite must then only decrypt the encryption keys with the old passphrase and encrypt them with the new one.
-The update will then propagate through the network\footnote{Note that we make no provisions for invalidating old passphrases as this would require substantially more encryption work and likely not be enforceable.}.
-Encrypted peers however do not need to be encrypted anew however since the actual encryption keys remain the same.
-Another advantage is that the entire encryption process is tied to a simple to remember passphrase that the user can freely assign and modify.
+The update will then propagate through the network\footnote{Note that we make no provisions for invalidating old passphrases since this would require substantially more encryption work and would most likely not be enforceable.}.
+Encrypted peers do not need to be encrypted anew since the actual encryption keys remain the same.
+Another advantage is that the entire encryption process is tied to a passphrase that is simple to remember and the user can freely assign and modify.
 Apart from said passphrase the user must do nothing to ensure full encryption security for the Tinzenite network.
 
 \subsection{Challenge Response}
