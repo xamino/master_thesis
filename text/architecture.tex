@@ -50,19 +50,22 @@ Figure~\ref{list:meta_folder} gives a broad overview of the contents.
 \end{figure}
 
 Placing the meta data within the directory has a few benefits for the complexity of the system and enables it to utilize the full feature set of the implemented synchronization capabilities to share data between peers when required.
-Specifically only the \textit{"org"} directory and the \textit{"removed"} directory are synchronized as any user data, along with the \textit{".tinignore"} file which specifies to ignore all other objects.
+Specifically only the \textit{"org"} directory and the \textit{"removed"} directory are synchronized just as any user data, along with the \textit{".tinignore"} file which specifies to ignore all other objects in the meta directory.
+The choice to use Tinzenite itself to handle these directories and files was done as they are required for trusted peers to work correctly.
+The \textit{"org"} directory is included because it contains both the authentication file and the peer files -- both are required to be kept synchronized between all other trusted peers.
+The \textit{"removed"} directory is included due to how removals must be handled as discussed in section~\ref{subs:Remove}.
 
 \subsection{Organizational Directory}
 \label{sub:Organizational Directory}
 
 The \textit{"org"} directory consists of two objects: the file containing the authentication information and a sub folder which contains a file for each known peer.
-It is first of two directories that are synchronized along with user specified files between peers, as both the authentication file and the peer list are required for all peers.
+It is first of two directories that are synchronized along with user specified files between peers, as both the authentication file and the peer list are required for all peers to function correctly.
 
 \subsubsection{Authentication File}
 \label{subs:Authentication File}
 
 The authentication file stores information required for the complete Tinzenite network.
-This includes information on the user, the directory the network synchronizes, and the encryption keys required to encrypt and decrypt data for encrypted peers.
+This includes information on the user, information on the directory the network synchronizes, and the encryption keys required to encrypt and decrypt data for encrypted peers.
 Since the authentication file is not encrypted upon upload to encrypted peers as it is meant to be used to enable user account management, all personal or otherwise critical information is stored either hashed or fully encrypted.
 Listing~\ref{json:auth_object} shows the contents of an example authentication file.
 
@@ -82,8 +85,11 @@ Listing~\ref{json:auth_object} shows the contents of an example authentication f
 
 The key \textit{"User"} stores a bcrypt hash~\cite{provos1999future} of the user's name.
 This is important for example for the support of encrypted third party peers: they can attach accounts to the provided user name for controlling server side access.
+It provides a way to enable encrypted server service providers to attach their own accounts directly into a Tinzenite network so that access can be managed.
 The user given name of the directory is stored in \textit{"Dirname"}.
+It is not hashed so that the user can easily read which directory the current authentication file belongs to.
 We also need a way to distinguish multiple synchronized directories from each other: this is the random unique hash stored in \textit{"DirID"}.
+This unique identification also allows us to differentiate multiple Tinzenite networks that might share a directory name.
 Again, this can be used by third party service providers to differentiate the amount of directories that a user can store with them.
 The encryption keys for encrypting and decrypting file data for encrypted peers is stored in \textit{"Secure"}.
 These keys are encrypted with a password derived encryption scheme further discussed in section~\ref{sub:Key Encryption}.
@@ -658,10 +664,12 @@ Listing~\ref{json:update_object} is a message for broadcasting a model update to
 The key \textit{"Object"} contains the object representation for the updated object as seen in section~\ref{sec:Object Model}.
 
 The update message serves to keep both models in sync even after the initial synchronization at connection establishment.
-Upon receiving an update message the peer should immediately respond with a fetch message to retrieve the updated file.
+Upon receiving an update message the peer should immediately respond with a request message to retrieve the updated file.
 If a peer receives a message for an operation that it has already applied, the message is silently discarded.
 This does not disturb the propagation of updates since the peer will have sent the update to the other connected peers if it  already has the update.
 In this way we ensure that every message propagates as far as possible without consuming unnecessary bandwidth\footnote{Peers are of course free to implement message sending in any way since the update messages are not critical for Tinzenite to work. Peers can simply only send update messages to a limited number of peers, down to none if bandwidth is scarce for example in the case of a mobile device.}.
+A positive side effect of the inclusion of the update message is that updates propagate through active trusted peers within the Tinzenite network faster.
+This in turn lowers the amount of time a user must wait for changes to arrive at another peer.
 
 \subsection{Encrypted Synchronization}
 \label{sub:Encrypted Synchronization}
