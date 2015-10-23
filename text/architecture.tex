@@ -8,9 +8,10 @@ Built on this model we will discuss the messages used to facilitate the update o
 Then we will discuss the protocol extensions required for the encrypted model.
 Finally we will take a look at the advanced features and how they can be built on top of the previous work.
 
-We chose to use JSON for all communication between peers (see section~\ref{sub:JSON}).
+We chose to use JSON for all communication between peers as further discussed in section~\ref{sub:JSON}.
 Therefore generally speaking all messages will be defined as JSON messages.
 Additionally most data is written to storage as JSON files.
+This has the advantage of allowing easy manual access to all files and message for development purposes since JSON messages can be sent as simple text messages via the normal Tox chat clients.
 
 \section{Meta Data}
 \label{sec:Meta Data}
