@@ -66,17 +66,17 @@ An example for this is web access to an encrypted storage: this is a feature tha
 \label{sub:Scope of Work}
 
 In this brief section we will go through the exact scope that this work is to fulfill.
-We therefore divide the above features into three categories, ranging from those required to have for the thesis to be considered successful, to those that can be added as extras if time permits or as future work.
+We therefore divide the above features into three categories, ranging from those required to have for the thesis to be considered successful, to those that can be added as extras if time permits or as future work -- see section~\ref{sec:Future Work}.
 Furthermore we will expand on the actual implementation work we intend for each scope definition.
 
-\subsubsection{MUST Have}
-\label{subs:MUST Have}
-
+\paragraph{MUST Have}
+\label{par:MUST Have}
 These features are required for the thesis to be considered basically successful.
 This means that the basic fundamentals of the proposed complete scope have been met and are in working order.
 Specifically this includes a fully working computer client based on a specified API on which all future work can be built on.
 This client must offer the basics required to get the system to work in a user friendly manner from setup through daily usage.
 Data transfer between multiple trusted clients must work as expected with collision detection and correct version iteration upon updates.
+Notably this will require of us to implement the entire communication stack and the directory management parts of Tinzenite.
 
 \begin{description}[leftmargin=16em,style=nextline,noitemsep,nolistsep]
 \item[File Synchronization Protocol]
@@ -89,13 +89,13 @@ Data transfer between multiple trusted clients must work as expected with collis
     Files must not be modified by the system beyond the modifications required for the synchronization.
 \end{description}
 
-\subsubsection{SHOULD Have}
-\label{subs:SHOULD Have}
 
+\paragraph{SHOULD Have}
+\label{par:SHOULD Have}
 Features in this category are features that built on the MUST have features and are thus not strictly required.
 In broad terms this includes two important aspects.
-First and foremost is the capability of having a client that only retains an encrypted version of the data.
-Built on this the second aspect is the server client that only retains an encrypted data set for each one of the multiple users.
+First and foremost is the capability of having a peer that only retains an encrypted version of the data.
+Built on this the second aspect is the server client that only retains an encrypted data set of a user's Tinzenite directory.
 The server also adds the capability of handling multiple users' data on a distributed file system capable of handling the large data size that is to be expected for multiple concurrent users.
 
 \begin{description}[leftmargin=10em,style=nextline,noitemsep,nolistsep]
@@ -107,9 +107,8 @@ The server also adds the capability of handling multiple users' data on a distri
     Working on an additional peer type should allow us to improve performance of the protocol.
 \end{description}
 
-\subsubsection{COULD Have}
-\label{subs:COULD Have}
-
+\paragraph{COULD Have}
+\label{par:COULD Have}
 These features are features that will only be implemented if all previous features have been successfully integrated.
 They are not required for the thesis to be considered successful but would be nice to have to fully complete the proposed functionality.
 Primary aspects that would be added in this phase are additional clients with differing functionality: a mobile client for Android, a web interface for accessing encrypted server clients, and a passive storage client.
@@ -132,6 +131,8 @@ These would require additional protocol extensions to support higher performance
 \label{sec:Dependencies}
 
 This section will introduce the software and programming language this thesis will be based on.
+We will include a brief overview of each technology and highlight some points that are important to our work.
+A more technical discussion on these technologies can be found in section~\ref{sec:Tools and Environment}.
 
 \subsection{Golang}
 \label{sub:Golang}
@@ -144,9 +145,6 @@ Golang was first created at Google in 2007, but announced and open sourced in 20
 The reason for yet another language is given in the language's frequently asked questions page as: "Go is an attempt to combine the ease of programming of an interpreted, dynamically typed language with the efficiency and safety of a statically typed, compiled language. It also aims to be modern, with support for networked and multicore computing. Finally, it is intended to be fast: it should take at most a few seconds to build a large executable on a single computer."~\cite{web:site:golang:faq}.
 Since Tinzenite is a networked system and offers many possible applications for using concurrent operations it was deemed a good match for this thesis.
 More information on the origin of the language and its design goals can be found in this article~\cite{pike2012go}.
-
-Golang, much like Java, comes with a wide range of available default packages to use directly within a program.
-Beyond the basics we will make use of the provided cypher package to implement all encryption related tasks where required.
 
 \subsection{Tox}
 \label{sub:Tox}
