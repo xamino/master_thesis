@@ -147,7 +147,8 @@ See table~\ref{table:software_comparison}.
 \begin{table}[htp]
 \begin{threeparttable}
 \centering
-\begin{tabulary}{\textwidth}{ p{2.8cm} || c | C | C | C | C }
+{\small
+\begin{tabulary}{\textwidth}{ L || c | C | C | C | C }
     \textbf{Name} & \textbf{Architecture} & \textbf{Free Storage} & \textbf{Client-side Encryption} & \textbf{Open Source} & \textbf{Account Required} \\
     \hline \hline
     Dropbox & Centralized & 2 GB & & & \checkmark \\
@@ -162,6 +163,7 @@ See table~\ref{table:software_comparison}.
     \hline
     Syncthing & Distributed & $\infty$ & & \checkmark & \\
 \end{tabulary}
+}
 \scriptsize{
 \begin{tablenotes}
     \item[a] Boxcryptor is used on top of an existing cloud storage provider.
