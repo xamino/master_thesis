@@ -153,15 +153,15 @@ By setting the shadow flag to true the client will then immediately try to fetch
 
 Shadow files pose a few additional difficulties that would have to be solved.
 First and most trivial: what happens to an already synchronized file when the shadow attribute is set?
-We propose that the file is immediately removed although this could be expensive in terms of bandwidth if the users quickly change their mind again as the file must then be fetched again all anew.
+We propose that the file is immediately removed although this could be expensive in terms of bandwidth if the users quickly change their mind again because the file must then be fetched again all anew.
 A more sophisticated approach would integrate the size restriction capability of the client as proposed previously.
-By setting the space limit to a number below the full size of the directory files will only be immediately removed if near the space limit.
-If the user changes their mind the file may thus still be immediately available.
+By setting the space limit to a number below the full size of the directory, files will only be immediately removed if near the space limit.
+If the users change their mind the file may thus still be immediately available.
 
 So what do peers do if they receive a model update where the shadow flag is set?
 It is important to note here that the shadow flag is considered to be transient when synchronizing models, meaning its value is considered to be local only.
-However it is still sent as it is used to determine for the receiving peer whether it can fetch an update from the other peer if applicable.
-Again it is up to the peer what happens upon receiving a shadow file update: trivially a peer that has a non shadow copy of the file will ignore shadow updates as it can not fetch the binary file update successfully from it.
+However it is still sent because it is used to determine whether the receiving peer can fetch an update from the other peer if applicable.
+Again it is up to the peer what happens upon receiving a shadow file update: normally a peer that has a non shadow copy of the file will ignore shadow updates as it can not fetch the binary file update successfully from it.
 It will then have to wait for another peer to offer the update where the attribute is not set.
 
 The final edge case is a challenging one: what Tinzenite does not provide is a way to ensure that one full copy of the shadowed file is always kept somewhere.
@@ -196,13 +196,13 @@ We thus propose to extend the Tinzenite architecture for all encrypted peers to 
 This would require some further logic in how to detect and merge different encrypted peer states.
 Generally it could be done if the directory model had an unencrypted version state attached to it.
 As long as no model conflicts arise, all encrypted peers can keep updating themselves to the most current version.
-If two encrypted peers receive conflicting update states, the entire swarm of encrypted peers would need to wait for a trusted peer to resolve the issue.
+If however two encrypted peers receive conflicting update states, the entire swarm of encrypted peers would need to wait for a trusted peer to resolve the issue.
 This would require some large extensions to the current protocol, but should in theory be doable.
 
 \subsubsection{Data Obfuscation}
 \label{subs:Data Obfuscation}
 
-While encrypted peers already only store encrypted files, simply encrypting a file may not be sufficient to prevent meta information collection on the directory contents.
+While encrypted peers only store encrypted files, simply encrypting a file may not be sufficient to prevent meta information collection on the directory contents.
 Thus we propose that future work could include modifying the encrypted peer implementation and the transfer protocol so that trusted peers send not only encrypted but also obfuscated data to encrypted peers, effectively implementing an oblivious storage system~\cite{goldreich1996software}.
 
 This especially makes sense if combined with the swarm behavior mentioned previously and the encrypted peer synchronization.
@@ -214,10 +214,10 @@ Obfuscation would be sufficient to hide most meta data that may be deduced from 
 \label{subs:Update Feedback}
 
 While our implementation allows for a basic feedback of large file transfers in the form of basic progress meters, a lot more detailed and better specified feedback could be offered to peers.
-This would allow them to signal to the user for example of outstanding updates -- updates that it has received but not yet applied for example because the transfer is pending.
+This would allow them to signal to the user for example of outstanding updates -- such as updates that it has received but not yet applied because the transfer is pending.
 Generally such features would also tie in with the better control of peer behavior previously mentioned.
 If the user can quickly see at a glance the general state of the local trusted peer or even other connected peers, usability of the entire Tinzenite network increases.
-It would also hasten the user's trust in that the synchronization is fully working as intended.
+It would also hasten the user's trust in the fully working synchronization.
 
 \subsubsection{Additional Peer Versions}
 \label{subs:Additional Peer Versions}
@@ -232,21 +232,21 @@ On the positive side little else would need to be changed in our provided work a
 Indeed the entire application could be written in Golang, building on our already completed work, by utilizing the \emph{mobile} package~\cite{web:site:golang:mobile}.
 
 The web interface peer would be an interesting challenge.
-It would allow the user to log in to a web server and enter their passphrase.
+It would allow the users to log in to a web server and enter their passphrase.
 The web peer would then be capable of fetching and decrypting the model file and allow the user to upload and download encrypted data directly from an encrypted peer.
 This could happen entirely without requiring the underlying Tox communication architecture.
 All data to and from the web server would be fully encrypted since decrypted data would only be kept on the web interface peer.
-The moment the user closes the web page all temporary data would be discarded.
+The moment a user closes the web page all temporary data would be discarded.
 This would enable users to access their data stored in the Tinzenite network anywhere where they have internet access, as long as they have encrypted peers that enable this feature.
 
 Finally a cold storage peer could be offered.
 Technically it would not be a true peer of the Tinzenite network, but for the sake of this text we will reference it as a passive peer.
 A user could command a trusted Tinzenite peer to utilize a storage location as a passive peer.
-Tinzenite would then encrypt all local files and its current state and write the data to the location.
+Tinzenite would then encrypt all local files and its current state and write the data to the specified location.
 This location could be anything from a USB stick to more permanent storage device.
 If the users wish to update the passive peer they would not even have to do it at the same peer: any other trusted peer could be used too.
-This other trusted peer would, much like how the encrypted peer works, read and synchronize the passive peer against itself.
-This would allow passive peers to be used both as safeguards against data lose and even as secure transport containers.
+This other trusted peer would, similar to how the encrypted peer works, read and synchronize the passive peer against itself.
+This would allow passive peers to be used both as safeguards against data loss and even as secure transport containers.
 Two trusted peers not connected via the internet could be kept synchronized manually by regularly moving a passive peer between them.
 
 \subsubsection{File Versioning}
@@ -257,7 +257,7 @@ Indeed the core protocol would not even have to be changed to support this: all 
 
 We propose to implement this as follows.
 First, for every created object that Tinzenite detects, it copies the initial version into a hidden directory for future reference.
-Then, whenever a change to the file is detected, the delta update functionality can be used to store the difference between the old version and the new version of the file.
+Then, whenever a change within the file is detected, the delta update functionality can be used to store the difference between the old version and the new version of the file.
 A file removal could be marked specifically.
 A setting could be introduced to allow the user to control how far back different versions of an object are kept to keep storage requirements at a reasonable level.
 Thus it should be comparatively easy to only retain the last three versions of an object.
