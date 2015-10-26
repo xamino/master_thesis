@@ -52,7 +52,7 @@ Users should be guided to create long and secure passphrases because then they b
 
 Tinzenite's security is built on one of the most scrutinized encryption libraries currently in existence, the NaCl library.
 Therefore the encrypted data that untrusted, encrypted peers receive should be more than sufficient to deny unauthorized third party access.
-Should services running encrypted peers be requested by hostile governments to hand over user data said data would be inaccessible without guessing the passphrase used to encrypt the encryption keys.
+Should services running encrypted peers be requested by hostile governments to hand over user data, said data would be inaccessible without guessing the passphrase used to encrypt the encryption keys.
 Thus the security of the user data primarily depends on the user's willingness to use a sufficiently complex passphrase.
 
 Theoretically this feature is Tinzenite's distinguishing point between all existing implementation mentioned in section~\ref{sec:Existing Software}.
@@ -197,7 +197,7 @@ This would require some further logic in how to detect and merge different encry
 Generally it could be done if the directory model had an unencrypted version state attached to it.
 As long as no model conflicts arise, all encrypted peers can keep updating themselves to the most current version.
 If however two encrypted peers receive conflicting update states, the entire swarm of encrypted peers would need to wait for a trusted peer to resolve the issue.
-This would require some large extensions to the current protocol, but should in theory be doable.
+This would require some large extensions to the current protocol, but in theory should be doable.
 
 \subsubsection{Data Obfuscation}
 \label{subs:Data Obfuscation}
@@ -214,10 +214,10 @@ Obfuscation would be sufficient to hide most meta data that may be deduced from 
 \label{subs:Update Feedback}
 
 While our implementation allows for a basic feedback of large file transfers in the form of basic progress meters, a lot more detailed and better specified feedback could be offered to peers.
-This would allow them to signal to the user for example of outstanding updates -- such as updates that it has received but not yet applied because the transfer is pending.
+This would allow them to signal to the user of outstanding updates -- such as updates that it has received but not yet applied because the transfer is pending.
 Generally such features would also tie in with the better control of peer behavior previously mentioned.
 If the user can quickly see at a glance the general state of the local trusted peer or even other connected peers, usability of the entire Tinzenite network increases.
-It would also hasten the user's trust in the fully working synchronization.
+It would also hasten the user's trust that the synchronization is working as intended.
 
 \subsubsection{Additional Peer Versions}
 \label{subs:Additional Peer Versions}
@@ -228,7 +228,7 @@ As discussed in section~\ref{sec:Software Scope} we have already considered addi
 A mobile peer would be a trusted active peer of the Tinzenite network.
 As previously discussed however the mobile peer would most likely not retain a full copy of the Tinzenite directory due to size and bandwidth limitations.
 Thus both shadow objects and size restrictions are likely prerequisites for a mobile client.
-On the positive side little else would need to be changed in our provided work as Golang can be executed on both of the most popular mobile operating systems in use currently, Android and iOS.
+On the positive side little else would need to be changed in our provided work as Golang can be executed on both of the most popular mobile operating systems currently in use, Android and iOS.
 Indeed the entire application could be written in Golang, building on our already completed work, by utilizing the \emph{mobile} package~\cite{web:site:golang:mobile}.
 
 The web interface peer would be an interesting challenge.

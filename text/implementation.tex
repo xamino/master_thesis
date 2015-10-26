@@ -3,7 +3,7 @@
 
 In this chapter we will expand on the process of implementing our proof of concept.
 Before we can discuss the actual work of implementing the architecture we need to define the developing environment.
-This will include an introduction of the software libraries we will base some functionality of Tinzenite on.
+This will include an introduction of the software libraries Tinzenite will base some of its functionality on.
 
 \section{Tools and Environment}
 \label{sec:Tools and Environment}
@@ -217,7 +217,7 @@ The channel object makes use of callbacks to allow callers to react to incoming 
 
 Since the underlying Tox instance must be called in regular intervals, the channel object implements a background go routine that keeps Tox ticking.
 To avoid locking up the Tox instance on callbacks, each callback is called asynchronously.
-If a callback can result in a direct response that must be passed to the Tox instance another method is available.
+If a callback can result in a direct response that must be passed to the Tox instance, another method is available.
 
 Tox requires bootstrapping to known nodes to connect to the Tox network.
 This bootstrapping is different from the bootstrapping of peers we will discuss later.
@@ -245,7 +245,7 @@ It offers a range of flags to make a Tinzenite directory easier to manage.
 Each instance of Tin should run for a single trusted Tinzenite peer.
 Additionally the program can also be used to create new peers and bootstrap them to the Tinzenite network.
 In the case of bootstrapping an encrypted peer the program will exit on successful completion.
-For trusted peers it will immediately go over into running the directory.
+For trusted peers the program will immediately continue by running the directory.
 If a trusted peer receives a bootstrapping request it asks the user to validate the given peer address and requested trust level.
 
 The program also automatically updates the local directory, requests remote updates, and synchronizes with available encrypted peers at certain intervals.
@@ -304,7 +304,7 @@ Most files the encrypted peer handles are user data files.
 One of the goals for this thesis was to support writing these files to the Hadoop distributed file system.
 Therefore we implemented the encrypted peer so that all user files are written with a specified storage interface as seen in listing~\ref{golang:storage_interface}.
 However this storage interface is not used for all files.
-The authentication file and the peer files are required to exist unencrypted and required for the encrypted peer to run correctly.
+The authentication file and the peer files are required to exist unencrypted and are required for the encrypted peer to run correctly.
 Therefore these files are written to disk within the \textit{"org"} directory\footnote{The encrypted peer does not share the directory structure of a trusted peer. The reason for this is that an encrypted peer lacks many of the features that went into the design of the \textit{".tinzenite"} directory. Thus a simpler, flatter structure was chosen.}.
 
 The storage interface allows encrypted clients, such as the \emph{server} package provides an example of, to interface with any storage interface a developer requires it to.
@@ -437,7 +437,7 @@ It is immediately obvious that simply storing the keys in plain text next to the
 So the keys must be encrypted too but with another set of keys.
 The question then is where to store these keys for encrypting the encryption keys.
 Since Tinzenite should be user friendly and secure we opted for an interesting algorithm for generating the keys that unlock the actual encryption keys.
-To differentiate the two different set of keys in the following we will reference the encryption keys that are used to encrypt and decrypt the keys for the file encryption as the box keys.
+To differentiate the two different sets of keys we will reference the encryption keys which are used to encrypt and decrypt the other keys as the box keys.
 
 On creating a Tinzenite network the user is asked for a password or better yet a passphrase~\cite{web:site:xkcd:pwd_strength}.
 We then use this passphrase to generate the box keys used to encrypt the encryption keys.
