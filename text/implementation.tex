@@ -254,6 +254,7 @@ In fact apart from setting up a peer the synchronization runs fully without user
 Care was taken to ensure that the entire program could run using as little resources as possible.
 Currently the program runs with negligible CPU and RAM usage even though synchronizing regularly.
 The only truly expensive operation where the program requires more performance is for hash generation and encryption when handling files.
+On an Intel Core i5-4440 with 4 physical cores at 3.1 GHz, each instance of Tin remains under 1\% CPU and around 9 MB of RAM usage over a prolonged period of time when no update operations beyond model synchronization are executed.
 
 The \emph{core} package itself wraps the complete trusted peer code.
 Basically it uses the model object and the channel object to offer all trusted peer functionality.
@@ -326,7 +327,7 @@ Upon successful locking an encrypted peer to itself, the trusted peer requests t
 If the encrypted peer responds with a notification that the file doesn't exist the encrypted peer is considered empty and the logic skips to uploading the current state of the trusted peer.
 
 If a model is received the trusted peer must first compare the remote model against its own model to check for changes.
-Unknown updates that the encrypted peer has are applied to the trusted peer by fetching the necessary files.
+Unknown updates of the encrypted peer are applied to the trusted peer by fetching the necessary files.
 Once this is complete the next step is to update the encrypted peer to the state of the trusted peer.
 Updates that the trusted peer has but the encrypted peer lacks are uploaded and finally the current model is encrypted and also uploaded.
 Then the encrypted peer is unlocked so that other trusted peers can access it too.
@@ -385,7 +386,7 @@ An example can be seen in listing~\ref{golang:enum_example}.
 Our largest issue with this was that when converting these enumeration similes to JSON instead of the name of the enumeration the number value was output due to Golang seeing them as number value variables.
 Thus instead of having JSON where each enumeration was easily interpretable we had values such as \texttt{"MsgType":1} where what we wanted was \texttt{"MsgType":"update"}.
 The solution to this requires a lot of boilerplate code since Golang does not support generics at this point in time.
-For each defined enumeration type we had to write custom \texttt{MarshalJSON} and \texttt{UnmarshalJSON} methods.
+For each defined enumeration type we had to write custom \texttt{MarshalJSON} and \texttt{UnmarshalJSON} methods, which we did where applicable.
 
 \section{Security}
 \label{sec:Security}

@@ -27,7 +27,7 @@ The other option is a distributed peer to peer model, where a client requests in
 One of the more well known candidates of this is the Bittorrent protocol~\cite{web:site:bittorrent}.
 Both options have been used in existing file synchronization solutions.
 See figure~\ref{fig:example_netarch} for an example diagram of the two architectures.
-Therefore we have divided the existing software we will shortly discuss in the following sections between these two extremes.
+we have divided the existing software between these two extremes and will shortly discuss these in the following sections.
 
 \subsection{Client-Server Solutions}
 \label{sub:Client-Server Solutions}
@@ -47,7 +47,7 @@ On the negative side the service relies on its back-end servers, although comput
 Dropbox also lacks any end to end encryption, but does encrypt data while in transit and when "at rest" in their data centers~\cite{web:site:dropbox:blog}.
 Therefore it comes with little surprise that they were prominently featured in the Snowden leaks~\cite{web:site:rt:dropbox}.
 The company does have full access to any data the user uploads to their servers, as long as the users do not encrypt the files beforehand themselves.
-Therefore we can extrapolate that Dropbox can offer up a user's data if required to by a fourth party, as is the case in the United States of America.
+Therefore we can extrapolate that Dropbox can offer up a user's data if required to by a fourth party, as is the case in the United States of America via PRISM by the NSA~\cite{web:site:wp:internet_giants}.
 
 Dropbox offers a free account for a basic storage plan.
 Additional storage capacity is available for purchase.
@@ -113,12 +113,12 @@ The downside is that Syncthing lacks a feature which BitTorrent Sync shares with
 \subsection{Additional Security Layers}
 \label{sub:Additional Security Layers}
 
-It is of course possible to encrypt all data before using any data storage service beforehand.
+It is of course possible to encrypt all data beforehand before using any data storage service such as those mentioned.
 This has a few notable downsides however.
 For many client-server solutions the user loses out on web access to the data along with a host of additional feature built on the availability of the data.
 While advanced users may be capable of encrypting their data themselves using a range of available tools, such solutions require the user to manage the encryption keys themselves.
 This is a non trivial issue beyond adding an additional hurdle to using data storage services.
-As so often commercial solutions for this exist.
+As so often commercial solutions for this exist as the following example shows.
 
 \subsubsection{Boxcryptor}
 \label{subs:Boxcryptor}
@@ -211,7 +211,7 @@ Derive is argued to be indistinguishable from edit without higher level knowledg
 While not impossible to detect, this feature we consider to be beyond the scope of Tinzenite.
 Features that Tinzenite shares with the paper's prototype include that parents must be created before their children and that children must be removed before their parents.
 
-The paper also offers a number of improvements that Tinzenite could incorporate.
+The paper also offers a number of improvements that Tinzenite will or could incorporate.
 Notably this includes support for an explicit move command.
 This would remove the need for removing and recreating a file's content when it was moved, thus making this operation more performant.% performant is written correctly
 They also suggest using fingerprints of content to avoid sending data that already exists.

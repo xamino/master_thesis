@@ -10,7 +10,7 @@ In this section we will briefly and informally compare Tinzenite with existing s
 Note that an actual study comparing our solution with other storage providers was not the intended goal of this thesis.
 All information used to compare the different solutions is to be taken with a grain of salt.
 
-\subsection{Performance}
+\subsection{Network Performance}
 \label{sub:Performance}
 
 Tinzenite shares a large advantage with the other related peer to peer solutions that have been discussed.
@@ -35,7 +35,8 @@ Server-client alternatives must still download the file to the other client addi
 
 Here Tinzenite in its current state definitely loses out to existing solutions.
 While running the software requires little to no user interaction, the setup and management of peers is currently only available via command line interface programs.
-Nothing speaks against implementing a graphical user interface in principle, this was not an essential part of our work and no such client was implemented due to time constraints.
+Nothing speaks against implementing a graphical user interface in principle.
+This was not an essential part of our work however so no such client was implemented due to time constraints.
 And while Tinzenite theoretically supports web access to encrypted peers (see section~\ref{subs:Additional Peer Versions} below), this capability was also not tested or implemented.
 We believe that web access would improve usability by a large margin and allow Tinzenite to close the feature gap.
 
@@ -217,7 +218,7 @@ While our implementation allows for a basic feedback of large file transfers in 
 This would allow them to signal to the user of outstanding updates -- such as updates that it has received but not yet applied because the transfer is pending.
 Generally such features would also tie in with the better control of peer behavior previously mentioned.
 If the user can quickly see at a glance the general state of the local trusted peer or even other connected peers, usability of the entire Tinzenite network increases.
-It would also hasten the user's trust that the synchronization is working as intended.
+It would also increase the user's trust that the synchronization is working as intended.
 
 \subsubsection{Additional Peer Versions}
 \label{subs:Additional Peer Versions}
