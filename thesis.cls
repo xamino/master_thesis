@@ -182,7 +182,7 @@
 \includegraphics[height=1.8cm]{img/unilogo_wort}\\[1em]
 
 {\footnotesize
-{\bfseries Ulm University}\textbar ~89069 Ulm \textbar ~Germany
+{\bfseries Ulm University} \textbar ~89069 Ulm \textbar ~Germany
 \hfill\parbox[t]{35mm}{\bfseries \raggedleft Faculty of \@fakultaet\\ \mdseries \@institut}
 \hspace*{140mm}\\[2cm]
 
@@ -225,14 +225,17 @@
 {
 \thispagestyle{empty}
 
-Name: \thefullname \hfill Matrikelnummer: \thematnr \vspace{2cm}
+Name: \thefullname \hfill Matriculation Number: \thematnr \vspace{2cm}
 
-\minisec{Erklärung}
+\minisec{Affidavit}
 
-Ich erkläre, dass ich die Arbeit selbstständig verfasst und keine anderen als
-die angegebenen Quellen und Hilfsmittel verwendet habe.\vspace{2cm}
+I herewith declare in lieu of oath that I have composed this thesis without any inadmissible help of a third party and without the use of aids other than those listed.
+The data and concepts that have been taken directly or indirectly from other sources have been acknowledged and referenced.
+This thesis has not been submitted, wholly or substantially, neither in this country nor abroad for another degree at any university or institute.
 
-Ulm, den \dotfill
+\vspace{2cm}
+
+Ulm, the \dotfill
 
 \hspace{10cm} {\footnotesize \thefullname}
 }
