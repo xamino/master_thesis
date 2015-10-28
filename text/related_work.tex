@@ -50,8 +50,9 @@ The company does have full access to any data the user uploads to their servers,
 Therefore we can extrapolate that Dropbox can offer up a user's data if required to by a fourth party, as is the case in the United States of America via PRISM by the NSA~\cite{web:site:wp:internet_giants}.
 
 Dropbox offers a free account for a basic storage plan.
-Additional storage capacity is available for purchase.
+Additional storage capacity is available for purchase or by referrals that lead to account creations.
 None of the core applications have been open sourced to date, meaning even if Dropbox implemented strong encryption it could not be independently verified.
+This includes client software and server software.
 
 \subsubsection{OneDrive}
 \label{subs:OneDrive}
@@ -98,13 +99,15 @@ However, just as the client-server solutions before, Sync is closed source.
 Clients exist for a multitude of platforms.
 While information is encrypted in transfer, there is no differentiation for untrusted clients.
 Sync is free for basic usage, but requires a paid account for additional features that offer more fine grained control.
+This includes advanced data sharing options.
+Unlike Syncthing BitTorrent Sync is capable of sharing content to third parties that are not part of the data storage service.
 
 \subsubsection{Syncthing}
 \label{subs:Syncthing}
 
 Syncthing~\cite{web:site:synthing} is an open source file synchronization software on an equally free block exchange protocol.
 This protocol is a mixed data transfer and communication protocol in one, with encryption for all communication built in directly.
-Again the user can not designate untrusted peers.
+Again the user can not designate untrusted peers or specify peers to retain only an encrypted copy of the data.
 
 Unlike the other solutions mentioned here, Syncthing is open source and can thus be independently verified to be secure.
 Like Tinzenite it is also implemented in Golang.

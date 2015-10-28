@@ -48,7 +48,7 @@ A variety of tools are directly built into the development suite, including a to
 \subsection{JSON}
 \label{sub:JSON}
 
-\begin{listing}[htp]
+\begin{listing}[H]
     \begin{lstlisting}[language=golang,firstnumber=0]
 type Message struct {
     Address string
@@ -109,17 +109,18 @@ Git~\cite{web:site:git} was used for the version control system, with a hosted r
 \section{Software Structure}
 \label{sec:Software Structure}
 
+Tinzenite was developed not as a single package but as a package collection where each package covers some part of the complete scope.
+In this section we will discuss the general layout of the packages and how they depend on one another.
+Figure~\ref{fig:implementation_structure} shows an informal diagram of the structure.
+All packages have their own repository on Github~\cite{web:site:github:tinzenite}.
+\newpage
+
 \begin{figure}[htp]
 \centering
     \includegraphics[width=5cm]{diagram/topo_implementation}
 \caption[Tinzenite Structure]{This diagram shows an informal representation of the package structure of our implementation.}
 \label{fig:implementation_structure}
 \end{figure}
-
-Tinzenite was developed not as a single package but as a package collection where each package covers some part of the complete scope.
-In this section we will discuss the general layout of the packages and how they depend on one another.
-Figure~\ref{fig:implementation_structure} shows an informal diagram of the structure.
-All packages have their own repository on Github~\cite{web:site:github:tinzenite}.
 
 \begin{description}[leftmargin=6em,style=nextline,noitemsep,nolistsep]
     \item[bootstrap]
@@ -140,12 +141,12 @@ All packages have their own repository on Github~\cite{web:site:github:tinzenite
         Built on the \emph{core} package implements an example user program for a trusted peer.
 \end{description}
 
-The implementation started with the implementation of the \emph{model} and the \emph{channel} packages, then built the \emph{core} package on these.
-At one point we began putting shared code into the \emph{shared} package, thus allowing it to grow as the implementation grew.
-The \emph{tin} package was quickly added for testing and debugging purposes and grew alongside the trusted peer development.
-Once the basic functions worked we implemented the \emph{bootstrap} package since we required multiple peers to continue working.
-Finally we built the \emph{encrypted} and \emph{server} packages to implement the encrypted peer.
-This in turn required some modifications to the \emph{bootstrap} package to enable it to bootstrap both trusted and encrypted peers.
+We began the implementation with the \emph{model} and the \emph{channel} packages, then built the \emph{core} package on top of these.
+At one point we began writing shared code into the \emph{shared} package for reuse.
+The \emph{tin} package was added early on for testing and debugging purposes and grew alongside the trusted peer development.
+Once the basic functions worked we implemented the \emph{bootstrap} package.
+Then we built the \emph{encrypted} and \emph{server} packages to implement the encrypted peer.
+Finally we adapted the \emph{bootstrap} package for both peer types.
 
 \section{Highlights}
 \label{sec:Highlights}

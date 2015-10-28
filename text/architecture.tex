@@ -342,7 +342,7 @@ These three operations are not the only operations that a user can do on directo
 However they are all the operations that Tinzenite requires so that it can cover all possible file state transitions.
 The choice of these three basic operations for Tinzenite was heavily based on the paper discussed in section~\ref{sub:An Algebraic Approach to File Synchronization}.
 
-\begin{figure}[htp]
+\begin{figure}[tp]
 \centering
     \includegraphics[width=4cm]{graph/sm_object_lifecycle}
 \caption[Object State Diagram]{The life cycle of every object, file and directory, in Tinzenite with the allowed operations.}
@@ -462,7 +462,7 @@ If the challenge is answered incorrectly or not at all we can not be assured tha
 Therefore we simply ignore it for all further operations\footnote{Ideally we would warn the user of this as it may result in peers being orphaned within the network. Since this requires either the user having tried to connect to an insecure peer or a peer having become compromised, the chance that this behavior is undesired is comparatively small.}.
 This concludes opening a communication channel with a connected peer.
 
-\begin{figure}[htp]
+\begin{figure}[tp]
 \centering
     \includegraphics[width=6cm]{graph/sm_peer_communications}
 \caption[Connection State Diagram]{This diagram shows how peers handle the establishment of a connection to a known peer.}
@@ -499,7 +499,7 @@ We therefore propose that the user only needs to authenticate the new peer with 
 From there the authentication is synchronized to the other existing peers much like any other file or property update.
 This bootstrapping process allows a user-friendly setup of peers.
 
-\begin{figure}[htp]
+\begin{figure}[tp]
 \centering
     \includegraphics[width=10cm]{diagram/sequence_new_connect}
 \caption[New Connection Sequence Diagram]{This diagram shows the interaction required to connect a new peer to the existing Tinzenite network.}

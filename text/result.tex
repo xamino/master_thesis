@@ -2,7 +2,9 @@
 \label{chap:Results and Recapitulation}
 
 This chapter will discuss the proof of concept implementation and recapitulate on how the architecture was implemented.
-We will then discuss improvements and future work.
+Specifically we will elaborate on the state of our implementation in relation to existing services.
+We will then discuss future work.
+Our future work can be divided into two broad categories: improvements on the existing solution and expansion on top of it.
 
 \section{Comparison}
 
@@ -51,12 +53,13 @@ Users should be guided to create long and secure passphrases because then they b
 \subsection{Security}
 \label{sub:Security}
 
-Tinzenite's security is built on one of the most scrutinized encryption libraries currently in existence, the NaCl library.
-Therefore the encrypted data that untrusted, encrypted peers receive should be more than sufficient to deny unauthorized third party access.
-Should services running encrypted peers be requested by hostile governments to hand over user data, said data would be inaccessible without guessing the passphrase used to encrypt the encryption keys.
+Tinzenite's security is built on one of the most scrutinized encryption libraries currently in existence, the NaCl library~\cite{bernstein2009cryptography}.
+Therefore the encrypted data that untrusted, encrypted peers receive should be more than sufficiently secure to deny unauthorized third party access even if the server peer is accessible.
+Should services running encrypted peers be requested to hand over user data by hostile governments, said data would be inaccessible without guessing the passphrase\footnote{Without knowing the passphrase the box keys can not easily be determined. Therefore the actual file encryption keys which are encrypted with the box keys are stored securely enough to ensure confidentiality.}.
 Thus the security of the user data primarily depends on the user's willingness to use a sufficiently complex passphrase.
+Note that Tinzenite does not provide data deniability: if the user is forced to give up the passphrase~\cite{web:site:xkcd:pwd_wrench}, no further mechanisms prevent full data access.
 
-Theoretically this feature is Tinzenite's distinguishing point between all existing implementation mentioned in section~\ref{sec:Existing Software}.
+Theoretically the capability of working with encrypted peers is Tinzenite's distinguishing point between all existing implementation mentioned in section~\ref{sec:Existing Software}.
 Like other peer to peer solutions Tinzenite works directly between peers with most of the associated advantages.
 Additionally Tinzenite allows for off site backup of the users' data.
 Unlike the server-client solutions Tinzenite does not require an account or trust in a third party.
@@ -64,12 +67,11 @@ We believe that Tinzenite therefore combines the best of both worlds in regards 
 
 %disclaimer :P
 None the less, Tinzenite should not be trusted with secure data at this point in development.
-Primarily because it was written as a proof of concept and thus is probably not bug free.
-Since encryption is hard to implement correctly we are also not confident enough of our implementation of the various aspects of the encryption scheme.
+Since encryption is hard to implement correctly we are not confident enough of our implementation of the various aspects of the encryption scheme.
 Furthermore Tinzenite should only be trusted after a security audit has been performed on the core logic.
 Tinzenite's open source nature however allows any interested party to audit the code at their own leisure.
 Tinzenite does leak some information: namely the peer list is available unencrypted along with the authentication file.
-While a small risk as no true user information is stored in those files it is still a possible attack vector for a malicious peer.
+While a small risk as no personal user information is stored in those files it is still a possible attack vector for a malicious peer.
 
 \section{Future Work}
 \label{sec:Future Work}
@@ -169,7 +171,6 @@ The final edge case is a challenging one: what Tinzenite does not provide is a w
 If the user marks a file as shadowed on all peers it may well happen that Tinzenite loses the file.
 For now we propose to avoid this by explicitly warning the user of this possibility.
 One way to mitigate this risk is by allowing user defined shadowed files only for specific clients: we can probably assume that any full desktop peer should always retain a full copy of the directory anyway.
-Thus shadow files should only be used for the proposed mobile peer and web interface peer.
 
 \subsubsection{Implementation Improvements}
 \label{subs:Implementation Improvements}
@@ -203,9 +204,8 @@ This would require some large extensions to the current protocol, but in theory 
 \subsubsection{Data Obfuscation}
 \label{subs:Data Obfuscation}
 
-While encrypted peers only store encrypted files, simply encrypting a file may not be sufficient to prevent meta information collection on the directory contents.
+In the case of encrypted peers simply encrypting a file may not be sufficient to prevent meta information collection on the directory contents.
 Thus we propose that future work could include modifying the encrypted peer implementation and the transfer protocol so that trusted peers send not only encrypted but also obfuscated data to encrypted peers, effectively implementing an oblivious storage system~\cite{goldreich1996software}.
-
 This especially makes sense if combined with the swarm behavior mentioned previously and the encrypted peer synchronization.
 The entire group of encrypted peers could then be used to obfuscate and store data redundantly.
 This would increase the third party security and further reduce the trust of said party required.

@@ -138,7 +138,6 @@ A more technical discussion on these technologies can be found in section~\ref{s
 \label{sub:Golang}
 
 Our implementation language of choice is Golang, usually referred to by the shorthand Go~\cite{web:site:golang}.
-The language is new to the author of this thesis but will hopefully provide an interesting intellectual challenge.
 Since the main language at Ulm University is mostly Java for student work, this thesis will hopefully also offer some insight into the differences between the two.
 
 Golang was first created at Google in 2007, but announced and open sourced in 2009.
@@ -238,6 +237,8 @@ These encrypted peers will also utilize a different subset of the communication 
 Built on top of an encrypted server peer it should theoretically be possible to implement access to the encrypted data for the user via a web interface.
 This can be realized by allowing users to enter their password which in turn unlocks the decryption keys required to decrypt the stored data.
 By utilizing client side code within a web browser, these operations can be done without involving the server peer beyond its use as a blind data store.
+This peer would require a Javascript implementation of the Tinzenite protocol.
+Golang can be compiled to Javascript~\cite{web:site:github:gopherjs} which should allow at least some reuse of existing code.
 
 \subsection{Mobile Peer}
 
